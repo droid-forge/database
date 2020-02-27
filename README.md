@@ -1,6 +1,6 @@
-# Android Promise Commons
+# Android Promise Database
 - [v1.0.0]
-The base promise library
+The promise database library
 
 # Setup
 - 
@@ -21,8 +21,8 @@ android {
 }
 
 dependencies {
-     implementation 'com.github.dev4vin:android-promise:1.0.8'
-     implementation 'io.reactivex.rxjava2:rxjava:2.2.7'
+     implementation 'com.github.android-promise:database:1.0'
+     implementation 'com.github.android-promise:commons:1.0'
 }
 ```
 
@@ -34,13 +34,13 @@ Initialize Promise in your main application file, entry point
   @Override
   public void onCreate() {
     super.onCreate();
-    Promise.init(this).threads(100);
+    Promise.init(this);
   }
 ```
 #### Stay Updated
 
 # Wiki!
-I strongly recommend to read the **[Wiki](https://github.com/dev4vin/android-promise/wiki) pages**, where you can find a comprehensive Tutorial.<br/>
+I strongly recommend to read the **[Wiki](https://github.com/android-promise/database/wiki) pages**, where you can find a comprehensive Tutorial.<br/>
 
 ### Pull requests / Issues / Improvement requests
 Feel free to contribute and ask!<br/>
