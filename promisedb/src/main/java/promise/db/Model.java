@@ -21,6 +21,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.text.TextUtils;
+import android.view.Display;
 
 import androidx.annotation.Nullable;
 
@@ -28,6 +29,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import io.reactivex.Maybe;
+import io.reactivex.Single;
 import promise.commons.data.log.LogUtil;
 import promise.commons.model.List;
 import promise.commons.util.Conditions;
@@ -49,6 +52,34 @@ import promise.model.SModel;
  */
 public abstract class Model<T extends SModel>
     implements Table<T, SQLiteDatabase>, DoubleConverter<T, Cursor, ContentValues> {
+
+  /**
+   *
+   */
+  private FastDatabase database;
+
+  /**
+   * @param database
+   */
+  public Model(FastDatabase database) {
+    this.database = database;
+  }
+
+  /**
+   * @return
+   */
+  public FastDatabase getDatabase() {
+    return database;
+  }
+
+  /**
+   * @return
+   */
+  public ReactiveDatabase getReactiveDatabase() {
+    if (database instanceof ReactiveDatabase) return (ReactiveDatabase) database;
+    throw new IllegalStateException("The database is not an instance of ReactiveDatabase");
+  }
+
   /**
    * The create prefix in a prefix for queries that create a table structure
    */
@@ -217,6 +248,198 @@ public abstract class Model<T extends SModel>
       }
     }
     return true;
+  }
+
+  /**
+   * @param t
+   * @return
+   */
+  public Long save(T t) {
+    return database.save(t, this);
+  }
+
+
+  /**
+   * @param t
+   * @return
+   */
+  public Single<Long> saveAsync(T t) {
+    return getReactiveDatabase().saveAsync(t, this);
+  }
+
+  /**
+   * @param list
+   * @return
+   */
+  public boolean save(SList<? extends T> list) {
+    return database.save(list, this);
+  }
+
+  /**
+   * @param list
+   * @return
+   */
+  public Single<Boolean> saveAsync(SList<? extends T> list) {
+    return getReactiveDatabase().saveAsync(list, this);
+  }
+
+  /**
+   * @param t
+   * @return
+   */
+  public boolean update(T t) {
+    return database.update(t, this);
+  }
+
+  /**
+   * @param t
+   * @return
+   */
+  public  Maybe<Boolean> updateAsync(T t) {
+    return getReactiveDatabase().updateAsync(t, this);
+  }
+
+  /**
+   * @param t
+   * @param column
+   * @return
+   */
+  public boolean update(T t, Column column) {
+    return database.update(t, this, column);
+  }
+
+  /**
+   * @param t
+   * @param column
+   * @return
+   */
+  public Maybe<Boolean> updateAsync(T t, Column column) {
+    return getReactiveDatabase().updateAsync(t, this, column);
+  }
+
+  /**
+   * @return
+   */
+  public  Table.Extras<T> read() {
+    return database.read(this);
+  }
+
+  /**
+   * @return
+   * @throws ModelError
+   */
+  public ReactiveTable.Extras<T> readAsync() throws ModelError {
+    return getReactiveDatabase().readAsync(this);
+  }
+
+  /**
+   * @return
+   */
+  public SList<? extends T> readAll() {
+    return database.readAll(this);
+  }
+
+  /**
+   * @return
+   */
+  public Maybe<SList<? extends T>> readAllAsync() {
+    return getReactiveDatabase().readAllAsync(this);
+  }
+
+  /**
+   * @param column
+   * @return
+   */
+  public SList<? extends T> readAll(Column... column) {
+    return database.readAll(this, column);
+  }
+
+  /**
+   * @param column
+   * @return
+   */
+  public Maybe<SList<? extends T>> readAllAsync(Column... column) {
+    return getReactiveDatabase().readAllAsync(this, column);
+  }
+
+  /**
+   * @param column
+   * @return
+   */
+  public boolean delete(Column column)  {
+    return database.delete(this, column);
+  }
+
+  /**
+   * @param column
+   * @return
+   */
+  public Maybe<Boolean> deleteAsync(Column column) {
+    return getReactiveDatabase().deleteAsync(this, column);
+  }
+
+  /**
+   * @param t
+   * @return
+   */
+  public boolean delete(T t) {
+    return database.delete(this, t);
+  }
+
+  /**
+   * @param t
+   * @return
+   */
+  public Maybe<Boolean> deleteAsync(T t) {
+    return getReactiveDatabase().deleteAsync(this, t);
+  }
+
+  /**
+   * @param column
+   * @param list
+   * @param <N>
+   * @return
+   */
+  public <N> boolean delete(Column<N> column, List<? extends N> list) {
+    return database.delete(this, column, list);
+  }
+
+  /**
+   * @param column
+   * @param list
+   * @param <C>
+   * @return
+   */
+  public <C> Maybe<Boolean> deleteAsync(Column<C> column, List<? extends C> list) {
+    return getReactiveDatabase().deleteAsync(this, column, list);
+  }
+
+  /**
+   * @return
+   */
+  public boolean clear() {
+    return database.delete(this);
+  }
+
+  /**
+   * @return
+   */
+  public Maybe<Boolean> clearAsync() {
+    return getReactiveDatabase().deleteAsync(this);
+  }
+
+  /**
+   * @return
+   */
+  public int getLastId() {
+    return database.getLastId(this);
+  }
+
+  /**
+   * @return
+   */
+  public Maybe<Integer> getLastIdAsync() {
+    return getReactiveDatabase().getLastIdAsync(this);
   }
 
   /**

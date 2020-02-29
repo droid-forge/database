@@ -26,13 +26,11 @@ interface Crud<X> {
 
     <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super X> table);
 
-    <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super X> table, Column column);
-
     <T extends Identifiable<Integer>> boolean update(T t, Table<T, ? super X> table, Column column);
 
     <T extends Identifiable<Integer>> boolean update(T t, Table<T, ? super X> table);
 
-    <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super X> table, Column[] columns);
+    <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super X> table, Column... columns);
 
     boolean delete(Table<?, ? super X> table, Column column);
 

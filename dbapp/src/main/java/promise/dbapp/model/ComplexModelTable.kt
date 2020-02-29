@@ -6,7 +6,7 @@ import promise.commons.model.List
 import promise.db.Column
 import promise.db.Model
 
-class ComplexModelTable : Model<ComplexModel>() {
+class ComplexModelTable(database: Database) : Model<ComplexModel>(database) {
   /**
    * @return
    */
@@ -18,9 +18,8 @@ class ComplexModelTable : Model<ComplexModel>() {
    *
    * @return list of columns
    */
-  override fun getColumns(): List<Column<*>> {
-   return List.fromArray(intVariableColumn, floatVariableColumn, doubleVariableColumn, stringVariableColumn)
-  }
+  override fun getColumns(): List<Column<*>> =
+      List.fromArray(intVariableColumn, floatVariableColumn, doubleVariableColumn, stringVariableColumn)
 
   override fun deserialize(e: Cursor): ComplexModel = ComplexModel().apply {
     intVariable = e.getInt(intVariableColumn.index)

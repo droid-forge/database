@@ -35,6 +35,7 @@ public interface Table<T extends Identifiable<Integer>, X> {
    * @return true if the table is created
    * @throws ModelError if theirs an error creating the table
    */
+
   boolean onCreate(X x) throws ModelError;
 
   /** upgraded the table from one version to the next

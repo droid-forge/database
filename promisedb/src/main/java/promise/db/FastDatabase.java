@@ -41,6 +41,7 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    *
    */
   static final String DEFAULT_NAME = "fast";
+
   /*private static Map<IndexCreated, Table<?, SQLiteDatabase>> indexCreatedTableHashMap;*/
   private String TAG = LogUtil.makeTag(FastDatabase.class);
   /**
@@ -130,7 +131,7 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    * @param newVersion
    * @return
    */
-  public abstract void onUpgradeDatabase(SQLiteDatabase database, int oldVersion, int newVersion);
+  public void onUpgradeDatabase(SQLiteDatabase database, int oldVersion, int newVersion) {}
 
   /**
    * @return
@@ -182,6 +183,8 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
       }
     }
   }
+
+
 
   /**
    * @param database
@@ -280,19 +283,7 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
   public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table) {
     return checkTableExist(table).onReadAll(getReadableDatabase(), true);
   }
-
-  /**
-   * @param table
-   * @param column
-   * @param <T>
-   * @return
-   */
-  @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table, Column column) {
-    return checkTableExist(table).onReadAll(getReadableDatabase(), column);
-  }
-
-  /**
+ /**
    * @param t
    * @param table
    * @param <T>
@@ -327,7 +318,7 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table, Column[] columns) {
+  public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table, Column... columns) {
     return checkTableExist(table).onReadAll(getReadableDatabase(), columns);
   }
 
