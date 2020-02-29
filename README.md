@@ -1,9 +1,5 @@
-# Android Promise Database
-- [v1.0.0]
-The promise database library
-
+# Android Promise Database [![](https://jitpack.io/v/android-promise/database.svg)](https://jitpack.io/#android-promise/database)
 # Setup
-- 
 #### build.gradle
 ```
 allprojects {
