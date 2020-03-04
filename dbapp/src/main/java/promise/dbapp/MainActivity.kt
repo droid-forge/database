@@ -56,5 +56,8 @@ class MainActivity : AppCompatActivity() {
             complex_values_textview.text = ""
           }
     }
+
+    val complexRecordTable = AppDatabase.complexModelTable
+
   }
 }

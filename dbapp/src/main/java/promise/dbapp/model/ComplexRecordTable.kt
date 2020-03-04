@@ -15,9 +15,11 @@ package promise.dbapp.model
 
 import android.content.ContentValues
 import android.database.Cursor
+import io.reactivex.Maybe
 import promise.commons.model.List
 import promise.db.Column
 import promise.db.FastTable
+import promise.model.IdentifiableList
 
 class ComplexRecordTable(database: AppDatabase) : FastTable<ComplexRecord>(database) {
   /**
@@ -50,6 +52,11 @@ class ComplexRecordTable(database: AppDatabase) : FastTable<ComplexRecord>(datab
     put(doubleVariableColumn.name, t.doubleVariable)
     put(stringVariableColumn.name, t.stringVariable)
   }
+
+  override fun findAllAsync(): Maybe<IdentifiableList<out ComplexRecord>> {
+    return super.findAllAsync()
+  }
+
 
   companion object {
     val intVariableColumn: Column<Int> = Column("int", Column.Type.INTEGER.NOT_NULL(), 1)
