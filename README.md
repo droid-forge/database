@@ -42,6 +42,17 @@ Initialize Promise in your main application file, entry point
 # Wiki!
 I strongly recommend to read the **[Wiki](https://github.com/android-promise/database/wiki) pages**, where you can find a comprehensive Tutorial.<br/>
 
+## Developed By
+
+* Peter Vincent - <dev4vin@gmail.com>
+
+## Donations
+If you'd like to support this library development, you could make some donations here:
+
+* [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](http://www.paypal.me/vinsonpeter8)
+
+Thank you very much in advance!
+
 ### Pull requests / Issues / Improvement requests
 Feel free to contribute and ask!<br/>
 

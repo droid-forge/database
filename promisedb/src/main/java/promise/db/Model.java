@@ -1,27 +1,27 @@
 /*
+ * Copyright 2017, Peter Vincent
+ * Licensed under the Apache License, Version 2.0, Android Promise.
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *  * Copyright 2017, Peter Vincent
- *  * Licensed under the Apache License, Version 2.0, Promise.
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
  *
  */
 
 package promise.db;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.text.TextUtils;
-import android.view.Display;
 
 import androidx.annotation.Nullable;
 
@@ -52,33 +52,6 @@ import promise.model.SModel;
  */
 public abstract class Model<T extends SModel>
     implements Table<T, SQLiteDatabase>, DoubleConverter<T, Cursor, ContentValues> {
-
-  /**
-   *
-   */
-  private FastDatabase database;
-
-  /**
-   * @param database
-   */
-  public Model(FastDatabase database) {
-    this.database = database;
-  }
-
-  /**
-   * @return
-   */
-  public FastDatabase getDatabase() {
-    return database;
-  }
-
-  /**
-   * @return
-   */
-  public ReactiveDatabase getReactiveDatabase() {
-    if (database instanceof ReactiveDatabase) return (ReactiveDatabase) database;
-    throw new IllegalStateException("The database is not an instance of ReactiveDatabase");
-  }
 
   /**
    * The create prefix in a prefix for queries that create a table structure
@@ -113,6 +86,10 @@ public abstract class Model<T extends SModel>
   }
 
   /**
+   *
+   */
+  private FastDatabase database;
+  /**
    * The alter prefix is used to alter the structure of a column when making upgrades
    */
   private String ALTER_COMMAND = "ALTER TABLE";
@@ -129,6 +106,27 @@ public abstract class Model<T extends SModel>
    * Temporary data holder for holding data during dangerous table structure changes
    */
   private SList<T> backup;
+  /**
+   * @param database
+   */
+  public Model(FastDatabase database) {
+    this.database = database;
+  }
+
+  /**
+   * @return
+   */
+  public FastDatabase getDatabase() {
+    return database;
+  }
+
+  /**
+   * @return
+   */
+  public ReactiveDatabase getReactiveDatabase() {
+    if (database instanceof ReactiveDatabase) return (ReactiveDatabase) database;
+    throw new IllegalStateException("The database is not an instance of ReactiveDatabase");
+  }
 
   /**
    * gets all the columns for this model from the child class for creation purposes
@@ -295,7 +293,7 @@ public abstract class Model<T extends SModel>
    * @param t
    * @return
    */
-  public  Maybe<Boolean> updateAsync(T t) {
+  public Maybe<Boolean> updateAsync(T t) {
     return getReactiveDatabase().updateAsync(t, this);
   }
 
@@ -317,32 +315,55 @@ public abstract class Model<T extends SModel>
     return getReactiveDatabase().updateAsync(t, this, column);
   }
 
+  public Cursor query(QueryBuilder queryBuilder) {
+    return database.query(queryBuilder);
+  }
+
+
+  public Single<Cursor> queryAsync(QueryBuilder queryBuilder) {
+    return getReactiveDatabase().queryAsync(queryBuilder);
+  }
+
   /**
    * @return
    */
-  public  Table.Extras<T> read() {
-    return database.read(this);
+  public Table.Extras<T> find() {
+    return database.find(this);
+  }
+
+  /**
+   * @return
+   */
+  public T findById(long idLong) {
+    return database.find(this).where(id.with((int) idLong)).first();
+  }
+
+  /**
+   * @return
+   */
+  public T findOne(Column... columns) {
+    return database.find(this).where(columns).first();
   }
 
   /**
    * @return
    * @throws ModelError
    */
-  public ReactiveTable.Extras<T> readAsync() throws ModelError {
+  public ReactiveTable.Extras<T> findAsync() throws ModelError {
     return getReactiveDatabase().readAsync(this);
   }
 
   /**
    * @return
    */
-  public SList<? extends T> readAll() {
-    return database.readAll(this);
+  public SList<? extends T> findAll() {
+    return database.findAll(this);
   }
 
   /**
    * @return
    */
-  public Maybe<SList<? extends T>> readAllAsync() {
+  public Maybe<SList<? extends T>> findAllAsync() {
     return getReactiveDatabase().readAllAsync(this);
   }
 
@@ -350,15 +371,15 @@ public abstract class Model<T extends SModel>
    * @param column
    * @return
    */
-  public SList<? extends T> readAll(Column... column) {
-    return database.readAll(this, column);
+  public SList<? extends T> findAll(Column... column) {
+    return database.findAll(this, column);
   }
 
   /**
    * @param column
    * @return
    */
-  public Maybe<SList<? extends T>> readAllAsync(Column... column) {
+  public Maybe<SList<? extends T>> findAllAsync(Column... column) {
     return getReactiveDatabase().readAllAsync(this, column);
   }
 
@@ -366,7 +387,7 @@ public abstract class Model<T extends SModel>
    * @param column
    * @return
    */
-  public boolean delete(Column column)  {
+  public boolean delete(Column column) {
     return database.delete(this, column);
   }
 
@@ -449,7 +470,7 @@ public abstract class Model<T extends SModel>
    * @return an extras instance for more concise reads
    */
   @Override
-  public Extras<T> read(final SQLiteDatabase database) {
+  public Extras<T> find(final SQLiteDatabase database) {
     return new QueryExtras<T>(database) {
       @Override
       public ContentValues serialize(T t) {
@@ -471,7 +492,7 @@ public abstract class Model<T extends SModel>
    * @return a list of records
    */
   @Override
-  public final SList<? extends T> onReadAll(SQLiteDatabase database, boolean close) {
+  public final SList<? extends T> onFindAll(SQLiteDatabase database, boolean close) {
     QueryBuilder builder = new QueryBuilder().from(Model.this);
     Cursor cursor;
     try {
@@ -497,8 +518,8 @@ public abstract class Model<T extends SModel>
    * @return list of records satisfying the criteria
    */
   @Override
-  public SList<? extends T> onReadAll(SQLiteDatabase database, Column[] columns) {
-    if (columns == null) return onReadAll(database, true);
+  public SList<? extends T> onFindAll(SQLiteDatabase database, Column[] columns) {
+    if (columns == null) return onFindAll(database, true);
     QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
     for (Column column : columns) {
       if (column.value() != null) builder.whereAnd(Criteria.equals(column, column.value()));
@@ -679,7 +700,7 @@ public abstract class Model<T extends SModel>
   public final int onGetLastId(SQLiteDatabase database) {
     if (id == null) return 0;
     QueryBuilder builder = new QueryBuilder().from(this).select(Projection.count(id).as("num"));
-    Cursor cursor = database.rawQuery(builder.build(), builder.buildParameters());
+    @SuppressLint("Recycle") Cursor cursor = database.rawQuery(builder.build(), builder.buildParameters());
     return cursor.getInt(Model.id.getIndex());
   }
 
@@ -688,10 +709,10 @@ public abstract class Model<T extends SModel>
    *
    * @param database readable database instance
    */
-  @Override
+
   public void backup(SQLiteDatabase database) {
     backup = new SList<>();
-    backup.addAll(onReadAll(database, false));
+    backup.addAll(onFindAll(database, false));
   }
 
   /**
@@ -699,9 +720,13 @@ public abstract class Model<T extends SModel>
    *
    * @param database writable database
    */
-  @Override
+
   public void restore(SQLiteDatabase database) {
-    if (backup != null && !backup.isEmpty()) onSave(backup, database);
+    if (backup != null && !backup.isEmpty()) {
+      onSave(backup, database);
+      backup.clear();
+    }
+    backup = null;
   }
 
   /**
@@ -844,6 +869,21 @@ public abstract class Model<T extends SModel>
       Cursor cursor;
       try {
         QueryBuilder builder = new QueryBuilder().from(Model.this).take(limit).skip(skip);
+        cursor = database.rawQuery(builder.build(), builder.buildParameters());
+        SList<Q> ts = new SList<>();
+        while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
+        return ts;
+      } catch (SQLiteException e) {
+        LogUtil.e(TAG, e);
+        return new SList<>();
+      }
+    }
+
+    @Override
+    public SList<? extends Q> paginateDescending(int skip, int limit) {
+      Cursor cursor;
+      try {
+        QueryBuilder builder = new QueryBuilder().from(Model.this).orderByDescending(id).take(limit).skip(skip);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
         SList<Q> ts = new SList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));

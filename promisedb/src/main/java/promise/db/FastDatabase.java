@@ -1,15 +1,15 @@
 /*
+ * Copyright 2017, Peter Vincent
+ * Licensed under the Apache License, Version 2.0, Android Promise.
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *  * Copyright 2017, Peter Vincent
- *  * Licensed under the Apache License, Version 2.0, Promise.
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
  *
  */
 
@@ -20,7 +20,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Build;
 
 import java.util.Arrays;
@@ -36,7 +35,7 @@ import promise.model.SList;
 /**
  *
  */
-public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLiteDatabase> {
+public abstract class FastDatabase extends FastDatabaseOpenHelper implements Crud<SQLiteDatabase> {
   /**
    *
    */
@@ -270,8 +269,8 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> Table.Extras<T> read(Table<T, ? super SQLiteDatabase> table) {
-    return checkTableExist(table).read(getReadableDatabase());
+  public <T extends Identifiable<Integer>> Table.Extras<T> find(Table<T, ? super SQLiteDatabase> table) {
+    return checkTableExist(table).find(getReadableDatabase());
   }
 
   /**
@@ -280,8 +279,8 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table) {
-    return checkTableExist(table).onReadAll(getReadableDatabase(), true);
+  public <T extends Identifiable<Integer>> SList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table) {
+    return checkTableExist(table).onFindAll(getReadableDatabase(), true);
   }
  /**
    * @param t
@@ -318,8 +317,8 @@ public abstract class FastDatabase extends SQLiteOpenHelper implements Crud<SQLi
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> readAll(Table<T, ? super SQLiteDatabase> table, Column... columns) {
-    return checkTableExist(table).onReadAll(getReadableDatabase(), columns);
+  public <T extends Identifiable<Integer>> SList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table, Column... columns) {
+    return checkTableExist(table).onFindAll(getReadableDatabase(), columns);
   }
 
   /**

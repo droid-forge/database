@@ -1,15 +1,15 @@
 /*
+ * Copyright 2017, Peter Vincent
+ * Licensed under the Apache License, Version 2.0, Android Promise.
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *  * Copyright 2017, Peter Vincent
- *  * Licensed under the Apache License, Version 2.0, Promise.
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
  *
  */
 
@@ -52,21 +52,21 @@ public interface Table<T extends Identifiable<Integer>, X> {
    * @param x the database instance
    * @return an instance of extras with more concise methods for querying the data set
    */
-  Extras<T> read(X x);
+  Extras<T> find(X x);
 
   /** gets all the records in the table
    * @param x the database instance
    * @param close if the connection is to be closed
    * @return a list if the records
    */
-  SList<? extends T> onReadAll(X x, boolean close);
+  SList<? extends T> onFindAll(X x, boolean close);
 
   /** gets all the records matching the conditions specified in the columns
    * @param x database instance
    * @param column specifies where or order by conditions
    * @return a list if records
    */
-  SList<? extends T> onReadAll(X x, Column... column);
+  SList<? extends T> onFindAll(X x, Column... column);
 
   /** updates an item in the table specified by the condition in the column
    * see {@link Column#getOperand()} for sample conditional operations
@@ -139,20 +139,6 @@ public interface Table<T extends Identifiable<Integer>, X> {
    */
   boolean onDrop(X x) throws ModelError;
 
-  /**
-   * @param x
-   */
-  void backup(X x);
-
-  /**
-   * @param x
-   */
-  void restore(X x);
-
-  /**
-   * @param x
-   * @return
-   */
   int onGetLastId(X x);
 
   /**
@@ -193,6 +179,13 @@ public interface Table<T extends Identifiable<Integer>, X> {
      * @return
      */
     SList<? extends T> paginate(int skip, int limit);
+
+    /**
+     * @param skip
+     * @param limit
+     * @return
+     */
+    SList<? extends T> paginateDescending(int skip, int limit);
 
     /**
      * @param column

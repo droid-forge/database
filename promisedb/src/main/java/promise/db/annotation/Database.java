@@ -13,18 +13,14 @@
  *
  */
 
-package promise.db.query.criteria;
+package promise.db.annotation;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import promise.db.query.QueryBuilder;
-
-public class NotExistsCriteria extends ExistsCriteria {
-  public NotExistsCriteria(QueryBuilder subQuery) {
-    super(subQuery);
-  }
-
-  @Override
-  public String build() {
-    return "NOT " + super.build();
-  }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface Database {
 }

@@ -1,15 +1,15 @@
 /*
+ * Copyright 2017, Peter Vincent
+ * Licensed under the Apache License, Version 2.0, Android Promise.
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
- *  * Copyright 2017, Peter Vincent
- *  * Licensed under the Apache License, Version 2.0, Promise.
- *  * you may not use this file except in compliance with the License.
- *  * You may obtain a copy of the License at
- *  * http://www.apache.org/licenses/LICENSE-2.0
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an "AS IS" BASIS,
- *  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  * See the License for the specific language governing permissions and
- *  * limitations under the License.
  *
  */
 
@@ -145,7 +145,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    */
   @Override
   public <T extends Identifiable<Integer>> Maybe<SList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table) {
-    return Maybe.fromCallable(() -> readAll(table));
+    return Maybe.fromCallable(() -> findAll(table));
   }
 
   /**
@@ -156,7 +156,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    */
   @Override
   public <T extends Identifiable<Integer>> Maybe<SList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table, Column... column) {
-    return Maybe.fromCallable(() -> table.onReadAll(getReadableDatabase(), column));
+    return Maybe.fromCallable(() -> table.onFindAll(getReadableDatabase(), column));
   }
 
   /**
@@ -350,7 +350,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
     @Nullable
     @Override
     public Maybe<T> first() {
-      return Maybe.fromCallable(() -> table.read(database).first());
+      return Maybe.fromCallable(() -> table.find(database).first());
     }
 
     /**
@@ -359,7 +359,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
     @Nullable
     @Override
     public Maybe<T> last() {
-      return Maybe.fromCallable(() -> table.read(database).last());
+      return Maybe.fromCallable(() -> table.find(database).last());
     }
 
     /**
@@ -367,7 +367,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> all() {
-      return Maybe.fromCallable(() -> table.read(database).all());
+      return Maybe.fromCallable(() -> table.find(database).all());
     }
 
     /**
@@ -376,7 +376,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> limit(final int limit) {
-      return Maybe.fromCallable(() -> table.read(database).limit(limit));
+      return Maybe.fromCallable(() -> table.find(database).limit(limit));
     }
 
     /**
@@ -386,7 +386,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> paginate(final int skip, final int limit) {
-      return Maybe.fromCallable(() -> table.read(database).paginate(skip, limit));
+      return Maybe.fromCallable(() -> table.find(database).paginate(skip, limit));
     }
 
     /**
@@ -397,7 +397,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public <N extends Number> Maybe<SList<? extends T>> between(final Column<N> column, final N a, final N b) {
-      return Maybe.fromCallable(() -> table.read(database).between(column, a, b));
+      return Maybe.fromCallable(() -> table.find(database).between(column, a, b));
     }
 
     /**
@@ -406,7 +406,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> where(final Column[] column) {
-      return Maybe.fromCallable(() -> table.read(database).where(column));
+      return Maybe.fromCallable(() -> table.find(database).where(column));
     }
 
     /**
@@ -417,7 +417,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
     @SafeVarargs
     @Override
     public final <N extends Number> Maybe<SList<? extends T>> notIn(final Column<N> column, final N... bounds) {
-      return Maybe.fromCallable(() -> table.read(database).notIn(column, bounds));
+      return Maybe.fromCallable(() -> table.find(database).notIn(column, bounds));
     }
 
     /**
@@ -426,7 +426,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> like(final Column[] column) {
-      return Maybe.fromCallable(() -> table.read(database).like(column));
+      return Maybe.fromCallable(() -> table.find(database).like(column));
     }
 
     /**
@@ -435,7 +435,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> orderBy(final Column column) {
-      return Maybe.fromCallable(() -> table.read(database).orderBy(column));
+      return Maybe.fromCallable(() -> table.find(database).orderBy(column));
     }
 
     /**
@@ -444,7 +444,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> groupBy(final Column column) {
-      return Maybe.fromCallable(() -> table.read(database).groupBy(column));
+      return Maybe.fromCallable(() -> table.find(database).groupBy(column));
     }
 
     /**
@@ -454,7 +454,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @Override
     public Maybe<SList<? extends T>> groupAndOrderBy(final Column column, final Column column1) {
-      return Maybe.fromCallable(() -> table.read(database).groupAndOrderBy(column, column1));
+      return Maybe.fromCallable(() -> table.find(database).groupAndOrderBy(column, column1));
     }
   }
 
