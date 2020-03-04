@@ -28,6 +28,9 @@ class ComplexRecord constructor() : TimeAware() {
 
   var stringVariable: String? = null
 
+  // added new field
+  var flagString: String? = null
+
   constructor(source: Parcel) : this() {
     intVariable = source.readInt()
   }

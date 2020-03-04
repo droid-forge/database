@@ -109,9 +109,10 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
    * @param newVersion
    */
   @Override
-  public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+  public final void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
     LogUtil.d(TAG, "onUpgrade", oldVersion, newVersion);
-    if ((newVersion - oldVersion) == 1) onUpgradeDatabase(database, oldVersion, newVersion);
+    if ((newVersion - oldVersion) == 1)
+      onUpgradeDatabase(database, oldVersion, newVersion);
     else {
       int i = oldVersion;
       while (i < newVersion) {
@@ -121,6 +122,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
     }
     upgrade(database, oldVersion, newVersion);
   }
+
 
   /**
    * @param database
@@ -134,7 +136,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
   /**
    * @return
    */
-  public String name() {
+  public final String name() {
     return this.getDatabaseName();
   }
 
@@ -421,7 +423,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
   /**
    * @return
    */
-  public Context getContext() {
+  public final Context getContext() {
     return context;
   }
 

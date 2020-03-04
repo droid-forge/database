@@ -58,6 +58,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     val complexRecordTable = AppDatabase.complexModelTable
-
+    var items = complexRecordTable.findAll()
+    if (items.isEmpty()) {
+      complexRecordTable.save(IdentifiableList(ComplexRecord.someModels()))
+      items = complexRecordTable.findAll()
+    }
+    complex_values_textview.text = items.toString()
   }
 }

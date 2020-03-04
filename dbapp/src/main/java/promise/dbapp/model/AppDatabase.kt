@@ -34,15 +34,18 @@ class AppDatabase : ReactiveFastDatabase(name, version, null, null) {
   /**
    * @return
    */
-  override fun onTerminate(): CompositeDisposable {
-    return compositeDisposable
+  override fun onTerminate(): CompositeDisposable = compositeDisposable
+
+  override fun onUpgradeDatabase(database: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+    if (oldVersion == 1 && newVersion == 2)  {
+      // we added new record table when database version is 1, and therefore need to add it version 2
+      add(database, newRecordTable)
+    }
+    super.onUpgradeDatabase(database, oldVersion, newVersion)
   }
 
-  /**
-   *
-   * @return
-   */
-  override fun tables(): List<Table<*, in SQLiteDatabase>> = List.fromArray(complexModelTable)
+  override fun tables(): List<Table<*, in SQLiteDatabase>> =
+      List.fromArray(complexModelTable, newRecordTable)
 
   fun allComplexModels(result: Result<IdentifiableList<out ComplexRecord>, Throwable>) {
     compositeDisposable.add(complexModelTable.findAllAsync()
@@ -91,7 +94,9 @@ class AppDatabase : ReactiveFastDatabase(name, version, null, null) {
         }
 
     const val name = "complex_db_name"
-    const val version = 1
+    // here update the version
+    const val version = 2
     val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
+    val newRecordTable: NewRecordTable by lazy { NewRecordTable(AppDatabase()) }
   }
 }

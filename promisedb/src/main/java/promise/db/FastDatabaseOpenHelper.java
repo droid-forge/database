@@ -37,4 +37,59 @@ public abstract class FastDatabaseOpenHelper extends SQLiteOpenHelper {
   public FastDatabaseOpenHelper(@Nullable Context context, @Nullable String name, int version, @NonNull SQLiteDatabase.OpenParams openParams) {
     super(context, name, version, openParams);
   }
+
+  @Override
+  public final void onConfigure(SQLiteDatabase db) {
+    super.onConfigure(db);
+  }
+
+  @Override
+  public final void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    super.onDowngrade(db, oldVersion, newVersion);
+  }
+
+  @Override
+  public final void onOpen(SQLiteDatabase db) {
+    super.onOpen(db);
+  }
+
+  @Override
+  public final void setIdleConnectionTimeout(long idleConnectionTimeoutMs) {
+    super.setIdleConnectionTimeout(idleConnectionTimeoutMs);
+  }
+
+  @Override
+  public final void setLookasideConfig(int slotSize, int slotCount) {
+    super.setLookasideConfig(slotSize, slotCount);
+  }
+
+  @Override
+  public final void setOpenParams(@NonNull SQLiteDatabase.OpenParams openParams) {
+    super.setOpenParams(openParams);
+  }
+
+  @Override
+  public final void setWriteAheadLoggingEnabled(boolean enabled) {
+    super.setWriteAheadLoggingEnabled(enabled);
+  }
+
+  @Override
+  public final SQLiteDatabase getReadableDatabase() {
+    return super.getReadableDatabase();
+  }
+
+  @Override
+  public final SQLiteDatabase getWritableDatabase() {
+    return super.getWritableDatabase();
+  }
+
+  @Override
+  public final String getDatabaseName() {
+    return super.getDatabaseName();
+  }
+
+  @Override
+  public final synchronized void close() {
+    super.close();
+  }
 }

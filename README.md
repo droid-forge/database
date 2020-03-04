@@ -277,8 +277,128 @@ Note, you could also interract with the table directly
 ```kotlin
 ...
 val complexRecordTable = AppDatabase.complexModelTable
+var items = complexRecordTable.findAll()
+if (items.isEmpty()) {
+  complexRecordTable.save(IdentifiableList(ComplexRecord.someModels()))
+  items = complexRecordTable.findAll()
+}
+complex_values_textview.text = items.toString()
 ```
-> All the crud functionality exist on the table
+> All the crud functionality exist on the table,
+> Note avoid querying the database on the UI thread
+
+## Migrations
+Assume, on our app, we decided to add another table for another datatype, in this case NewRecord
+We'll upgrade our database to version 2 and add the table in our database as this
+##### AppDatabase
+```kotlin
+...
+override fun onUpgradeDatabase(database: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
+    if (oldVersion == 1 && newVersion == 2)  {
+      // we added new record table when database version is 1, and therefore need to add it version 2
+      add(database, newRecordTable)
+    }
+    super.onUpgradeDatabase(database, oldVersion, newVersion)
+}
+...
+```
+Amd the update our new table in table registry so that new installs get the new table as well
+```kotlin
+...
+override fun tables(): List<Table<*, in SQLiteDatabase>> = 
+      List.fromArray(complexModelTable, newRecordTable)
+...
+```
+Finally upgrade the version of the database
+```kotlin
+companion object {
+    @Volatile
+    var instance: AppDatabase? = null
+    private var LOCK = Any()
+    operator fun invoke(): AppDatabase = instance
+        ?: synchronized(LOCK) {
+          instance ?: AppDatabase()
+              .also {
+                instance = it
+              }
+        }
+
+    const val name = "complex_db_name"
+    // here update the version
+    const val version = 2
+    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
+    val newRecordTable: NewRecordTable by lazy { NewRecordTable(AppDatabase()) }
+  }
+```
+
+A second scenario, in our complex table, we decided to add another column for storing a flag
+We'll also update the table
+##### ComplexRecord
+```kotlin
+...
+  // added new field
+  var flagString: String? = null
+...
+```
+##### ComplexRecordTable
+Adding the column in the table
+```kotlin
+companion object {
+   ...
+   // new column
+    val flagVariableColumn: Column<String> = Column("flag", Column.Type.INTEGER.NOT_NULL(), 5)
+    // notice update on the index of 5
+  }
+```
+Adding this column to the table
+```kotlin
+...
+override fun onUpgrade(database: SQLiteDatabase?, v1: Int, v2: Int) {
+    if (v1 == 1 && v2 ==2) {
+      // add when migrating from version 1 to 2
+      addColumns(database, flagVariableColumn)
+    }
+    super.onUpgrade(database, v1, v2)
+  }
+...
+```
+> Do not forget to add this new column to the clumns list so new installs do not have to upgrade
+```kotlin
+...
+override fun getColumns(): List<Column<*>> =
+      List.fromArray(intVariableColumn,
+          floatVariableColumn,
+          doubleVariableColumn,
+          stringVariableColumn,
+          // add this here to have it on new installs
+          flagVariableColumn
+          )
+...
+```
+Finally update your serialization and deserialization logic
+```kotlin
+override fun deserialize(e: Cursor): ComplexRecord = ComplexRecord().apply {
+    intVariable = e.getInt(intVariableColumn.index)
+    floatVariable = e.getFloat(floatVariableColumn.index)
+    doubleVariable = e.getDouble(doubleVariableColumn.index)
+    stringVariable = e.getString(stringVariableColumn.index)
+    // remember to update it to your model
+    flagString = e.getString(flagVariableColumn.getIndex(e))
+  }
+
+  override fun serialize(t: ComplexRecord): ContentValues = ContentValues().apply {
+    put(intVariableColumn.name, t.intVariable)
+    put(floatVariableColumn.name, t.floatVariable)
+    put(doubleVariableColumn.name, t.doubleVariable)
+    put(stringVariableColumn.name, t.stringVariable)
+    // remember to store the new variable
+    put(flagVariableColumn.name, t.flagString)
+  }
+```
+
+## New features on the way
+watch this repo to stay updated 
+
 # Developed By
 * Peter Vincent - <dev4vin@gmail.com>
 # Donations

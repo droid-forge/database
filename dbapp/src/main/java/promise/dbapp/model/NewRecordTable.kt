@@ -1,0 +1,43 @@
+/*
+ * Copyright 2017, Peter Vincent
+ * Licensed under the Apache License, Version 2.0, Android Promise.
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package promise.dbapp.model
+
+import android.content.ContentValues
+import android.database.Cursor
+import promise.commons.model.List
+import promise.db.Column
+import promise.db.FastTable
+
+class NewRecordTable(appDatabase: AppDatabase) : FastTable<NewRecord>(appDatabase) {
+  override fun getName(): String {
+    return "new_record_table"
+  }
+
+  override fun getColumns(): List<out Column<Any>> {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  override fun deserialize(e: Cursor?): NewRecord {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  override fun serialize(t: NewRecord?): ContentValues {
+    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  }
+
+  companion object {
+    val nameColumn: Column<String> = Column("name", Column.Type.INTEGER.NOT_NULL(), 1)
+    val descColumn: Column<Float> = Column("desc", Column.Type.INTEGER.NOT_NULL(), 2)
+  }
+}
