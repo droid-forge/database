@@ -9,23 +9,20 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
 
 import android.database.sqlite.SQLiteDatabase;
 
+import promise.commons.model.Identifiable;
 import promise.commons.model.List;
 import promise.commons.model.Result;
-import promise.model.SModel;
-
 
 /**
  * @param <T>
  */
-public class CrudStore<T extends SModel> implements Store<T, Table<T, ? super SQLiteDatabase>, Throwable> {
+public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Table<T, ? super SQLiteDatabase>, Throwable> {
   /**
    *
    */
@@ -45,14 +42,14 @@ public class CrudStore<T extends SModel> implements Store<T, Table<T, ? super SQ
   @Override
   public void get(
       Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
-      Result<Extras<T>, Throwable> callBack) {
-    new StoreExtra<T, Throwable>() {
+      Result<StoreExtra<T>, Throwable> callBack) {
+    StoreExtra.getExtras(crudStore.findAll(tsqLiteDatabaseTable), new StoreFilter<T>() {
       @SafeVarargs
       @Override
-      public final <Y> List<? extends T> filter(List<? extends T> list, Y... y) {
+      public final <X> List<? extends T> filter(List<? extends T> list, X... x) {
         return list;
       }
-    }.getExtras(crudStore.findAll(tsqLiteDatabaseTable), callBack);
+    }, callBack);
   }
 
   /**

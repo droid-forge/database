@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
@@ -30,7 +28,7 @@ import promise.commons.model.Identifiable;
 import promise.commons.model.List;
 import promise.commons.util.Conditions;
 import promise.db.query.QueryBuilder;
-import promise.model.SList;
+import promise.model.IdentifiableList;
 
 /**
  *
@@ -130,7 +128,8 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
    * @param newVersion
    * @return
    */
-  public void onUpgradeDatabase(SQLiteDatabase database, int oldVersion, int newVersion) {}
+  public void onUpgradeDatabase(SQLiteDatabase database, int oldVersion, int newVersion) {
+  }
 
   /**
    * @return
@@ -176,13 +175,12 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
             i++;
           }
         }
-      } catch (ModelError modelError) {
-        LogUtil.e(TAG, modelError);
+      } catch (TableError tableError) {
+        LogUtil.e(TAG, tableError);
         return;
       }
     }
   }
-
 
 
   /**
@@ -231,7 +229,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
   private boolean create(Table<?, ? super SQLiteDatabase> table, SQLiteDatabase database) throws DBError {
     try {
       table.onCreate(database);
-    } catch (ModelError e) {
+    } catch (TableError e) {
       throw new DBError(e);
     }
     return true;
@@ -246,7 +244,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
   private boolean drop(Table<?, ? super SQLiteDatabase> table, SQLiteDatabase database) throws DBError {
     try {
       checkTableExist(table).onDrop(database);
-    } catch (ModelError e) {
+    } catch (TableError e) {
       throw new DBError(e);
     }
     return true;
@@ -279,10 +277,11 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table) {
+  public <T extends Identifiable<Integer>> IdentifiableList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table) {
     return checkTableExist(table).onFindAll(getReadableDatabase(), true);
   }
- /**
+
+  /**
    * @param t
    * @param table
    * @param <T>
@@ -304,8 +303,8 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
   public <T extends Identifiable<Integer>> boolean update(T t, Table<T, ? super SQLiteDatabase> table, Column column) {
     try {
       return checkTableExist(table).onUpdate(t, getWritableDatabase(), column);
-    } catch (ModelError modelError) {
-      LogUtil.e(TAG, "updateAsync error", modelError);
+    } catch (TableError tableError) {
+      LogUtil.e(TAG, "updateAsync error", tableError);
       return false;
     }
   }
@@ -317,7 +316,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> SList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table, Column... columns) {
+  public <T extends Identifiable<Integer>> IdentifiableList<? extends T> findAll(Table<T, ? super SQLiteDatabase> table, Column... columns) {
     return checkTableExist(table).onFindAll(getReadableDatabase(), columns);
   }
 
@@ -393,7 +392,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> boolean save(SList<? extends T> list, Table<T, ? super SQLiteDatabase> table) {
+  public <T extends Identifiable<Integer>> boolean save(IdentifiableList<? extends T> list, Table<T, ? super SQLiteDatabase> table) {
     return checkTableExist(table).onSave(list, getWritableDatabase());
   }
 
@@ -445,7 +444,7 @@ public abstract class FastDatabase extends FastDatabaseOpenHelper implements Cru
         } catch (SQLException e) {
             try {
                 table.onCreate(database);
-            } catch (ModelError modelError) {
+            } catch (TableError modelError) {
                 LogUtil.e(TAG, modelError);
                 throw new RuntimeException(modelError);
             }

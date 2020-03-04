@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
@@ -32,7 +30,7 @@ public interface Store<T, K, X extends Throwable> {
    * @param k
    * @param callBack
    */
-  void get(K k, Result<Extras<T>, X> callBack);
+  void get(K k, Result<StoreExtra<T>, X> callBack);
 
   /**
    * @param k
@@ -66,18 +64,25 @@ public interface Store<T, K, X extends Throwable> {
    */
   void clear(Result<Boolean, X> callBack);
 
+  interface StoreFilter<T> {
+    <X> List<? extends T> filter(List<? extends T> list, X... x);
+  }
+
   /**
    * @param <T>
-   * @param <E>
    */
-  interface StoreExtra<T, E extends Throwable> {
+  abstract class StoreExtra<T> {
+
     /**
      * @param list
      * @param callBack
+     * @param <E>
      */
-    default void getExtras(final List<? extends T> list, Result<Extras<T>, E> callBack) {
+    static <T, E extends Throwable> void getExtras(final List<? extends T> list,
+                                                   StoreFilter<T> storeFilter,
+                                                   Result<StoreExtra<T>, E> callBack) {
       callBack.response(
-          new Extras<T>() {
+          new StoreExtra<T>() {
             /**
              * @return
              */
@@ -121,17 +126,41 @@ public interface Store<T, K, X extends Throwable> {
             @SafeVarargs
             @Override
             public final <X> List<? extends T> where(X... x) {
-              return filter(list, x);
+              return storeFilter.filter(list, x);
             }
           });
     }
 
     /**
-     * @param list
-     * @param y
-     * @param <Y>
      * @return
      */
-    <Y> List<? extends T> filter(List<? extends T> list, Y... y);
+    @Nullable
+    abstract T first();
+
+    /**
+     * @return
+     */
+    abstract @Nullable
+    T last();
+
+    /**
+     * @return
+     */
+    abstract List<? extends T> all();
+
+    /**
+     * @param limit
+     * @return
+     */
+    abstract List<? extends T> limit(int limit);
+
+    /**
+     * @param x
+     * @param <X>
+     * @return
+     */
+    abstract <X> List<? extends T> where(X... x);
   }
+
+
 }

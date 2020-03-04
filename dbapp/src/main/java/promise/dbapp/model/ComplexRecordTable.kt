@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.dbapp.model
@@ -19,9 +17,9 @@ import android.content.ContentValues
 import android.database.Cursor
 import promise.commons.model.List
 import promise.db.Column
-import promise.db.Model
+import promise.db.FastTable
 
-class ComplexModelTable(database: Database) : Model<ComplexModel>(database) {
+class ComplexRecordTable(database: AppDatabase) : FastTable<ComplexRecord>(database) {
   /**
    * @return
    */
@@ -34,16 +32,19 @@ class ComplexModelTable(database: Database) : Model<ComplexModel>(database) {
    * @return list of columns
    */
   override fun getColumns(): List<Column<*>> =
-      List.fromArray(intVariableColumn, floatVariableColumn, doubleVariableColumn, stringVariableColumn)
+      List.fromArray(intVariableColumn,
+          floatVariableColumn,
+          doubleVariableColumn,
+          stringVariableColumn)
 
-  override fun deserialize(e: Cursor): ComplexModel = ComplexModel().apply {
+  override fun deserialize(e: Cursor): ComplexRecord = ComplexRecord().apply {
     intVariable = e.getInt(intVariableColumn.index)
     floatVariable = e.getFloat(floatVariableColumn.index)
     doubleVariable = e.getDouble(doubleVariableColumn.index)
     stringVariable = e.getString(stringVariableColumn.index)
   }
 
-  override fun serialize(t: ComplexModel): ContentValues = ContentValues().apply {
+  override fun serialize(t: ComplexRecord): ContentValues = ContentValues().apply {
     put(intVariableColumn.name, t.intVariable)
     put(floatVariableColumn.name, t.floatVariable)
     put(doubleVariableColumn.name, t.doubleVariable)
@@ -51,9 +52,6 @@ class ComplexModelTable(database: Database) : Model<ComplexModel>(database) {
   }
 
   companion object {
-
-    fun id() = id
-
     val intVariableColumn: Column<Int> = Column("int", Column.Type.INTEGER.NOT_NULL(), 1)
     val floatVariableColumn: Column<Float> = Column("float", Column.Type.INTEGER.NOT_NULL(), 2)
     val doubleVariableColumn: Column<Double> = Column("double", Column.Type.INTEGER.NOT_NULL(), 3)

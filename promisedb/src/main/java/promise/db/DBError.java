@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
@@ -19,14 +17,14 @@ package promise.db;
  * Created by yoctopus on 2/21/17.
  */
 public final class DBError extends Exception {
-    DBError() {
-    }
+  DBError() {
+  }
 
-    DBError(String message) {
-        super(message);
-    }
+  DBError(String message) {
+    super(message);
+  }
 
-    DBError(Throwable cause) {
-        super(cause);
-    }
+  DBError(Throwable cause) {
+    super(cause);
+  }
 }

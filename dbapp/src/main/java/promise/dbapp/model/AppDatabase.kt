@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.dbapp.model
@@ -23,11 +21,11 @@ import io.reactivex.schedulers.Schedulers
 import promise.commons.Promise
 import promise.commons.model.List
 import promise.commons.model.Result
-import promise.db.ReactiveDatabase
+import promise.db.ReactiveFastDatabase
 import promise.db.Table
-import promise.model.SList
+import promise.model.IdentifiableList
 
-class Database : ReactiveDatabase(name, version, null, null) {
+class AppDatabase : ReactiveFastDatabase(name, version, null, null) {
   /**
    *
    */
@@ -46,8 +44,8 @@ class Database : ReactiveDatabase(name, version, null, null) {
    */
   override fun tables(): List<Table<*, in SQLiteDatabase>> = List.fromArray(complexModelTable)
 
-  fun allComplexModels(result: Result<SList<out ComplexModel>, Throwable>) {
-    compositeDisposable.add(complexModelTable.readAllAsync()
+  fun allComplexModels(result: Result<IdentifiableList<out ComplexRecord>, Throwable>) {
+    compositeDisposable.add(complexModelTable.findAllAsync()
         .subscribeOn(Schedulers.from(Promise.instance().executor()))
         .observeOn(AndroidSchedulers.mainThread())
         .subscribe({ list ->
@@ -57,7 +55,7 @@ class Database : ReactiveDatabase(name, version, null, null) {
                 .withErrorCallBack {
                   result.error(it)
                 }) else
-            result.response(SList(list))
+            result.response(IdentifiableList(list))
 
         }, {
           result.error(it)
@@ -66,7 +64,7 @@ class Database : ReactiveDatabase(name, version, null, null) {
 
   private fun saveSomeComplexModels(result: Result<Boolean, Throwable>) {
     compositeDisposable.add(
-        complexModelTable.saveAsync(SList(ComplexModel.someModels()))
+        complexModelTable.saveAsync(IdentifiableList(ComplexRecord.someModels()))
             .subscribeOn(Schedulers.from(Promise.instance().executor()))
             .observeOn(Schedulers.from(Promise.instance().executor()))
             .subscribe({
@@ -82,11 +80,11 @@ class Database : ReactiveDatabase(name, version, null, null) {
 
   companion object {
     @Volatile
-    var instance: Database? = null
+    var instance: AppDatabase? = null
     private var LOCK = Any()
-    operator fun invoke(): Database = instance
+    operator fun invoke(): AppDatabase = instance
         ?: synchronized(LOCK) {
-          instance ?: Database()
+          instance ?: AppDatabase()
               .also {
                 instance = it
               }
@@ -94,6 +92,6 @@ class Database : ReactiveDatabase(name, version, null, null) {
 
     const val name = "complex_db_name"
     const val version = 1
-    val complexModelTable: ComplexModelTable by lazy { ComplexModelTable(Database()) }
+    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
   }
 }

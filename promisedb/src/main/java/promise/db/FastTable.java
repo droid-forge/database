@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
@@ -32,26 +30,23 @@ import java.util.Set;
 import io.reactivex.Maybe;
 import io.reactivex.Single;
 import promise.commons.data.log.LogUtil;
+import promise.commons.model.Identifiable;
 import promise.commons.model.List;
 import promise.commons.util.Conditions;
 import promise.commons.util.DoubleConverter;
 import promise.db.query.QueryBuilder;
 import promise.db.query.criteria.Criteria;
 import promise.db.query.projection.Projection;
-import promise.model.SList;
-import promise.model.SModel;
+import promise.model.ITimeAware;
+import promise.model.IdentifiableList;
+import promise.model.TimeAware;
 
 /**
  * This class models database queries
- * Each extending class must implement {@link DoubleConverter#serialize(Object)} method to
- * convert the {@link SModel} instance to a content value see {@link ContentValues}
- * and {@link DoubleConverter#deserialize(Object)}
- * method to deserialize a {@link Cursor} back to the instance
  *
- * @param <T> {@link SModel} instance to be persisted by the model
+ * @param <T> {@link Identifiable} instance to be persisted by the model
  */
-public abstract class Model<T extends SModel>
-    implements Table<T, SQLiteDatabase>, DoubleConverter<T, Cursor, ContentValues> {
+public abstract class FastTable<T extends Identifiable<Integer>> implements Table<T, SQLiteDatabase> {
 
   /**
    * The create prefix in a prefix for queries that create a table structure
@@ -101,15 +96,16 @@ public abstract class Model<T extends SModel>
   /**
    * The specific tag for logging in this table
    */
-  private String TAG = LogUtil.makeTag(Model.class).concat(name);
+  private String TAG = LogUtil.makeTag(FastTable.class).concat(name);
   /**
    * Temporary data holder for holding data during dangerous table structure changes
    */
-  private SList<T> backup;
+  private IdentifiableList<T> backup;
+
   /**
    * @param database
    */
-  public Model(FastDatabase database) {
+  public FastTable(FastDatabase database) {
     this.database = database;
   }
 
@@ -123,9 +119,9 @@ public abstract class Model<T extends SModel>
   /**
    * @return
    */
-  public ReactiveDatabase getReactiveDatabase() {
-    if (database instanceof ReactiveDatabase) return (ReactiveDatabase) database;
-    throw new IllegalStateException("The database is not an instance of ReactiveDatabase");
+  public ReactiveFastDatabase getReactiveDatabase() {
+    if (database instanceof ReactiveFastDatabase) return (ReactiveFastDatabase) database;
+    throw new IllegalStateException("The database is not an instance of ReactiveFastDatabase");
   }
 
   /**
@@ -153,13 +149,13 @@ public abstract class Model<T extends SModel>
    *
    * @param database writable sql database
    * @return true if table is created
-   * @throws ModelError if theirs a query error
+   * @throws TableError if theirs a query error
    */
   @Override
-  public boolean onCreate(SQLiteDatabase database) throws ModelError {
+  public boolean onCreate(SQLiteDatabase database) throws TableError {
     String sql = CREATE_PREFIX;
     /*
-     * add the opening braces after select prefix, see {@link Model#CREATE_PREFIX}
+     * add the opening braces after select prefix, see {@link FastTable#CREATE_PREFIX}
      */
     sql = sql.concat(name + "(");
     List<? extends Column> columns = Conditions.checkNotNull(getColumns());
@@ -185,7 +181,7 @@ public abstract class Model<T extends SModel>
       LogUtil.d(TAG, sql);
       database.execSQL(sql);
     } catch (SQLException e) {
-      throw new ModelError(e);
+      throw new TableError(e);
     }
     return true;
   }
@@ -197,10 +193,10 @@ public abstract class Model<T extends SModel>
    * @param v1 previous version
    * @param v2 next version
    * @return
-   * @throws ModelError
+   * @throws TableError
    */
   @Override
-  public void onUpgrade(SQLiteDatabase database, int v1, int v2) throws ModelError {
+  public void onUpgrade(SQLiteDatabase database, int v1, int v2) throws TableError {
     QueryBuilder builder = new QueryBuilder().from(this);
     Cursor c = database.rawQuery(builder.build(), builder.buildParameters());
     Set<String> set = new HashSet<>(List.fromArray(c.getColumnNames()));
@@ -213,16 +209,16 @@ public abstract class Model<T extends SModel>
    *
    * @param database writable sql database
    * @param columns  fields to be added must be nullable entry types
-   * @throws ModelError if theirs an sql error
+   * @throws TableError if theirs an sql error
    */
-  public void addColumns(SQLiteDatabase database, Column... columns) throws ModelError {
+  public void addColumns(SQLiteDatabase database, Column... columns) throws TableError {
     for (Column column : columns) {
       String alterSql = ALTER_COMMAND + " `" + getName() + "` " + "ADD " + column.toString() + ";";
       try {
         LogUtil.d(TAG, alterSql);
         database.execSQL(alterSql);
       } catch (SQLException e) {
-        throw new ModelError(e);
+        throw new TableError(e);
       }
     }
   }
@@ -233,16 +229,16 @@ public abstract class Model<T extends SModel>
    * @param database writable sql database
    * @param columns  fields to be dropped
    * @return true if fields are dropped successfully
-   * @throws ModelError if theirs an sql error
+   * @throws TableError if theirs an sql error
    */
-  public boolean dropColumns(SQLiteDatabase database, Column... columns) throws ModelError {
+  public boolean dropColumns(SQLiteDatabase database, Column... columns) throws TableError {
     for (Column column : columns) {
       String alterSql =
           ALTER_COMMAND + " `" + getName() + "` " + "DROP COLUMN " + column.getName() + ";";
       try {
         database.execSQL(alterSql);
       } catch (SQLException e) {
-        throw new ModelError(e);
+        throw new TableError(e);
       }
     }
     return true;
@@ -269,7 +265,7 @@ public abstract class Model<T extends SModel>
    * @param list
    * @return
    */
-  public boolean save(SList<? extends T> list) {
+  public boolean save(IdentifiableList<? extends T> list) {
     return database.save(list, this);
   }
 
@@ -277,7 +273,7 @@ public abstract class Model<T extends SModel>
    * @param list
    * @return
    */
-  public Single<Boolean> saveAsync(SList<? extends T> list) {
+  public Single<Boolean> saveAsync(IdentifiableList<? extends T> list) {
     return getReactiveDatabase().saveAsync(list, this);
   }
 
@@ -347,23 +343,23 @@ public abstract class Model<T extends SModel>
 
   /**
    * @return
-   * @throws ModelError
+   * @throws TableError
    */
-  public ReactiveTable.Extras<T> findAsync() throws ModelError {
+  public ReactiveTable.Extras<T> findAsync() throws TableError {
     return getReactiveDatabase().readAsync(this);
   }
 
   /**
    * @return
    */
-  public SList<? extends T> findAll() {
+  public IdentifiableList<? extends T> findAll() {
     return database.findAll(this);
   }
 
   /**
    * @return
    */
-  public Maybe<SList<? extends T>> findAllAsync() {
+  public Maybe<IdentifiableList<? extends T>> findAllAsync() {
     return getReactiveDatabase().readAllAsync(this);
   }
 
@@ -371,7 +367,7 @@ public abstract class Model<T extends SModel>
    * @param column
    * @return
    */
-  public SList<? extends T> findAll(Column... column) {
+  public IdentifiableList<? extends T> findAll(Column... column) {
     return database.findAll(this, column);
   }
 
@@ -379,7 +375,7 @@ public abstract class Model<T extends SModel>
    * @param column
    * @return
    */
-  public Maybe<SList<? extends T>> findAllAsync(Column... column) {
+  public Maybe<IdentifiableList<? extends T>> findAllAsync(Column... column) {
     return getReactiveDatabase().readAllAsync(this, column);
   }
 
@@ -469,17 +465,18 @@ public abstract class Model<T extends SModel>
    * @param database readable sql database
    * @return an extras instance for more concise reads
    */
+
   @Override
   public Extras<T> find(final SQLiteDatabase database) {
     return new QueryExtras<T>(database) {
       @Override
       public ContentValues serialize(T t) {
-        return Model.this.serialize(t);
+        return FastTable.this.serialize(t);
       }
 
       @Override
       public T deserialize(Cursor cursor) {
-        return Model.this.deserialize(cursor);
+        return FastTable.this.deserialize(cursor);
       }
     };
   }
@@ -492,18 +489,18 @@ public abstract class Model<T extends SModel>
    * @return a list of records
    */
   @Override
-  public final SList<? extends T> onFindAll(SQLiteDatabase database, boolean close) {
-    QueryBuilder builder = new QueryBuilder().from(Model.this);
+  public final IdentifiableList<? extends T> onFindAll(SQLiteDatabase database, boolean close) {
+    QueryBuilder builder = new QueryBuilder().from(FastTable.this);
     Cursor cursor;
     try {
       cursor = database.rawQuery(builder.build(), builder.buildParameters());
-      SList<T> ts = new SList<>();
+      IdentifiableList<T> ts = new IdentifiableList<>();
       while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
       cursor.close();
       /*if (close) database.close();*/
       return ts;
     } catch (SQLiteException e) {
-      return new SList<>();
+      return new IdentifiableList<>();
     }
   }
 
@@ -518,9 +515,9 @@ public abstract class Model<T extends SModel>
    * @return list of records satisfying the criteria
    */
   @Override
-  public SList<? extends T> onFindAll(SQLiteDatabase database, Column[] columns) {
+  public IdentifiableList<? extends T> onFindAll(SQLiteDatabase database, Column[] columns) {
     if (columns == null) return onFindAll(database, true);
-    QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
+    QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll();
     for (Column column : columns) {
       if (column.value() != null) builder.whereAnd(Criteria.equals(column, column.value()));
       if (column.order() != null) {
@@ -530,7 +527,7 @@ public abstract class Model<T extends SModel>
       }
     }
     Cursor cursor = database.rawQuery(builder.build(), builder.buildParameters());
-    SList<T> ts = new SList<>();
+    IdentifiableList<T> ts = new IdentifiableList<>();
     while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
     cursor.close();
     /*database.close();*/
@@ -546,11 +543,11 @@ public abstract class Model<T extends SModel>
    * @return true if instance is updated
    */
   @Override
-  public final boolean onUpdate(T t, SQLiteDatabase database, Column column) throws ModelError {
+  public final boolean onUpdate(T t, SQLiteDatabase database, Column column) throws TableError {
     String where;
     if (column != null && column.getOperand() != null && column.value() != null)
       where = column.getName() + column.getOperand() + column.value();
-    else throw new ModelError("Cant updateAsync the record, missing updating information");
+    else throw new TableError("Cant updateAsync the record, missing updating information");
     ContentValues values = serialize(t);
     values.put(updatedAt.getName(), System.currentTimeMillis());
     return database.update(name, values, where, null) >= 0;
@@ -567,7 +564,7 @@ public abstract class Model<T extends SModel>
   public boolean onUpdate(T t, SQLiteDatabase database) {
     try {
       return id != null && onUpdate(t, database, id.with(t.getId()));
-    } catch (ModelError modelError) {
+    } catch (TableError tableError) {
       return false;
     }
   }
@@ -659,7 +656,7 @@ public abstract class Model<T extends SModel>
    * @return true if all the items are saved
    */
   @Override
-  public final boolean onSave(SList<? extends T> list, SQLiteDatabase database) {
+  public final boolean onSave(IdentifiableList<? extends T> list, SQLiteDatabase database) {
     boolean saved = true;
     int i = 0, listSize = list.size();
     while (i < listSize) {
@@ -676,15 +673,15 @@ public abstract class Model<T extends SModel>
    *
    * @param database writable sql database
    * @return true if the table is dropped
-   * @throws ModelError if theirs an sql error
+   * @throws TableError if theirs an sql error
    */
   @Override
-  public final boolean onDrop(SQLiteDatabase database) throws ModelError {
+  public final boolean onDrop(SQLiteDatabase database) throws TableError {
     String sql = DROP_PREFIX + name + ";";
     try {
       database.execSQL(sql);
     } catch (SQLException e) {
-      throw new ModelError(e);
+      throw new TableError(e);
     }
     return true;
   }
@@ -701,7 +698,7 @@ public abstract class Model<T extends SModel>
     if (id == null) return 0;
     QueryBuilder builder = new QueryBuilder().from(this).select(Projection.count(id).as("num"));
     @SuppressLint("Recycle") Cursor cursor = database.rawQuery(builder.build(), builder.buildParameters());
-    return cursor.getInt(Model.id.getIndex());
+    return cursor.getInt(FastTable.id.getIndex());
   }
 
   /**
@@ -711,7 +708,7 @@ public abstract class Model<T extends SModel>
    */
 
   public void backup(SQLiteDatabase database) {
-    backup = new SList<>();
+    backup = new IdentifiableList<>();
     backup.addAll(onFindAll(database, false));
   }
 
@@ -738,19 +735,23 @@ public abstract class Model<T extends SModel>
   T getWithId(Cursor cursor) {
     T t = deserialize(cursor);
     t.setId(cursor.getInt(id.getIndex()));
-    t.createdAt(cursor.getInt(createdAt.getIndex(cursor)));
-    t.updatedAt(cursor.getInt(updatedAt.getIndex(cursor)));
+    if (t instanceof ITimeAware) {
+      ITimeAware iTimeAware = (ITimeAware) t;
+      iTimeAware.setCreatedAt(cursor.getInt(createdAt.getIndex(cursor)));
+      iTimeAware.setUpdatedAt(cursor.getInt(updatedAt.getIndex(cursor)));
+      t = (T) iTimeAware;
+    }
     return t;
   }
 
   /**
    * This class contains special queries for reading from the table
-   * see {@link SModel} for encapsulating id and timestamps
+   * see {@link TimeAware} for encapsulating id and timestamps
    * see {@link DoubleConverter} for serializing and de-serializing
    *
    * @param <Q> The type of the items in the table
    */
-  private abstract class QueryExtras<Q extends SModel>
+  private abstract class QueryExtras<Q extends Identifiable<Integer>>
       implements Extras<Q>, DoubleConverter<Q, Cursor, ContentValues> {
     /**
      * the database instance to readAsync fromm
@@ -774,8 +775,12 @@ public abstract class Model<T extends SModel>
     Q getWithId(Cursor cursor) {
       Q t = deserialize(cursor);
       t.setId(cursor.getInt(id.getIndex()));
-      t.createdAt(cursor.getInt(createdAt.getIndex(cursor)));
-      t.updatedAt(cursor.getInt(updatedAt.getIndex(cursor)));
+      if (t instanceof ITimeAware) {
+        ITimeAware iTimeAware = (ITimeAware) t;
+        iTimeAware.setCreatedAt(cursor.getInt(createdAt.getIndex(cursor)));
+        iTimeAware.setUpdatedAt(cursor.getInt(updatedAt.getIndex(cursor)));
+        t = (Q) iTimeAware;
+      }
       return t;
     }
 
@@ -789,7 +794,7 @@ public abstract class Model<T extends SModel>
     public Q first() {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).take(1);
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).take(1);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
         return getWithId(cursor);
       } catch (SQLiteException e) {
@@ -808,7 +813,7 @@ public abstract class Model<T extends SModel>
     public Q last() {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).orderByDescending(id).take(1);
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).orderByDescending(id).take(1);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
         return getWithId(cursor);
       } catch (SQLiteException e) {
@@ -823,16 +828,16 @@ public abstract class Model<T extends SModel>
      * @return the items or an empty list if theirs none
      */
     @Override
-    public SList<? extends Q> all() {
+    public IdentifiableList<? extends Q> all() {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll();
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -843,17 +848,17 @@ public abstract class Model<T extends SModel>
      * @return a list of the items
      */
     @Override
-    public SList<? extends Q> limit(int limit) {
+    public IdentifiableList<? extends Q> limit(int limit) {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).take(limit);
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).take(limit);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -865,32 +870,32 @@ public abstract class Model<T extends SModel>
      * @return a list of records
      */
     @Override
-    public SList<? extends Q> paginate(int skip, int limit) {
+    public IdentifiableList<? extends Q> paginate(int skip, int limit) {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).take(limit).skip(skip);
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).take(limit).skip(skip);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
     @Override
-    public SList<? extends Q> paginateDescending(int skip, int limit) {
+    public IdentifiableList<? extends Q> paginateDescending(int skip, int limit) {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).orderByDescending(id).take(limit).skip(skip);
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).orderByDescending(id).take(limit).skip(skip);
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -903,17 +908,17 @@ public abstract class Model<T extends SModel>
      * @return a list of items
      */
     @Override
-    public <N extends Number> SList<? extends Q> between(Column<N> column, N a, N b) {
+    public <N extends Number> IdentifiableList<? extends Q> between(Column<N> column, N a, N b) {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll().whereAnd(Criteria.between(column, a, b));
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll().whereAnd(Criteria.between(column, a, b));
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -924,19 +929,19 @@ public abstract class Model<T extends SModel>
      * @return a list of items
      */
     @Override
-    public SList<? extends Q> where(Column[] column) {
+    public IdentifiableList<? extends Q> where(Column[] column) {
       Cursor cursor;
       try {
-        QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
+        QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll();
         for (Column column1 : column)
           if (column1.value() != null) builder.whereAnd(Criteria.equals(column1, column1.value()));
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) ts.add(getWithId(cursor));
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -949,15 +954,15 @@ public abstract class Model<T extends SModel>
      */
     @SafeVarargs
     @Override
-    public final <N extends Number> SList<? extends Q> notIn(Column<N> column, N... bounds) {
+    public final <N extends Number> IdentifiableList<? extends Q> notIn(Column<N> column, N... bounds) {
       Cursor cursor;
       Object[] items = new Object[bounds.length];
       System.arraycopy(bounds, 0, items, 0, bounds.length);
-      QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll()
+      QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll()
           .whereAnd(Criteria.notIn(column, items));
       try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) {
           Q t = getWithId(cursor);
           ts.add(t);
@@ -967,7 +972,7 @@ public abstract class Model<T extends SModel>
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -978,14 +983,14 @@ public abstract class Model<T extends SModel>
      * @return a list of columns
      */
     @Override
-    public SList<? extends Q> like(Column[] column) {
+    public IdentifiableList<? extends Q> like(Column[] column) {
       Cursor cursor;
-      QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
+      QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll();
       for (Column column1 : column)
         builder.whereAnd(Criteria.contains(column1, String.valueOf(column1.value())));
       try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) {
           Q t = getWithId(cursor);
           ts.add(t);
@@ -995,7 +1000,7 @@ public abstract class Model<T extends SModel>
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -1006,15 +1011,15 @@ public abstract class Model<T extends SModel>
      * @return a list of ordered items
      */
     @Override
-    public SList<? extends Q> orderBy(Column column) {
+    public IdentifiableList<? extends Q> orderBy(Column column) {
       Cursor cursor;
-      QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll();
+      QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll();
       if (column.order().equals(Column.DESCENDING)) {
         builder.orderByDescending(column);
       } else builder.orderByAscending(column);
       try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) {
           Q t = getWithId(cursor);
           ts.add(t);
@@ -1024,7 +1029,7 @@ public abstract class Model<T extends SModel>
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -1035,12 +1040,12 @@ public abstract class Model<T extends SModel>
      * @return a list of grouped items
      */
     @Override
-    public SList<? extends Q> groupBy(Column column) {
+    public IdentifiableList<? extends Q> groupBy(Column column) {
       Cursor cursor;
-      QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll().groupBy(column);
+      QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll().groupBy(column);
       try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) {
           Q t = getWithId(cursor);
           ts.add(t);
@@ -1050,7 +1055,7 @@ public abstract class Model<T extends SModel>
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
 
@@ -1062,15 +1067,15 @@ public abstract class Model<T extends SModel>
      * @return a list of items
      */
     @Override
-    public SList<? extends Q> groupAndOrderBy(Column column, Column column1) {
+    public IdentifiableList<? extends Q> groupAndOrderBy(Column column, Column column1) {
       Cursor cursor;
-      QueryBuilder builder = new QueryBuilder().from(Model.this).takeAll().groupBy(column);
+      QueryBuilder builder = new QueryBuilder().from(FastTable.this).takeAll().groupBy(column);
       if (column1.order().equals(Column.DESCENDING)) {
         builder.orderByDescending(column1);
       } else builder.orderByAscending(column1);
       try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters());
-        SList<Q> ts = new SList<>();
+        IdentifiableList<Q> ts = new IdentifiableList<>();
         while (cursor.moveToNext() && !cursor.isClosed()) {
           Q t = getWithId(cursor);
           ts.add(t);
@@ -1080,7 +1085,7 @@ public abstract class Model<T extends SModel>
         return ts;
       } catch (SQLiteException e) {
         LogUtil.e(TAG, e);
-        return new SList<>();
+        return new IdentifiableList<>();
       }
     }
   }

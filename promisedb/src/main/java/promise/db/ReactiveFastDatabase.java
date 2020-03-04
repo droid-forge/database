@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db;
@@ -36,15 +34,15 @@ import promise.commons.model.Result;
 import promise.commons.model.function.MapFunction;
 import promise.commons.util.DoubleConverter;
 import promise.db.query.QueryBuilder;
-import promise.model.SList;
-import promise.model.SModel;
+import promise.model.IdentifiableList;
+import promise.model.TimeAware;
 
 /**
  *
  */
-public abstract class ReactiveDatabase extends FastDatabase implements ReactiveCrud<SQLiteDatabase> {
+public abstract class ReactiveFastDatabase extends FastDatabase implements ReactiveCrud<SQLiteDatabase> {
 
-  private String TAG = LogUtil.makeTag(ReactiveDatabase.class);
+  private String TAG = LogUtil.makeTag(ReactiveFastDatabase.class);
 
   /**
    * @param name
@@ -52,7 +50,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @param version
    * @param errorHandler
    */
-  private ReactiveDatabase(
+  private ReactiveFastDatabase(
       String name,
       SQLiteDatabase.CursorFactory factory,
       int version,
@@ -77,7 +75,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @param listener
    */
   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-  public ReactiveDatabase(String name, int version, final DatabaseCursorFactory.Listener cursorListener, final Corrupt listener) {
+  public ReactiveFastDatabase(String name, int version, final DatabaseCursorFactory.Listener cursorListener, final Corrupt listener) {
     this(
         name,
         cursorListener != null ? new DatabaseCursorFactory(cursorListener) : null,
@@ -91,7 +89,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
   /**
    * @param version
    */
-  public ReactiveDatabase(int version) {
+  public ReactiveFastDatabase(int version) {
     this(DEFAULT_NAME, version, null, null);
   }
 
@@ -110,11 +108,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @return
    */
   public Single<Cursor> queryAsync(final QueryBuilder builder) {
-    return Single.fromCallable(() -> {
-      String sql = builder.build();
-      String[] params = builder.buildParameters();
-      return getReadableDatabase().rawQuery(sql, params);
-    });
+    return Single.fromCallable(() -> query(builder));
   }
 
   /**
@@ -122,18 +116,18 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @param <T>
    * @return
    */
+
   @Override
-  public <T extends SModel> ReactiveTable.Extras<T> readAsync(Table<T, ? super SQLiteDatabase> table) throws ModelError {
-    Model<T> tTable = model(checkTableExist(table));
-    return new QueryExtras<T>(tTable, getReadableDatabase()) {
+  public <T extends Identifiable<Integer>> ReactiveTable.Extras<T> readAsync(Table<T, ? super SQLiteDatabase> table) throws TableError {
+    return new QueryExtras<T>(table, getReadableDatabase()) {
       @Override
       public ContentValues serialize(T t) {
-        return tTable.serialize(t);
+        return table.serialize(t);
       }
 
       @Override
       public T deserialize(Cursor cursor) {
-        return tTable.deserialize(cursor);
+        return table.deserialize(cursor);
       }
     };
   }
@@ -144,7 +138,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> Maybe<SList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table) {
+  public <T extends Identifiable<Integer>> Maybe<IdentifiableList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table) {
     return Maybe.fromCallable(() -> findAll(table));
   }
 
@@ -155,7 +149,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> Maybe<SList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table, Column... column) {
+  public <T extends Identifiable<Integer>> Maybe<IdentifiableList<? extends T>> readAllAsync(Table<T, ? super SQLiteDatabase> table, Column... column) {
     return Maybe.fromCallable(() -> table.onFindAll(getReadableDatabase(), column));
   }
 
@@ -243,7 +237,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @return
    */
   @Override
-  public <T extends Identifiable<Integer>> Single<Boolean> saveAsync(SList<? extends T> list, Table<T, ? super SQLiteDatabase> table) {
+  public <T extends Identifiable<Integer>> Single<Boolean> saveAsync(IdentifiableList<? extends T> list, Table<T, ? super SQLiteDatabase> table) {
     return Single.fromCallable(() -> table.onSave(list, getWritableDatabase()));
   }
 
@@ -287,23 +281,23 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
    * @param <T>
    * @param table
    * @return
-   * @throws ModelError
+   * @throws TableError
    */
-  private <T extends SModel> Model<T> model(final Table<T, ? super SQLiteDatabase> table) throws ModelError {
-    if (!(table instanceof Model))
-      throw new ModelError(new IllegalStateException("Passed table not a model instance"));
-    return (Model<T>) table;
+  private <T extends TimeAware> FastTable<T> model(final Table<T, ? super SQLiteDatabase> table) throws TableError {
+    if (!(table instanceof FastTable))
+      throw new TableError(new IllegalStateException("Passed table not a model instance"));
+    return (FastTable<T>) table;
   }
 
   /**
    * @param table
    * @return
-   * @throws ModelError
+   * @throws TableError
    */
-  private Model modelWithoutType(final Table<?, ? super SQLiteDatabase> table) throws ModelError {
-    if (!(table instanceof Model))
-      throw new ModelError(new IllegalStateException("Passed table not a model instance"));
-    return (Model<?>) table;
+  private FastTable modelWithoutType(final Table<?, ? super SQLiteDatabase> table) throws TableError {
+    if (!(table instanceof FastTable))
+      throw new TableError(new IllegalStateException("Passed table not a model instance"));
+    return (FastTable<?>) table;
   }
 
   private static class IndexCreated {
@@ -366,7 +360,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> all() {
+    public Maybe<IdentifiableList<? extends T>> all() {
       return Maybe.fromCallable(() -> table.find(database).all());
     }
 
@@ -375,7 +369,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> limit(final int limit) {
+    public Maybe<IdentifiableList<? extends T>> limit(final int limit) {
       return Maybe.fromCallable(() -> table.find(database).limit(limit));
     }
 
@@ -385,8 +379,18 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> paginate(final int skip, final int limit) {
+    public Maybe<IdentifiableList<? extends T>> paginate(final int skip, final int limit) {
       return Maybe.fromCallable(() -> table.find(database).paginate(skip, limit));
+    }
+
+    /**
+     * @param skip
+     * @param limit
+     * @return
+     */
+    @Override
+    public Maybe<IdentifiableList<? extends T>> paginateDescending(int skip, int limit) {
+      return Maybe.fromCallable(() -> table.find(database).paginateDescending(skip, limit));
     }
 
     /**
@@ -396,7 +400,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public <N extends Number> Maybe<SList<? extends T>> between(final Column<N> column, final N a, final N b) {
+    public <N extends Number> Maybe<IdentifiableList<? extends T>> between(final Column<N> column, final N a, final N b) {
       return Maybe.fromCallable(() -> table.find(database).between(column, a, b));
     }
 
@@ -405,7 +409,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> where(final Column[] column) {
+    public Maybe<IdentifiableList<? extends T>> where(final Column[] column) {
       return Maybe.fromCallable(() -> table.find(database).where(column));
     }
 
@@ -416,7 +420,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      */
     @SafeVarargs
     @Override
-    public final <N extends Number> Maybe<SList<? extends T>> notIn(final Column<N> column, final N... bounds) {
+    public final <N extends Number> Maybe<IdentifiableList<? extends T>> notIn(final Column<N> column, final N... bounds) {
       return Maybe.fromCallable(() -> table.find(database).notIn(column, bounds));
     }
 
@@ -425,7 +429,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> like(final Column[] column) {
+    public Maybe<IdentifiableList<? extends T>> like(final Column[] column) {
       return Maybe.fromCallable(() -> table.find(database).like(column));
     }
 
@@ -434,7 +438,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> orderBy(final Column column) {
+    public Maybe<IdentifiableList<? extends T>> orderBy(final Column column) {
       return Maybe.fromCallable(() -> table.find(database).orderBy(column));
     }
 
@@ -443,7 +447,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> groupBy(final Column column) {
+    public Maybe<IdentifiableList<? extends T>> groupBy(final Column column) {
       return Maybe.fromCallable(() -> table.find(database).groupBy(column));
     }
 
@@ -453,7 +457,7 @@ public abstract class ReactiveDatabase extends FastDatabase implements ReactiveC
      * @return
      */
     @Override
-    public Maybe<SList<? extends T>> groupAndOrderBy(final Column column, final Column column1) {
+    public Maybe<IdentifiableList<? extends T>> groupAndOrderBy(final Column column, final Column column1) {
       return Maybe.fromCallable(() -> table.find(database).groupAndOrderBy(column, column1));
     }
   }

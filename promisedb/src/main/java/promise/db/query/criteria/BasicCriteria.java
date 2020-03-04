@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db.query.criteria;
@@ -23,6 +21,7 @@ public class BasicCriteria extends Criteria {
   private Projection projection;
   private String operator;
   private Object value;
+
   public BasicCriteria(Projection projection, String operator, Object value) {
     this.projection = projection;
     this.operator = operator;

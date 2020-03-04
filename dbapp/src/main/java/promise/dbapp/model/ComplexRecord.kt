@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.dbapp.model
@@ -18,9 +16,9 @@ package promise.dbapp.model
 import android.os.Parcel
 import android.os.Parcelable
 import promise.commons.model.List
-import promise.model.SModel
+import promise.model.TimeAware
 
-class ComplexModel constructor() : SModel() {
+class ComplexRecord constructor() : TimeAware() {
 
   var intVariable: Int? = null
 
@@ -39,111 +37,111 @@ class ComplexModel constructor() : SModel() {
   override fun writeToParcel(dest: Parcel, flags: Int) = with(dest) {}
 
   override fun toString(): String =
-      "ComplexModel(intVariable=$intVariable, floatVariable=$floatVariable, doubleVariable=$doubleVariable, stringVariable=$stringVariable)\n"
+      "Complex(intVariable=$intVariable, floatVariable=$floatVariable, doubleVariable=$doubleVariable, stringVariable=$stringVariable)\n"
 
   companion object {
     @JvmField
-    val CREATOR: Parcelable.Creator<ComplexModel> = object : Parcelable.Creator<ComplexModel> {
-      override fun createFromParcel(source: Parcel): ComplexModel = ComplexModel(source)
-      override fun newArray(size: Int): Array<ComplexModel?> = arrayOfNulls(size)
+    val CREATOR: Parcelable.Creator<ComplexRecord> = object : Parcelable.Creator<ComplexRecord> {
+      override fun createFromParcel(source: Parcel): ComplexRecord = ComplexRecord(source)
+      override fun newArray(size: Int): Array<ComplexRecord?> = arrayOfNulls(size)
     }
 
-    fun someModels(): List<ComplexModel> = List.fromArray(ComplexModel().apply {
+    fun someModels(): List<ComplexRecord> = List.fromArray(ComplexRecord().apply {
       intVariable = 1
       floatVariable = 0.2f
       doubleVariable = 3.567
       stringVariable = "some string"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 2
       floatVariable = 0.5f
       doubleVariable = 3.87
       stringVariable = "some string 2"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987
       stringVariable = "some string 5"
-    },ComplexModel().apply {
+    },ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987
       stringVariable = "some string 5"
-    },ComplexModel().apply {
+    },ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987
       stringVariable = "some string 5"
-    },ComplexModel().apply {
+    },ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987
       stringVariable = "some string 5"
-    },ComplexModel().apply {
+    },ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987
       stringVariable = "some string 5"
-    },ComplexModel().apply {
+    },ComplexRecord().apply {
       intVariable = 5
       floatVariable = 0.7f
       doubleVariable = 10.987655
       stringVariable = "some string 3"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 10
       floatVariable = 62f
       doubleVariable = 567.7865
       stringVariable = "some string 4"
-    }, ComplexModel().apply {
+    }, ComplexRecord().apply {
       intVariable = 18
       floatVariable = 100.3f
       doubleVariable = 456.987

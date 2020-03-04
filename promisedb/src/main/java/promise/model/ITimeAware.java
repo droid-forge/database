@@ -9,26 +9,13 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
-package promise.db;
+package promise.model;
 
+public interface ITimeAware {
 
-import androidx.annotation.Nullable;
+  void setCreatedAt(long createdAt);
 
-import promise.commons.model.List;
-
-
-/**
- * Created on 6/27/18 by yoctopus.
- */
-public interface Extras<T> {
-    @Nullable
-    T first();
-    @Nullable T last();
-    List<? extends T> all();
-    List<? extends T> limit(int limit);
-    <X> List<? extends T> where(X... x);
+  void setUpdatedAt(long updatedAt);
 }

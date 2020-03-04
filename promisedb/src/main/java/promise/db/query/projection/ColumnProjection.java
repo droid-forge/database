@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db.query.projection;
@@ -18,7 +16,7 @@ package promise.db.query.projection;
 import promise.commons.model.List;
 import promise.db.Column;
 import promise.db.Table;
-import promise.db.Utils;
+import promise.db.query.Utils;
 
 public class ColumnProjection extends Projection {
   private Table table;
@@ -33,7 +31,7 @@ public class ColumnProjection extends Projection {
   public String build() {
     String ret = "";
 
-    if (!Utils.isNullOrWhiteSpace(table != null ? table.getName(): "")) ret = table.getName();
+    if (!Utils.isNullOrWhiteSpace(table != null ? table.getName() : "")) ret = table.getName();
 
     if (!Utils.isNullOrWhiteSpace(column.getName())) ret = ret + column.getName();
 

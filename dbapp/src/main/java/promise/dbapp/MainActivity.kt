@@ -9,8 +9,6 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.dbapp
@@ -22,9 +20,9 @@ import io.reactivex.android.schedulers.AndroidSchedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import promise.commons.model.Result
-import promise.dbapp.model.ComplexModel
-import promise.dbapp.model.Database
-import promise.model.SList
+import promise.dbapp.model.ComplexRecord
+import promise.dbapp.model.AppDatabase
+import promise.model.IdentifiableList
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,8 +40,8 @@ class MainActivity : AppCompatActivity() {
   override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
 
-    val database = Database()
-    database.allComplexModels(Result<SList<out ComplexModel>, Throwable>()
+    val database = AppDatabase()
+    database.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
         .withCallBack {
           if (it.isNotEmpty()) {
             complex_values_textview.text = it.toString()

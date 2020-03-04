@@ -9,19 +9,15 @@
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
- *
  */
 
 package promise.db.query;
 
 import java.util.Collections;
 
-
 import promise.commons.model.List;
 import promise.db.Column;
 import promise.db.Table;
-import promise.db.Utils;
 import promise.db.query.criteria.Criteria;
 import promise.db.query.from.From;
 import promise.db.query.order.Order;
@@ -56,7 +52,6 @@ public class QueryBuilder {
 
   public QueryBuilder select(Column... columns) {
     if (columns == null) return this;
-
     return select(Utils.buildColumnProjections(columns));
   }
 

@@ -1,4 +1,5 @@
 # Android Promise Database [![](https://jitpack.io/v/android-promise/database.svg)](https://jitpack.io/#android-promise/database)
+ Manage SqLite databases in android with ease
 # Setup
 #### build.gradle
 ```
@@ -10,6 +11,7 @@ allprojects {
 }
 
 android {
+    ...
     compileOptions {
             sourceCompatibility JavaVersion.VERSION_1_8
             targetCompatibility JavaVersion.VERSION_1_8
@@ -17,6 +19,7 @@ android {
 }
 
 dependencies {
+     ...
      implementation 'com.github.android-promise:database:1.0'
      implementation 'com.github.android-promise:commons:1.0'
 }
@@ -27,25 +30,28 @@ Initialize Promise in your main application file, entry point
 
 #### App.java
 ```java
+  ...
   @Override
   public void onCreate() {
     super.onCreate();
     Promise.init(this);
+    ...
   }
+  ...
 ```
 #### Stay Updated
 
 # Wiki!
-I strongly recommend to read the **[Wiki](https://github.com/android-promise/database/wiki) pages**, where you can find a comprehensive Tutorial.<br/>
+Go through the **[Wiki](https://github.com/android-promise/database/wiki) pages**,to learn how to set up your database<br/>
 
 ## Developed By
 
 * Peter Vincent - <dev4vin@gmail.com>
 
 ## Donations
-If you'd like to support this library development, you could make some donations here:
+If you'd like to support this library development, you could buy me coffee here:
 
-* [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](http://www.paypal.me/vinsonpeter8)
+* [![Become a Patreon]("https://c6.patreon.com/becomePatronButton.bundle.js")](https://www.patreon.com/bePatron?u=31165349)
 
 Thank you very much in advance!
 
@@ -54,11 +60,9 @@ Feel free to contribute and ask!<br/>
 
 # License
 
-#### Android Promise
-
     Copyright 2018 Peter Vincent
 
-    Licensed under the Apache License, Version 2.0 (the "License");
+    Licensed under the Apache License, Version 2.0 Android Promise;
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
