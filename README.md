@@ -342,10 +342,11 @@ We'll also update the table
 ```
 ##### ComplexRecordTable
 Adding the column in the table
+The column added must be nullable, replace Column.Type.INTGER.NOT_NULL with Column.Type.TEXT.NULLABLE
 ```kotlin
 companion object {
    ...
-   // new column
+   // new column, this should be nullable and type TEXT
     val flagVariableColumn: Column<String> = Column("flag", Column.Type.INTEGER.NOT_NULL(), 5)
     // notice update on the index of 5
   }
