@@ -11,14 +11,14 @@
  * limitations under the License.
  */
 
-package promise.db.annotation;
+package promise.db
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import android.database.sqlite.SQLiteDatabase
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface Database {
+
+interface Migration {
+  fun onMigrate(database: FastDatabase,
+                sqLiteDatabase: SQLiteDatabase,
+                oldVersion: Int,
+                newVersion: Int)
 }

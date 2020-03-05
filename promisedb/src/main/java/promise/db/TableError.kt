@@ -10,16 +10,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package promise.db
 
-package promise.db.annotation;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.SOURCE)
-public @interface Table {
-  String name() default "";
+class TableError : Exception {
+  internal constructor(cause: Throwable) : super(cause)
+  internal constructor(cause: String) : super(cause)
 }

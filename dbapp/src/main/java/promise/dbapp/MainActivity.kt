@@ -17,6 +17,7 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
 import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import promise.commons.model.Result
@@ -40,8 +41,7 @@ class MainActivity : AppCompatActivity() {
   override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
 
-    val database = AppDatabase()
-    database.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
+    AppDatabase.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
         .withCallBack {
           if (it.isNotEmpty()) {
             complex_values_textview.text = it.toString()
@@ -50,11 +50,8 @@ class MainActivity : AppCompatActivity() {
         .withErrorCallBack { complex_values_textview.text = it.message })
 
     clear_button.setOnClickListener {
-      database.deleteAllAsync()
-          .observeOn(AndroidSchedulers.mainThread())
-          .subscribe {
-            complex_values_textview.text = ""
-          }
+      AppDatabase.instance.deleteAll()
+      complex_values_textview.text = ""
     }
 
     val complexRecordTable = AppDatabase.complexModelTable

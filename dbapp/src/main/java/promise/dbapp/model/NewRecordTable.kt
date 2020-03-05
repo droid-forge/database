@@ -17,16 +17,15 @@ import android.content.ContentValues
 import android.database.Cursor
 import promise.commons.model.List
 import promise.db.Column
+import promise.db.FastDatabase
 import promise.db.FastTable
+import promise.db.Table
 
-class NewRecordTable(appDatabase: AppDatabase) : FastTable<NewRecord>(appDatabase) {
-  override fun getName(): String {
-    return "new_record_table"
-  }
+@Table(tableName = "new_record_table")
+class NewRecordTable(appDatabase: FastDatabase) : FastTable<NewRecord>(appDatabase) {
 
-  override fun getColumns(): List<out Column<Any>> {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-  }
+  override val columns: List<out Column<*>>
+    get() = List.fromArray(nameColumn, descColumn)
 
   override fun deserialize(e: Cursor?): NewRecord {
     TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -37,7 +36,7 @@ class NewRecordTable(appDatabase: AppDatabase) : FastTable<NewRecord>(appDatabas
   }
 
   companion object {
-    val nameColumn: Column<String> = Column("name", Column.Type.INTEGER.NOT_NULL(), 1)
+    val nameColumn: Column<String> = Column("tableName", Column.Type.TEXT.NULLABLE(), 1)
     val descColumn: Column<Float> = Column("desc", Column.Type.INTEGER.NOT_NULL(), 2)
   }
 }

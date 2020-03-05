@@ -14,89 +14,62 @@
 package promise.dbapp.model
 
 import android.database.sqlite.SQLiteDatabase
-import io.reactivex.Maybe
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
 import promise.commons.Promise
-import promise.commons.model.List
+import promise.commons.data.log.LogUtil
 import promise.commons.model.Result
-import promise.db.ReactiveFastDatabase
-import promise.db.Table
+import promise.db.FastDatabase
+import promise.db.Migration
+import promise.db.Database
+import promise.db.FastDatabase.Companion.createDatabase
 import promise.model.IdentifiableList
 
-class AppDatabase : ReactiveFastDatabase(name, version, null, null) {
-  /**
-   *
-   */
-  private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
-
-  /**
-   * @return
-   */
-  override fun onTerminate(): CompositeDisposable = compositeDisposable
-
-  override fun onUpgradeDatabase(database: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-    if (oldVersion == 1 && newVersion == 2)  {
-      // we added new record table when database version is 1, and therefore need to add it version 2
-      add(database, newRecordTable)
-    }
-    super.onUpgradeDatabase(database, oldVersion, newVersion)
-  }
-
-  override fun tables(): List<Table<*, in SQLiteDatabase>> =
-      List.fromArray(complexModelTable, newRecordTable)
+@Database(
+    name = "complex_db_name",
+    version = 2,
+    tables = [
+      ComplexRecordTable::class,
+      NewRecordTable::class
+    ]
+)
+object AppDatabase {
 
   fun allComplexModels(result: Result<IdentifiableList<out ComplexRecord>, Throwable>) {
-    compositeDisposable.add(complexModelTable.findAllAsync()
-        .subscribeOn(Schedulers.from(Promise.instance().executor()))
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe({ list ->
-          if (list.isEmpty())
-            saveSomeComplexModels(Result<Boolean, Throwable>()
-                .withErrorCallBack { allComplexModels(result) }
-                .withErrorCallBack {
-                  result.error(it)
-                }) else
-            result.response(IdentifiableList(list))
-
-        }, {
-          result.error(it)
-        }))
-  }
+    val items = complexModelTable.findAll()
+    if (items.isEmpty()) {
+      saveSomeComplexModels(Result<Boolean, Throwable>()
+          .withCallBack {
+            allComplexModels(result)
+          })
+      return
+    }
+    result.response(items)
+   }
 
   private fun saveSomeComplexModels(result: Result<Boolean, Throwable>) {
-    compositeDisposable.add(
-        complexModelTable.saveAsync(IdentifiableList(ComplexRecord.someModels()))
-            .subscribeOn(Schedulers.from(Promise.instance().executor()))
-            .observeOn(Schedulers.from(Promise.instance().executor()))
-            .subscribe({
-              result.response(it)
-            }, {
-              result.error(it)
-            })
-    )
+    complexModelTable.save(IdentifiableList(ComplexRecord.someModels()))
+    result.response(true)
   }
 
-  override fun deleteAllAsync(): Maybe<Boolean> =
-      super.deleteAllAsync().subscribeOn(Schedulers.from(Promise.instance().executor()))
-
-  companion object {
-    @Volatile
-    var instance: AppDatabase? = null
-    private var LOCK = Any()
-    operator fun invoke(): AppDatabase = instance
-        ?: synchronized(LOCK) {
-          instance ?: AppDatabase()
-              .also {
-                instance = it
-              }
+  val instance = createDatabase(AppDatabase::class.java,
+      object : Migration {
+        override fun onMigrate(database: FastDatabase,
+                               sqLiteDatabase: SQLiteDatabase,
+                               oldVersion: Int,
+                               newVersion: Int) {
+          if (oldVersion == 1 && newVersion == 2) {
+            // we added new record table when database version is 1, and therefore need to add it version 2
+            database.add(sqLiteDatabase, database.obtain(NewRecordTable::class.java))
+          }
         }
+      })
 
-    const val name = "complex_db_name"
-    // here update the version
-    const val version = 2
-    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
-    val newRecordTable: NewRecordTable by lazy { NewRecordTable(AppDatabase()) }
+  val complexModelTable: ComplexRecordTable by lazy {
+    instance.obtain<ComplexRecordTable>(ComplexRecordTable::class.java)
+  }
+  val newRecordTable: NewRecordTable by lazy {
+    instance.obtain<NewRecordTable>(NewRecordTable::class.java)
   }
 }

@@ -15,13 +15,13 @@ package promise.db.query.from;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.Table;
+import promise.db.TableCrud;
 import promise.db.query.QueryBuilder;
 import promise.db.query.criteria.Criteria;
 import promise.db.query.projection.Projection;
 
 public abstract class From {
-  public static TableFrom table(Table table) {
+  public static TableFrom table(TableCrud table) {
     return new TableFrom(table);
   }
 
@@ -29,7 +29,7 @@ public abstract class From {
     return new SubQueryFrom(subQuery);
   }
 
-  public PartialJoin innerJoin(Table table) {
+  public PartialJoin innerJoin(TableCrud table) {
     return innerJoin(From.table(table));
   }
 
@@ -41,7 +41,7 @@ public abstract class From {
     return new PartialJoin(this, table, "INNER JOIN");
   }
 
-  public PartialJoin leftJoin(Table table) {
+  public PartialJoin leftJoin(TableCrud table) {
     return leftJoin(From.table(table));
   }
 

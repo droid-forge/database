@@ -15,14 +15,14 @@ package promise.db.query.projection;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.Table;
+import promise.db.TableCrud;
 import promise.db.query.Utils;
 
 public class ColumnProjection extends Projection {
-  private Table table;
+  private TableCrud table;
   private Column column;
 
-  public ColumnProjection(Table table, Column column) {
+  public ColumnProjection(TableCrud table, Column column) {
     this.table = table;
     this.column = column;
   }

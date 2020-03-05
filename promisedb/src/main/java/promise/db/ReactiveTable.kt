@@ -10,147 +10,140 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package promise.db
 
-package promise.db;
-
-
-import androidx.annotation.Nullable;
-
-import io.reactivex.Maybe;
-import promise.commons.model.Identifiable;
-import promise.model.IdentifiableList;
+import io.reactivex.Maybe
+import promise.commons.model.Identifiable
+import promise.model.IdentifiableList
 
 /**
  * models concise readAsync queries in an reactive way
- * see {@link Table}
+ * see [TableCrud]
  */
-public interface ReactiveTable {
-
+interface ReactiveTable {
   /**
    * modeling concise readAsync queries
-   * see {@link Table.Extras}
+   * see [TableCrud.Extras]
    *
    * @param <T> the type of data to be stored in the table
-   */
-  interface Extras<T extends Identifiable<Integer>> {
+  </T> */
+  interface Extras<T : Identifiable<Int>> {
     /**
      * gets the first record in the table
-     * see {@link Table.Extras#first()}
+     * see [TableCrud.Extras.first]
      *
      * @return the first records
      */
-    @Nullable
-    Maybe<T> first();
+    fun first(): Maybe<T>
 
     /**
      * gets the last record in the table
-     * see {@link Table.Extras#last()}
+     * see [TableCrud.Extras.last]
      *
      * @return the last record in the table
      */
-    @Nullable
-    Maybe<T> last();
+    fun last(): Maybe<T>
 
     /**
      * gets all the records in the table
-     * see {@link Table.Extras#all()}
+     * see [TableCrud.Extras.all]
      *
      * @return the list if records
      */
-    Maybe<IdentifiableList<? extends T>> all();
+    fun all(): Maybe<IdentifiableList<out T>>
 
     /**
      * gets the top records marked by the limit
      *
      * @param limit limit to take from the table
-     *              see {@link Table.Extras#limit(int)}
+     * see [TableCrud.Extras.limit]
      * @return a list of records
      */
-    Maybe<IdentifiableList<? extends T>> limit(int limit);
+    fun limit(limit: Int): Maybe<IdentifiableList<out T>>
 
     /**
      * paginates the data between the offset and limit
-     * see {@link Table.Extras#paginate(int, int)}
+     * see [TableCrud.Extras.paginate]
      *
      * @param skip  offset to take
      * @param limit limit to fetch
      * @return a list of records
      */
-    Maybe<IdentifiableList<? extends T>> paginate(int skip, int limit);
+    fun paginate(skip: Int, limit: Int): Maybe<IdentifiableList<out T>>
 
     /**
      * @param skip
      * @param limit
      * @return
      */
-    Maybe<IdentifiableList<? extends T>> paginateDescending(int skip, int limit);
+    fun paginateDescending(skip: Int, limit: Int): Maybe<IdentifiableList<out T>>
 
     /**
      * gets data that matches between the values passed in the specified column
-     * see {@link Table.Extras#between(Column, N, N)}
+     * see [TableCrud.Extras.between]
      *
      * @param column field to match between
      * @param a      lower bound of between
      * @param b      upper bound of between
      * @return a list of matched records
      */
-    <N extends Number> Maybe<IdentifiableList<? extends T>> between(Column<N> column, N a, N b);
+    fun <N : Number> between(column: Column<N>, a: N, b: N): Maybe<IdentifiableList<out T>>
 
     /**
      * gets all the data matched in where in the columns
-     * see {@link Table.Extras#where(Column[])}
+     * see [TableCrud.Extras.where]
      *
      * @param column columns to match where clause
      * @return a list of records matching the criteria
      */
-    Maybe<IdentifiableList<? extends T>> where(Column... column);
+    fun where(vararg column: Column<*>): Maybe<IdentifiableList<out T>>
 
     /**
      * gets all the data not within the specified bounds in the specified column
-     * see {@link Table.Extras#notIn(Column, N...)}
+     * see [TableCrud.Extras.notIn]
      *
      * @param column field to checkout bounds
      * @param bounds specified not in bounds
      * @param <N>    type of bound
      * @return list of records
-     */
-    <N extends Number> Maybe<IdentifiableList<? extends T>> notIn(Column<N> column, N... bounds);
+    </N> */
+    fun <N : Number> notIn(column: Column<N>, vararg bounds: N): Maybe<IdentifiableList<out T>>
 
     /**
      * fetches all the data where the column contains the value
-     * see {@link Table.Extras#limit(int)}
+     * see [TableCrud.Extras.limit]
      *
      * @param column field to build like clause
      * @return list of records
      */
-    Maybe<IdentifiableList<? extends T>> like(Column<String>... column);
+    fun like(vararg column: Column<String>): Maybe<IdentifiableList<out T>>
 
     /**
      * fetches all the data in the order specified in the column
-     * see {@link Table.Extras#orderBy(Column)}
+     * see [TableCrud.Extras.orderBy]
      *
      * @param column field to build order by clause
      * @return a list of records ordered
      */
-    Maybe<IdentifiableList<? extends T>> orderBy(Column column);
+    fun orderBy(column: Column<*>): Maybe<IdentifiableList<out T>>
 
     /**
      * fetches all the data in the group by condition specified in the column
-     * see {@link Table.Extras#groupBy(Column)}
+     * see [TableCrud.Extras.groupBy]
      *
      * @param column field to build the group by clause
      * @return a list of records grouped by the condition in the column
      */
-    Maybe<IdentifiableList<? extends T>> groupBy(Column column);
+    fun groupBy(column: Column<*>): Maybe<IdentifiableList<out T>>
 
     /**
      * groups and orders the result set by the two provided sets of columns
-     * see {@link Table.Extras#groupAndOrderBy(Column, Column)}
+     * see [TableCrud.Extras.groupAndOrderBy]
      *
      * @param column  field to group by
      * @param column1 field to order by
      * @return a list of data grouped and ordered in the given criteria
      */
-    Maybe<IdentifiableList<? extends T>> groupAndOrderBy(Column column, Column column1);
+    fun groupAndOrderBy(column: Column<*>, column1: Column<*>): Maybe<IdentifiableList<out T>>
   }
 }

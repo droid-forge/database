@@ -17,7 +17,7 @@ import java.util.Collections;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.Table;
+import promise.db.TableCrud;
 import promise.db.query.criteria.Criteria;
 import promise.db.query.from.From;
 import promise.db.query.order.Order;
@@ -61,7 +61,7 @@ public class QueryBuilder {
     return this;
   }
 
-  public QueryBuilder from(Table table) {
+  public QueryBuilder from(TableCrud table) {
     return from(From.table(table));
   }
 

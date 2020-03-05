@@ -20,7 +20,7 @@ android {
 
 dependencies {
      ...
-     implementation 'com.github.android-promise:database:1.0'
+     implementation 'com.github.android-promise:database:TAG'
      implementation 'com.github.android-promise:commons:1.0'
 }
 ```
@@ -64,30 +64,31 @@ A table is a functional class that has methods that manipulate records in the da
 A sample [ComplexRecordTable class](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecordTable.kt) will manipulate [ComplexRecord](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecord.kt) within the database.
 ```kotlin
 
-class ComplexRecordTable : FastTable<ComplexRecord>() {
-  /**
-   * @return
-   */
-  override fun getName(): String = "name_of_complex_model_table"
+@Table(tableName = "name_of_complex_model_table")
+class ComplexRecordTable(database: FastDatabase) : FastTable<ComplexRecord>(database) {
 
-  /**
-   * gets all the columns for this model from the child class for creation purposes
-   * see [.onCreate]
-   *
-   * @return list of columns
-   */
-  override fun getColumns(): List<Column<*>> {
-   return List.fromArray(intVariableColumn, floatVariableColumn, doubleVariableColumn, stringVariableColumn)
+  override fun onUpgrade(database: SQLiteDatabase, v1: Int, v2: Int) {
+    if (v1 == 1 && v2 == 2) {
+      // add when migrating from version 1 to 2
+      addColumns(database, flagVariableColumn)
+    }
   }
 
-  override fun deserialize(e: Cursor): ComplexModel = ComplexModel().apply {
+  override val columns: List<out Column<*>>
+    get() = List.fromArray(intVariableColumn,
+        floatVariableColumn,
+        doubleVariableColumn,
+        stringVariableColumn
+    )
+
+  override fun deserialize(e: Cursor): ComplexRecord = ComplexRecord().apply {
     intVariable = e.getInt(intVariableColumn.index)
     floatVariable = e.getFloat(floatVariableColumn.index)
     doubleVariable = e.getDouble(doubleVariableColumn.index)
     stringVariable = e.getString(stringVariableColumn.index)
   }
 
-  override fun serialize(t: ComplexModel): ContentValues = ContentValues().apply {
+  override fun serialize(t: ComplexRecord): ContentValues = ContentValues().apply {
     put(intVariableColumn.name, t.intVariable)
     put(floatVariableColumn.name, t.floatVariable)
     put(doubleVariableColumn.name, t.doubleVariable)
@@ -99,20 +100,18 @@ class ComplexRecordTable : FastTable<ComplexRecord>() {
     val floatVariableColumn: Column<Float> = Column("float", Column.Type.INTEGER.NOT_NULL(), 2)
     val doubleVariableColumn: Column<Double> = Column("double", Column.Type.INTEGER.NOT_NULL(), 3)
     val stringVariableColumn: Column<String> = Column("string", Column.Type.INTEGER.NOT_NULL(), 4)
-
   }
 }
 ```
 Each table should extend [FastTable Class](https://github.com/android-promise/database/blob/master/promisedb/src/main/java/promise/db/FastTable.java) class or implement [Table Interface](https://github.com/android-promise/database/blob/master/promisedb/src/main/java/promise/db/Table.java).
 A table also exposes columns that will be created in it in the database,
 ```kotlin
- override fun getColumns(): List<Column<*>> {
-   return List.fromArray(intVariableColumn, floatVariableColumn, doubleVariableColumn, stringVariableColumn)
-  }
-```
-It also provides a name for it in the database
-```kotlin
-override fun getName(): String = "name_of_complex_model_table"
+override val columns: List<out Column<*>>
+    get() = List.fromArray(intVariableColumn,
+        floatVariableColumn,
+        doubleVariableColumn,
+        stringVariableColumn
+    )
 ```
 
 It also overrides methods that will serialize and deserialize the model
@@ -157,105 +156,68 @@ If you want to utilize rxJava in your queries, extend from [ReactiveFastDatabase
 ##### [AppDatabase](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/AppDatabase.kt)
 ```kotlin
 
-class Database : ReactiveDatabase(name, version, null, null) {
-  /**
-   *
-   */
-  private val compositeDisposable: CompositeDisposable by lazy { CompositeDisposable() }
-  /**
-   * @return
-   */
-  override fun onTerminate(): CompositeDisposable {
-    return compositeDisposable
-  }
-  /**
-   *
-   * @return
-   */
-  override fun tables(): List<Table<*, in SQLiteDatabase>> = List.fromArray(complexModelTable)
+@Database(
+    name = "complex_db_name",
+    version = 1,
+    tables = [
+      ComplexRecordTable::class
+    ]
+)
+object AppDatabase {
 
-  fun allComplexModels(result: Result<SList<out ComplexModel>, Throwable>) {
-    compositeDisposable.add(findAllAsync(complexModelTable)
-        .subscribeOn(Schedulers.from(Promise.instance().executor()))
-        .observeOn(AndroidSchedulers.mainThread())
-        .subscribe({ list ->
-          if (list.isEmpty())
-            saveSomeComplexModels(Result<Boolean, Throwable>()
-                .withErrorCallBack { allComplexModels(result) }
-                .withErrorCallBack {
-                  result.error(it) }) else
-            result.response(SList(list))
-
-        }, {
-          result.error(it)
-        }))
-  }
+  fun allComplexModels(result: Result<IdentifiableList<out ComplexRecord>, Throwable>) {
+    val items = complexModelTable.findAll()
+    if (items.isEmpty()) {
+      saveSomeComplexModels(Result<Boolean, Throwable>()
+          .withCallBack {
+            allComplexModels(result)
+          })
+      return
+    }
+    result.response(items)
+   }
 
   private fun saveSomeComplexModels(result: Result<Boolean, Throwable>) {
-    compositeDisposable.add(saveAsync(SList(ComplexModel.someModels()), complexModelTable)
-        .subscribeOn(Schedulers.from(Promise.instance().executor()))
-        .observeOn(Schedulers.from(Promise.instance().executor()))
-        .subscribe({
-          result.response(it)
-        }, {
-          result.error(it)
-        }))
+    complexModelTable.save(IdentifiableList(ComplexRecord.someModels()))
+    result.response(true)
   }
 
-  override fun deleteAllAsync(): Maybe<Boolean> =
-      super.deleteAllAsync().subscribeOn(Schedulers.from(Promise.instance().executor()))
+  val instance = createDatabase(AppDatabase::class.java)
 
-  companion object {
-    @Volatile
-    var instance: AppDatabase? = null
-    private var LOCK = Any()
-    operator fun invoke(): AppDatabase = instance
-        ?: synchronized(LOCK) {
-          instance ?: AppDatabase()
-              .also {
-                instance = it
-              }
-        }
-    const val name = "complex_db_name"
-    const val version = 1
-    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
+  val complexModelTable: ComplexRecordTable by lazy {
+    instance.obtain<ComplexRecordTable>(ComplexRecordTable::class.java)
   }
+
 }
 ```
-The tables are registered with the following method of the database
+The tables are registered in the database annotation
 ```kotlin
-override fun tables(): List<Table<*, in SQLiteDatabase>> = List.fromArray(complexModelTable)
+@Database(
+    name = "complex_db_name",
+    version = 1,
+    tables = [
+      ComplexRecordTable::class
+    ]
+)
 ```
 > For better performance, always initialize your tables lazily as static fields
 ```kotlin
   ...
- companion object {
-    @Volatile
-    var instance: AppDatabase? = null
-    private var LOCK = Any()
-    operator fun invoke(): AppDatabase = instance
-        ?: synchronized(LOCK) {
-          instance ?: AppDatabase()
-              .also {
-                instance = it
-              }
-        }
+val instance = createDatabase(AppDatabase::class.java)
 
-    const val name = "complex_db_name"
-    const val version = 1
-    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
-  }
+val complexModelTable: ComplexRecordTable by lazy {
+  instance.obtain<ComplexRecordTable>(ComplexRecordTable::class.java)
+}
 ```
 
 ## Consuming your database
 Consuming you database is as easy as just calling methods from the custom database, An example in our [MainActivity](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/MainActivity.kt)
 ```kotlin
  ...
-override fun onPostCreate(savedInstanceState: Bundle?) {
+ override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
     ...
-    val database = AppDatabase()
-    database.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
+    AppDatabase.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
         .withCallBack {
           if (it.isNotEmpty()) {
             complex_values_textview.text = it.toString()
@@ -264,25 +226,24 @@ override fun onPostCreate(savedInstanceState: Bundle?) {
         .withErrorCallBack { complex_values_textview.text = it.message })
 
     clear_button.setOnClickListener {
-      database.deleteAllAsync()
-          .observeOn(AndroidSchedulers.mainThread())
-          .subscribe {
-            complex_values_textview.text = ""
-          }
+      AppDatabase.instance.deleteAll()
+      complex_values_textview.text = ""
     }
+
   }
 ...
 ```
 Note, you could also interract with the table directly
 ```kotlin
 ...
-val complexRecordTable = AppDatabase.complexModelTable
-var items = complexRecordTable.findAll()
-if (items.isEmpty()) {
-  complexRecordTable.save(IdentifiableList(ComplexRecord.someModels()))
-  items = complexRecordTable.findAll()
-}
-complex_values_textview.text = items.toString()
+
+    val complexRecordTable = AppDatabase.complexModelTable
+    var items = complexRecordTable.findAll()
+    if (items.isEmpty()) {
+      complexRecordTable.save(IdentifiableList(ComplexRecord.someModels()))
+      items = complexRecordTable.findAll()
+    }
+    complex_values_textview.text = items.toString()
 ```
 > All the crud functionality exist on the table,
 > Note avoid querying the database on the UI thread
@@ -293,43 +254,35 @@ We'll upgrade our database to version 2 and add the table in our database as thi
 ##### AppDatabase
 ```kotlin
 ...
-override fun onUpgradeDatabase(database: SQLiteDatabase?, oldVersion: Int, newVersion: Int) {
-    if (oldVersion == 1 && newVersion == 2)  {
-      // we added new record table when database version is 1, and therefore need to add it version 2
-      add(database, newRecordTable)
-    }
-    super.onUpgradeDatabase(database, oldVersion, newVersion)
-}
+val instance = createDatabase(AppDatabase::class.java,
+      object : Migration {
+        override fun onMigrate(database: FastDatabase,
+                               sqLiteDatabase: SQLiteDatabase,
+                               oldVersion: Int,
+                               newVersion: Int) {
+          if (oldVersion == 1 && newVersion == 2) {
+            // we added new record table when database version is 1, and therefore need to add it version 2
+            database.add(sqLiteDatabase, database.obtain(NewRecordTable::class.java))
+          }
+        }
+      })
 ...
 ```
 Amd the update our new table in table registry so that new installs get the new table as well
 ```kotlin
 ...
-override fun tables(): List<Table<*, in SQLiteDatabase>> = 
-      List.fromArray(complexModelTable, newRecordTable)
+@Database(
+    name = "complex_db_name",
+    version = 2,
+    tables = [
+      ComplexRecordTable::class,
+      // added table
+      NewRecordTable::class
+    ]
+)
 ...
 ```
-Finally upgrade the version of the database
-```kotlin
-companion object {
-    @Volatile
-    var instance: AppDatabase? = null
-    private var LOCK = Any()
-    operator fun invoke(): AppDatabase = instance
-        ?: synchronized(LOCK) {
-          instance ?: AppDatabase()
-              .also {
-                instance = it
-              }
-        }
-
-    const val name = "complex_db_name"
-    // here update the version
-    const val version = 2
-    val complexModelTable: ComplexRecordTable by lazy { ComplexRecordTable(AppDatabase()) }
-    val newRecordTable: NewRecordTable by lazy { NewRecordTable(AppDatabase()) }
-  }
-```
+> Finally upgrade the version of the database to 2
 
 A second scenario, in our complex table, we decided to add another column for storing a flag
 We'll also update the table
@@ -358,21 +311,20 @@ override fun onUpgrade(database: SQLiteDatabase?, v1: Int, v2: Int) {
       // add when migrating from version 1 to 2
       addColumns(database, flagVariableColumn)
     }
-    super.onUpgrade(database, v1, v2)
   }
 ...
 ```
 > Do not forget to add this new column to the clumns list so new installs do not have to upgrade
 ```kotlin
 ...
-override fun getColumns(): List<Column<*>> =
-      List.fromArray(intVariableColumn,
-          floatVariableColumn,
-          doubleVariableColumn,
-          stringVariableColumn,
-          // add this here to have it on new installs
-          flagVariableColumn
-          )
+ override val columns: List<out Column<*>>
+    get() = List.fromArray(intVariableColumn,
+        floatVariableColumn,
+        doubleVariableColumn,
+        stringVariableColumn,
+        // add this here to have it on new installs
+        flagVariableColumn
+    )
 ...
 ```
 Finally update your serialization and deserialization logic

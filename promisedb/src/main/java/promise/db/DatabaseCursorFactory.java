@@ -29,7 +29,7 @@ public class DatabaseCursorFactory implements SQLiteDatabase.CursorFactory {
 
   @Override
   public Cursor newCursor(SQLiteDatabase db, SQLiteCursorDriver masterQuery, String editTable, SQLiteQuery query) {
-    listener.onLog(query.toString());
+    if (listener != null) listener.onLog(query.toString());
     return new SQLiteCursor(db, masterQuery, editTable, query);
   }
 

@@ -13,16 +13,17 @@
 
 package promise.db;
 
-/**
- * Created by yoctopus on 2/21/17.
- */
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public final class TableError extends Exception {
-  TableError(Throwable cause) {
-    super(cause);
-  }
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Database {
+  String name() default "fast";
 
-  TableError(String cause) {
-    super(cause);
-  }
+  int version() default 1;
+
+  Class<? extends FastTable<?>>[] tables() default {};
 }

@@ -14,13 +14,13 @@
 package promise.db.query.from;
 
 import promise.commons.model.List;
-import promise.db.Table;
+import promise.db.TableCrud;
 import promise.db.query.Utils;
 
 public class TableFrom extends AliasableFrom<TableFrom> {
-  private Table table;
+  private TableCrud table;
 
-  public TableFrom(Table table) {
+  public TableFrom(TableCrud table) {
     this.table = table;
   }
 

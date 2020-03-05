@@ -15,7 +15,7 @@ package promise.db.query.projection;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.Table;
+import promise.db.TableCrud;
 import promise.db.query.QueryBuilder;
 
 public abstract class Projection {
@@ -24,7 +24,7 @@ public abstract class Projection {
     return new ColumnProjection(null, column);
   }
 
-  public static ColumnProjection column(Table table, Column column) {
+  public static ColumnProjection column(TableCrud table, Column column) {
     return new ColumnProjection(table, column);
   }
 

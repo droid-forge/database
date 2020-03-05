@@ -22,7 +22,7 @@ import promise.commons.model.Result;
 /**
  * @param <T>
  */
-public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Table<T, ? super SQLiteDatabase>, Throwable> {
+public class CrudStore<T extends Identifiable<Integer>> implements Store<T, TableCrud<T, ? super SQLiteDatabase>, Throwable> {
   /**
    *
    */
@@ -41,7 +41,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    */
   @Override
   public void get(
-      Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
+      TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       Result<StoreExtra<T>, Throwable> callBack) {
     StoreExtra.getExtras(crudStore.findAll(tsqLiteDatabaseTable), new StoreFilter<T>() {
       @SafeVarargs
@@ -59,7 +59,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    */
   @Override
   public void delete(
-      Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
+      TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
       Result<Boolean, Throwable> callBack) {
     try {
@@ -76,7 +76,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    */
   @Override
   public void update(
-      Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
+      TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
       Result<Boolean, Throwable> callBack) {
     try {
@@ -93,7 +93,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    */
   @Override
   public void save(
-      Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
+      TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
       Result<Boolean, Throwable> callBack) {
     try {
@@ -109,7 +109,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    */
   @Override
   public void clear(
-      Table<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
+      TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       Result<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.delete(tsqLiteDatabaseTable));
