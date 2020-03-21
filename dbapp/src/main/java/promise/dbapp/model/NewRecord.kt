@@ -14,6 +14,7 @@
 package promise.dbapp.model
 
 import promise.commons.model.Identifiable
+import promise.commons.model.List
 
 // added when version of database is 1
 class NewRecord : Identifiable<Int> {
@@ -26,4 +27,15 @@ class NewRecord : Identifiable<Int> {
 
   var toDoName: String? = null
   var todoDesc: String? = null
+
+  companion object {
+
+    fun someModels(): List<NewRecord> = List.fromArray(NewRecord().apply {
+      toDoName = "toda name 1"
+      todoDesc = "desc 1"
+    }, NewRecord().apply {
+      toDoName = "toda name 2"
+      todoDesc = "desc 3"
+    })
+  }
 }

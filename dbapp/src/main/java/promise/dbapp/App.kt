@@ -14,11 +14,11 @@
 package promise.dbapp
 
 import android.app.Application
-import promise.commons.Promise
+import promise.commons.AndroidPromise
 
 class App : Application() {
   override fun onCreate() {
     super.onCreate()
-    Promise.init(this)
+    AndroidPromise.init(this, BuildConfig.DEBUG)
   }
 }

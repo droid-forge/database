@@ -22,7 +22,7 @@ android {
 dependencies {
      ...
      implementation 'com.github.android-promise:database:TAG'
-     implementation 'com.github.android-promise:commons:1.0'
+     implementation 'com.github.android-promise:commons:1.1-alpha03'
 }
 ```
 
@@ -31,14 +31,20 @@ Initialize Promise in your main application file, entry point
 
 ##### App.java
 ```java
-  ...
+public class App extends Application {
   @Override
   public void onCreate() {
     super.onCreate();
-    Promise.init(this);
-    ...
+    // 10 is the number of threads allowed to run in the background
+    AndroidPromise.init(this, 10, BuildConfig.DEBUG);
   }
-  ...
+
+  @Override
+  public void onTerminate() {
+    super.onTerminate();
+    AndroidPromise.instance().terminate();
+  }
+}
 ```
 
 ## Making your Record Class and Table
@@ -65,7 +71,19 @@ A table is a functional class that has methods that manipulate records in the da
 A sample [ComplexRecordTable class](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecordTable.kt) will manipulate [ComplexRecord](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecord.kt) within the database.
 ```kotlin
 
-@Table(tableName = "name_of_complex_model_table")
+@Table(
+    tableName = "name_of_complex_model_table",
+    indexes = [
+      Table.Index(
+          columnName = "int"
+      ),
+      Table.Index(
+          columnName = "double",
+          unique = true
+      )
+    ]
+)
+
 class ComplexRecordTable(database: FastDatabase) : FastTable<ComplexRecord>(database) {
 
   override fun onUpgrade(database: SQLiteDatabase, v1: Int, v2: Int) {
@@ -158,8 +176,6 @@ If you want to utilize rxJava in your queries, extend from [ReactiveFastDatabase
 ```kotlin
 
 @Database(
-    name = "complex_db_name",
-    version = 1,
     tables = [
       ComplexRecordTable::class
     ]
@@ -183,7 +199,10 @@ object AppDatabase {
     result.response(true)
   }
 
-  val instance = createDatabase(AppDatabase::class.java)
+  // can also use in memory database, no name and no migrations
+  val inMemoryDatabase = createInMemoryDatabase(AppDatabase::class.java)
+
+  val instance = createDatabase(AppDatabase::class.java, "db_name")
 
   val complexModelTable: ComplexRecordTable by lazy {
     instance.obtain<ComplexRecordTable>(ComplexRecordTable::class.java)
@@ -194,8 +213,6 @@ object AppDatabase {
 The tables are registered in the database annotation
 ```kotlin
 @Database(
-    name = "complex_db_name",
-    version = 1,
     tables = [
       ComplexRecordTable::class
     ]
@@ -255,7 +272,7 @@ We'll upgrade our database to version 2 and add the table in our database as thi
 ##### AppDatabase
 ```kotlin
 ...
-val instance = createDatabase(AppDatabase::class.java,
+val instance = createDatabase(AppDatabase::class.java, "db_name",
       object : Migration {
         override fun onMigrate(database: FastDatabase,
                                sqLiteDatabase: SQLiteDatabase,
@@ -273,7 +290,6 @@ Amd the update our new table in table registry so that new installs get the new 
 ```kotlin
 ...
 @Database(
-    name = "complex_db_name",
     version = 2,
     tables = [
       ComplexRecordTable::class,
@@ -357,7 +373,7 @@ watch this repo to stay updated
 * Peter Vincent - <dev4vin@gmail.com>
 # Donations
 If you'd like to support this library development, you could buy me coffee here:
-* [![Become a Patreon]("https://c6.patreon.com/becomePatronButton.bundle.js")](https://www.patreon.com/bePatron?u=31165349)
+* [![Become a Patreon]("https://c6.patreon.com/becomePatronButton.bundle.js")](https://www.patreon.com/bePatron?u=31932751)
 
 Thank you very much in advance!
 

@@ -22,7 +22,19 @@ import promise.db.FastDatabase
 import promise.db.FastTable
 import promise.db.Table
 
-@Table(tableName = "name_of_complex_model_table")
+@Table(
+    tableName = "name_of_complex_model_table",
+    indexes = [
+      Table.Index(
+          columnName = "int"
+      ),
+      Table.Index(
+          columnName = "double",
+          unique = true
+      )
+    ]
+)
+
 class ComplexRecordTable(database: FastDatabase) : FastTable<ComplexRecord>(database) {
 
   override fun onUpgrade(database: SQLiteDatabase, v1: Int, v2: Int) {

@@ -16,13 +16,12 @@ package promise.dbapp
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.snackbar.Snackbar
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import promise.commons.model.Result
+import promise.commons.tx.PromiseResult
 import promise.dbapp.model.ComplexRecord
 import promise.dbapp.model.AppDatabase
+import promise.dbapp.model.NewRecord
 import promise.model.IdentifiableList
 
 class MainActivity : AppCompatActivity() {
@@ -41,24 +40,24 @@ class MainActivity : AppCompatActivity() {
   override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
 
-    AppDatabase.allComplexModels(Result<IdentifiableList<out ComplexRecord>, Throwable>()
-        .withCallBack {
+    AppDatabase.allComplexModels(PromiseResult<IdentifiableList<out ComplexRecord>, Throwable>()
+        .withCallback {
           if (it.isNotEmpty()) {
             complex_values_textview.text = it.toString()
           } else complex_values_textview.text = "empty list"
         }
-        .withErrorCallBack { complex_values_textview.text = it.message })
+        .withErrorCallback { complex_values_textview.text = it.message })
 
     clear_button.setOnClickListener {
       AppDatabase.instance.deleteAll()
       complex_values_textview.text = ""
     }
 
-    val complexRecordTable = AppDatabase.complexModelTable
-    var items = complexRecordTable.findAll()
+    val newRecordTable = AppDatabase.newRecordTable
+    var items = newRecordTable.findAll()
     if (items.isEmpty()) {
-      complexRecordTable.save(IdentifiableList(ComplexRecord.someModels()))
-      items = complexRecordTable.findAll()
+      newRecordTable.save(IdentifiableList(NewRecord.someModels()))
+      items = newRecordTable.findAll()
     }
     complex_values_textview.text = items.toString()
   }

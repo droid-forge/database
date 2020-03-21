@@ -24,6 +24,7 @@ import io.reactivex.Single
 import promise.commons.data.log.LogUtil
 import promise.commons.model.Identifiable
 import promise.commons.model.List
+import promise.commons.model.List.fromArray
 import promise.commons.util.Conditions
 import promise.commons.util.DoubleConverter
 import promise.db.query.QueryBuilder
@@ -32,6 +33,9 @@ import promise.db.query.projection.Projection
 import promise.model.ITimeAware
 import promise.model.IdentifiableList
 import java.util.*
+
+internal const val INDEXES = "indexes"
+internal const val FOREIGN_kEYS = "foreign_keys"
 
 /**
  * This class models database queries
@@ -51,19 +55,23 @@ abstract class FastTable<T : Identifiable<Int>>
      * The create prefix in a prefix for queries that create a table structure
      */
     private const val CREATE_PREFIX = "CREATE TABLE IF NOT EXISTS "
+
     /**
      * The drop prefix is a prefix for queries that destroy a table in the database
      */
     private const val DROP_PREFIX = "TRUNCATE TABLE IF EXISTS "
+
     /**
      * the tableName of the primary column
      */
     private const val ID_COLUMN_NAME = "id"
+
     /**
      * The tableName of the timestamp columns
      */
     private const val CREATED_AT_COLUMN_NAME = "CREATED_AT"
     private const val UPDATED_AT_COLUMN_NAME = "UPDATED_AT"
+
     /**
      * Each table must have a primary column as well al timestamp columns
      * see [Column] for more info
@@ -85,6 +93,7 @@ abstract class FastTable<T : Identifiable<Int>>
      * The alter prefix is used to alter the structure of a column when making upgrades
      */
     private const val ALTER_COMMAND = "ALTER TABLE"
+
   }
 
   /**
@@ -94,6 +103,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * The specific tag for logging in this table
    */
   private val TAG: String = LogUtil.makeTag(FastTable::class.java) + name
+
   /**
    * Temporary data holder for holding data during dangerous table structure changes
    */
@@ -115,10 +125,17 @@ abstract class FastTable<T : Identifiable<Int>>
    * @return list of columns
    */
   abstract val columns: List<out Column<*>>
+
   /**
    *
    */
   private var nameOfTable: String = ""
+
+  private lateinit var args: Map<String, Any>
+
+  internal fun setArgs(args: Map<String, Any>) {
+    this.args = args
+  }
 
   /**
    *
@@ -132,6 +149,17 @@ abstract class FastTable<T : Identifiable<Int>>
    */
   final override val name: String
     get() = nameOfTable
+
+  private fun generateCreateIndexQuery(indexes: Array<Table.Index>): String {
+    var columnNames = ""
+    var indexSql = "("
+    indexes.forEachIndexed { i, index ->
+      columnNames = if (i == indexes.size - 1) columnNames + index.columnName else "$columnNames${index.columnName}_"
+      indexSql = if (i == indexes.size - 1) indexSql + index.columnName else "$indexSql${index.columnName}, "
+    }
+    indexSql = "$indexSql);"
+    return "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
+  }
 
   /**
    * optional to get the number of all the columns in this table
@@ -176,6 +204,8 @@ abstract class FastTable<T : Identifiable<Int>>
     try {
       LogUtil.d(TAG, sql)
       database.execSQL(sql)
+      val indexes = args[INDEXES] as Array<Table.Index>
+      if (!indexes.isNullOrEmpty()) addIndies(database, indexes)
     } catch (e: SQLException) {
       throw TableError(e)
     }
@@ -195,7 +225,7 @@ abstract class FastTable<T : Identifiable<Int>>
   override fun onUpgrade(database: SQLiteDatabase, v1: Int, v2: Int) {
     val builder: QueryBuilder = QueryBuilder().from(this)
     @SuppressLint("Recycle") val c = database.rawQuery(builder.build(), builder.buildParameters())
-    val set: Set<String> = HashSet(List.fromArray(*c.columnNames))
+    val set: Set<String> = HashSet(fromArray(*c.columnNames))
     if (!set.contains(createdAt.name)) addColumns(database, createdAt)
     if (!set.contains(updatedAt.name)) addColumns(database, updatedAt)
   }
@@ -218,6 +248,13 @@ abstract class FastTable<T : Identifiable<Int>>
         throw TableError(e)
       }
     }
+  }
+
+  @Throws(TableError::class)
+  fun addIndies(database: SQLiteDatabase, indexes: Array<Table.Index>) {
+    val indexSql = generateCreateIndexQuery(indexes)
+    LogUtil.d(TAG, indexSql)
+    database.execSQL(indexSql)
   }
 
   /**
@@ -409,6 +446,17 @@ abstract class FastTable<T : Identifiable<Int>>
   val lastIdAsync: Maybe<Int>
     get() = reactiveDatabase.getLastIdAsync(this)
 
+  inline fun transact(block: FastTable<T>.() -> Unit) = synchronized(this) {
+    val db = database.writableDatabase
+    try {
+      db.beginTransaction()
+      block.invoke(this)
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+  }
+
   /**
    * more verbose readAsync operation against the database
    *
@@ -480,7 +528,7 @@ abstract class FastTable<T : Identifiable<Int>>
   @Throws(TableError::class)
   override fun onUpdate(t: T, database: SQLiteDatabase, column: Column<*>): Boolean {
     val whereArg: String = if (column.operand != null && column.value() != null)
-    column.name + column.operand + column.value()
+      column.name + column.operand + column.value()
     else throw TableError("Cant update the record, missing updating information")
     val values = serialize(t)
     values.put(updatedAt.name, System.currentTimeMillis())

@@ -32,10 +32,12 @@ import promise.model.IdentifiableList
  */
 
 class ReactiveFastDatabase private constructor(
-    name: String,
+    name: String?,
     factory: SQLiteDatabase.CursorFactory?,
     version: Int,
-    errorHandler: DatabaseErrorHandler) : FastDatabase(name, factory, version, errorHandler), ReactiveCrud<SQLiteDatabase> {
+    errorHandler: DatabaseErrorHandler) :
+    FastDatabase(name, factory, version, errorHandler),
+    ReactiveCrud<SQLiteDatabase> {
   private val TAG: String = LogUtil.makeTag(ReactiveFastDatabase::class.java)
 
   /**
@@ -45,7 +47,7 @@ class ReactiveFastDatabase private constructor(
    * @param listener
    */
   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-  internal constructor(name: String, version: Int, cursorListener: DatabaseCursorFactory.Listener?, listener: Corrupt?) : this(
+  internal constructor(name: String?, version: Int, cursorListener: DatabaseCursorFactory.Listener?, listener: Corrupt?) : this(
       name,
       DatabaseCursorFactory(cursorListener),
       version,
@@ -59,9 +61,7 @@ class ReactiveFastDatabase private constructor(
    */
   internal constructor(version: Int) : this(DEFAULT_NAME, version)
 
-  constructor(name: String, version: Int) : this(name, version, null, null)
-
-  constructor(): this("", 0, null, null)
+  constructor(name: String?, version: Int) : this(name, version, null, null)
 
   /**
    * @param tableCrud
@@ -69,17 +69,15 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  private fun <T : Identifiable<Int>> dropAsync(tableCrud: TableCrud<T, in SQLiteDatabase>, database: SQLiteDatabase): Single<Boolean> {
-    return Single.fromCallable { tableCrud.onDrop(database) }
-  }
+  private fun <T : Identifiable<Int>> dropAsync(tableCrud: TableCrud<T, in SQLiteDatabase>,
+                                                database: SQLiteDatabase): Single<Boolean> =
+      Single.fromCallable { tableCrud.onDrop(database) }
 
   /**
    * @param builder
    * @return
    */
-  fun queryAsync(builder: QueryBuilder): Single<Cursor> {
-    return Single.fromCallable { query(builder) }
-  }
+  fun queryAsync(builder: QueryBuilder): Single<Cursor> = Single.fromCallable { query(builder) }
 
   /**
    * @param tableCrud
@@ -87,12 +85,11 @@ class ReactiveFastDatabase private constructor(
    * @return
   </T> */
   @Throws(TableError::class)
-  override fun <T : Identifiable<Int>> readAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): ReactiveTable.Extras<T> {
-    return object : QueryExtras<T>(tableCrud, readableDatabase) {
-      override fun serialize(t: T): ContentValues = tableCrud.serialize(t)
-      override fun deserialize(cursor: Cursor): T = tableCrud.deserialize(cursor)
-    }
-  }
+  override fun <T : Identifiable<Int>> readAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): ReactiveTable.Extras<T> =
+      object : QueryExtras<T>(tableCrud, readableDatabase) {
+        override fun serialize(t: T): ContentValues = tableCrud.serialize(t)
+        override fun deserialize(cursor: Cursor): T = tableCrud.deserialize(cursor)
+      }
 
 
   /**
@@ -100,9 +97,8 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> readAllAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<IdentifiableList<out T>> {
-    return Maybe.fromCallable { findAll(tableCrud) }
-  }
+  override fun <T : Identifiable<Int>> readAllAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<IdentifiableList<out T>> =
+      Maybe.fromCallable { findAll(tableCrud) }
 
   /**
    * @param tableCrud
@@ -129,9 +125,8 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<Boolean> {
-    return Maybe.fromCallable { tableCrud.onUpdate(t, writableDatabase) }
-  }
+  override fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<Boolean> =
+      Maybe.fromCallable { tableCrud.onUpdate(t, writableDatabase) }
 
   /**
    * @param tableCrud
@@ -148,17 +143,15 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in SQLiteDatabase>, t: T): Maybe<Boolean> {
-    return Maybe.fromCallable { tableCrud.onDelete(t, writableDatabase) }
-  }
+  override fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in SQLiteDatabase>, t: T): Maybe<Boolean> =
+      Maybe.fromCallable { tableCrud.onDelete(t, writableDatabase) }
 
   /**
    * @param tableCrud
    * @return
    */
-  override fun deleteAsync(tableCrud: TableCrud<*, in SQLiteDatabase>): Maybe<Boolean> {
-    return Maybe.fromCallable { tableCrud.onDelete(writableDatabase) }
-  }
+  override fun deleteAsync(tableCrud: TableCrud<*, in SQLiteDatabase>): Maybe<Boolean> =
+      Maybe.fromCallable { tableCrud.onDelete(writableDatabase) }
 
   /**
    * @param tableCrud
@@ -167,9 +160,10 @@ class ReactiveFastDatabase private constructor(
    * @param <C>
    * @return
   </C> */
-  override fun <C> deleteAsync(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<C>, list: List<out C>): Maybe<Boolean> {
-    return Maybe.fromCallable { tableCrud.onDelete(writableDatabase, column, list) }
-  }
+  override fun <C> deleteAsync(tableCrud: TableCrud<*, in SQLiteDatabase>,
+                               column: Column<C>,
+                               list: List<out C>): Maybe<Boolean> =
+      Maybe.fromCallable { tableCrud.onDelete(writableDatabase, column, list) }
 
   /**
    * @param t
@@ -177,9 +171,8 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> saveAsync(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Single<Long> {
-    return Single.fromCallable { tableCrud.onSave(t, writableDatabase) }
-  }
+  override fun <T : Identifiable<Int>> saveAsync(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Single<Long> =
+      Single.fromCallable { tableCrud.onSave(t, writableDatabase) }
 
   /**
    * @param list
@@ -187,9 +180,8 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> saveAsync(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SQLiteDatabase>): Single<Boolean> {
-    return Single.fromCallable { tableCrud.onSave(list, writableDatabase) }
-  }
+  override fun <T : Identifiable<Int>> saveAsync(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SQLiteDatabase>): Single<Boolean> =
+      Single.fromCallable { tableCrud.onSave(list, writableDatabase) }
 
   /**
    * @return
@@ -208,15 +200,15 @@ class ReactiveFastDatabase private constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> getLastIdAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<Int> {
-    return Maybe.fromCallable { tableCrud.onGetLastId(readableDatabase) }
-  }
+  override fun <T : Identifiable<Int>> getLastIdAsync(tableCrud: TableCrud<T, in SQLiteDatabase>): Maybe<Int> =
+      Maybe.fromCallable { tableCrud.onGetLastId(readableDatabase) }
 
   /**
    * @param <T>
   </T> */
   private abstract inner class QueryExtras<T : Identifiable<Int>> internal constructor(private val tableCrud: TableCrud<T, in SQLiteDatabase>,
-                                                                                       private val database: SQLiteDatabase) : ReactiveTable.Extras<T>, DoubleConverter<T, Cursor, ContentValues> {
+                                                                                       private val database: SQLiteDatabase) :
+      ReactiveTable.Extras<T>, DoubleConverter<T, Cursor, ContentValues> {
     /**
      * @return
      */

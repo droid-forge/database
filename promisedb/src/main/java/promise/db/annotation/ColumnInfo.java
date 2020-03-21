@@ -20,7 +20,8 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Column {
+public @interface ColumnInfo {
   String name();
   boolean unique() default false;
+  boolean index() default false;
 }

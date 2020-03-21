@@ -17,12 +17,13 @@ import android.database.sqlite.SQLiteDatabase;
 
 import promise.commons.model.Identifiable;
 import promise.commons.model.List;
-import promise.commons.model.Result;
+import promise.commons.tx.PromiseResult;
 
 /**
  * @param <T>
  */
-public class CrudStore<T extends Identifiable<Integer>> implements Store<T, TableCrud<T, ? super SQLiteDatabase>, Throwable> {
+public class CrudStore<T extends Identifiable<Integer>>
+    implements Store<T, TableCrud<T, ? super SQLiteDatabase>, Throwable> {
   /**
    *
    */
@@ -42,7 +43,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
   @Override
   public void get(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
-      Result<StoreExtra<T>, Throwable> callBack) {
+      PromiseResult<StoreExtra<T>, Throwable> callBack) {
     StoreExtra.getExtras(crudStore.findAll(tsqLiteDatabaseTable), new StoreFilter<T>() {
       @SafeVarargs
       @Override
@@ -61,7 +62,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
   public void delete(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
-      Result<Boolean, Throwable> callBack) {
+      PromiseResult<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.delete(tsqLiteDatabaseTable, t));
     } catch (Throwable e) {
@@ -78,7 +79,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
   public void update(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
-      Result<Boolean, Throwable> callBack) {
+      PromiseResult<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.update(t, tsqLiteDatabaseTable));
     } catch (Throwable e) {
@@ -95,7 +96,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
   public void save(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
       T t,
-      Result<Boolean, Throwable> callBack) {
+      PromiseResult<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.save(t, tsqLiteDatabaseTable) > 0);
     } catch (Throwable e) {
@@ -110,7 +111,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
   @Override
   public void clear(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
-      Result<Boolean, Throwable> callBack) {
+      PromiseResult<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.delete(tsqLiteDatabaseTable));
     } catch (Throwable e) {
@@ -122,7 +123,7 @@ public class CrudStore<T extends Identifiable<Integer>> implements Store<T, Tabl
    * @param callBack
    */
   @Override
-  public void clear(Result<Boolean, Throwable> callBack) {
+  public void clear(PromiseResult<Boolean, Throwable> callBack) {
     try {
       callBack.response(crudStore.deleteAll());
     } catch (Throwable e) {

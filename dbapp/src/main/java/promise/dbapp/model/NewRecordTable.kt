@@ -27,12 +27,14 @@ class NewRecordTable(appDatabase: FastDatabase) : FastTable<NewRecord>(appDataba
   override val columns: List<out Column<*>>
     get() = List.fromArray(nameColumn, descColumn)
 
-  override fun deserialize(e: Cursor?): NewRecord {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  override fun deserialize(e: Cursor): NewRecord = NewRecord().apply {
+    toDoName = e.getString(nameColumn.index)
+    todoDesc = e.getString(descColumn.index)
   }
 
-  override fun serialize(t: NewRecord?): ContentValues {
-    TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+  override fun serialize(t: NewRecord): ContentValues = ContentValues().apply {
+    put(nameColumn.name, t.toDoName)
+    put(descColumn.name, t.todoDesc)
   }
 
   companion object {

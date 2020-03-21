@@ -17,7 +17,7 @@ package promise.db;
 import androidx.annotation.Nullable;
 
 import promise.commons.model.List;
-import promise.commons.model.Result;
+import promise.commons.tx.PromiseResult;
 
 /**
  * @param <T>
@@ -30,39 +30,39 @@ public interface Store<T, K, X extends Throwable> {
    * @param k
    * @param callBack
    */
-  void get(K k, Result<StoreExtra<T>, X> callBack);
+  void get(K k, PromiseResult<StoreExtra<T>, X> callBack);
 
   /**
    * @param k
    * @param t
    * @param callBack
    */
-  void delete(K k, T t, Result<Boolean, X> callBack);
+  void delete(K k, T t, PromiseResult<Boolean, X> callBack);
 
   /**
    * @param k
    * @param t
    * @param callBack
    */
-  void update(K k, T t, Result<Boolean, X> callBack);
+  void update(K k, T t, PromiseResult<Boolean, X> callBack);
 
   /**
    * @param k
    * @param t
    * @param callBack
    */
-  void save(K k, T t, Result<Boolean, X> callBack);
+  void save(K k, T t, PromiseResult<Boolean, X> callBack);
 
   /**
    * @param k
    * @param callBack
    */
-  void clear(K k, Result<Boolean, X> callBack);
+  void clear(K k, PromiseResult<Boolean, X> callBack);
 
   /**
    * @param callBack
    */
-  void clear(Result<Boolean, X> callBack);
+  void clear(PromiseResult<Boolean, X> callBack);
 
   interface StoreFilter<T> {
     <X> List<? extends T> filter(List<? extends T> list, X... x);
@@ -80,7 +80,7 @@ public interface Store<T, K, X extends Throwable> {
      */
     static <T, E extends Throwable> void getExtras(final List<? extends T> list,
                                                    StoreFilter<T> storeFilter,
-                                                   Result<StoreExtra<T>, E> callBack) {
+                                                   PromiseResult<StoreExtra<T>, E> callBack) {
       callBack.response(
           new StoreExtra<T>() {
             /**

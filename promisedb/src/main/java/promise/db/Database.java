@@ -21,8 +21,6 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Database {
-  String name() default "fast";
-
   int version() default 1;
 
   Class<? extends FastTable<?>>[] tables() default {};

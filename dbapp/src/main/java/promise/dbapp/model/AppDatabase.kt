@@ -14,21 +14,15 @@
 package promise.dbapp.model
 
 import android.database.sqlite.SQLiteDatabase
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
-import promise.commons.Promise
-import promise.commons.data.log.LogUtil
-import promise.commons.model.Result
-import promise.db.FastDatabase
-import promise.db.Migration
+import promise.commons.tx.PromiseResult
 import promise.db.Database
+import promise.db.FastDatabase
 import promise.db.FastDatabase.Companion.createDatabase
+import promise.db.FastDatabase.Companion.createInMemoryDatabase
+import promise.db.Migration
 import promise.model.IdentifiableList
 
 @Database(
-    name = "complex_db_name",
-    version = 2,
     tables = [
       ComplexRecordTable::class,
       NewRecordTable::class
@@ -36,24 +30,24 @@ import promise.model.IdentifiableList
 )
 object AppDatabase {
 
-  fun allComplexModels(result: Result<IdentifiableList<out ComplexRecord>, Throwable>) {
+  fun allComplexModels(result: PromiseResult<IdentifiableList<out ComplexRecord>, Throwable>) {
     val items = complexModelTable.findAll()
-    if (items.isEmpty()) {
-      saveSomeComplexModels(Result<Boolean, Throwable>()
-          .withCallBack {
-            allComplexModels(result)
-          })
-      return
-    }
-    result.response(items)
-   }
+    if (items.isEmpty()) saveSomeComplexModels(PromiseResult<Boolean, Throwable>()
+        .withCallback {
+          allComplexModels(result)
+        })
+    else result.response(items)
+  }
 
-  private fun saveSomeComplexModels(result: Result<Boolean, Throwable>) {
+  private fun saveSomeComplexModels(result: PromiseResult<Boolean, Throwable>) {
     complexModelTable.save(IdentifiableList(ComplexRecord.someModels()))
     result.response(true)
   }
+  // can also use in memory database, no name and no migrations
+  val inMemoryDatabase = createInMemoryDatabase(AppDatabase::class.java)
 
   val instance = createDatabase(AppDatabase::class.java,
+      "db_name",
       object : Migration {
         override fun onMigrate(database: FastDatabase,
                                sqLiteDatabase: SQLiteDatabase,

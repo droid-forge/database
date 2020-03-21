@@ -13,13 +13,11 @@
 package promise.db
 
 import android.annotation.TargetApi
-import android.content.Context
 import android.database.Cursor
 import android.database.DatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import androidx.collection.ArrayMap
-import promise.commons.Promise
 import promise.commons.data.log.LogUtil
 import promise.commons.makeInstance
 import promise.commons.model.Identifiable
@@ -35,21 +33,16 @@ import java.util.*
  */
 
 open class FastDatabase internal constructor(
-    name: String,
+    name: String?,
     factory: SQLiteDatabase.CursorFactory?,
     version: Int,
     errorHandler: DatabaseErrorHandler)
-  : FastDatabaseOpenHelper(Promise.instance().context(), name, factory, version, errorHandler),
+  : FastDatabaseOpenHelper(name, factory, version, errorHandler),
     Crud<SQLiteDatabase> {
 
   private val cacheMap: ArrayMap<String, Any> = ArrayMap()
 
   private var migration: Migration? = null
-
-  /**
-   *
-   */
-  private val context: Context
 
   /**
    * @param name
@@ -58,7 +51,7 @@ open class FastDatabase internal constructor(
    * @param listener
    */
   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-  private constructor(name: String,
+  private constructor(name: String?,
                       version: Int,
                       cursorListener: DatabaseCursorFactory.Listener?,
                       listener: Corrupt?) : this(
@@ -70,15 +63,8 @@ open class FastDatabase internal constructor(
         listener!!.onCorrupt()
       })
 
-  constructor(name: String, version: Int) : this(name, version, null, null)
+  constructor(name: String?, version: Int) : this(name, version, null, null)
 
-  constructor() : this("", 0, null, null)
-  /*private void initTables() {
-    indexCreatedTableHashMap = new ArrayMap<>();
-    List<Table<, SQLiteDatabase>> tables = Conditions.checkNotNull(tables());
-    for (int i = 0; i < tables.size(); i++)
-        indexCreatedTableHashMap.put(new IndexCreated(i, false), tables.get(i));
-  }*/
   /**
    * @param db
    */
@@ -91,7 +77,8 @@ open class FastDatabase internal constructor(
    */
   final override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
     LogUtil.d(TAG, "onUpgrade", oldVersion, newVersion)
-    if (newVersion - oldVersion == 1) onUpgradeDatabase(database, oldVersion, newVersion) else {
+    if (newVersion - oldVersion == 1)
+      onUpgradeDatabase(database, oldVersion, newVersion) else {
       var i = oldVersion
       while (i < newVersion) {
         onUpgradeDatabase(database, i, i + 1)
@@ -108,9 +95,7 @@ open class FastDatabase internal constructor(
    * @return
    */
   private fun onUpgradeDatabase(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-    if (migration != null) {
-      migration!!.onMigrate(this, database, oldVersion, newVersion)
-    }
+    if (migration != null) migration!!.onMigrate(this, database, oldVersion, newVersion)
   }
 
   /**
@@ -123,10 +108,9 @@ open class FastDatabase internal constructor(
   /**
    * @return
    */
-  protected fun tables(): List<TableCrud<*, in SQLiteDatabase>> {
-    if (tables == null) throw IllegalStateException("tables not found for this database")
-    return tables as List<TableCrud<*, in SQLiteDatabase>>
-  }
+  protected fun tables(): List<TableCrud<*, in SQLiteDatabase>> =
+      Conditions.checkNotNull(tables, "tables not found for this database")
+          as List<TableCrud<*, in SQLiteDatabase>>
 
   /**
    *
@@ -138,6 +122,10 @@ open class FastDatabase internal constructor(
         if (cacheMap.containsKey(table.tableName)) return cacheMap[table.tableName] as T
         val tableObject = makeInstance(tableClass.kotlin, arrayOf(this)) as T
         tableObject.setNameOfTable(table.tableName)
+        tableObject.setArgs(ArrayMap<String, Any>().apply {
+          put(INDEXES, table.indexes)
+          put(FOREIGN_kEYS, table.foreignKeys)
+        })
         cacheMap[table.tableName] = tableObject
         return tableObject
       }
@@ -161,13 +149,11 @@ open class FastDatabase internal constructor(
    */
   private fun create(database: SQLiteDatabase) {
     var created = true
-    for (table in Conditions.checkNotNull(tables())) {
-      created = try {
-        created && create(table, database)
-      } catch (dbError: DBError) {
-        LogUtil.e(TAG, dbError)
-        return
-      }
+    for (table in Conditions.checkNotNull(tables())) created = try {
+      created && create(table, database)
+    } catch (dbError: DBError) {
+      LogUtil.e(TAG, dbError)
+      return
     }
   }
 
@@ -177,19 +163,18 @@ open class FastDatabase internal constructor(
    * @param v2
    */
   private fun upgrade(database: SQLiteDatabase, v1: Int, v2: Int) {
-    for (table in Conditions.checkNotNull(tables())) {
-      try {
-        if (v2 - v1 == 1) checkTableExist(table).onUpgrade(database, v1, v2) else {
-          var i = v1
-          while (i < v2) {
-            checkTableExist(table).onUpgrade(database, i, i + 1)
-            i++
-          }
+    for (table in Conditions.checkNotNull(tables())) try {
+      if (v2 - v1 == 1)
+        checkTableExist(table).onUpgrade(database, v1, v2)
+      else {
+        var i = v1
+        while (i < v2) {
+          checkTableExist(table).onUpgrade(database, i, i + 1)
+          i++
         }
-      } catch (tableError: TableError) {
-        LogUtil.e(TAG, tableError)
-        return
       }
+    } catch (tableError: TableError) {
+      LogUtil.e(TAG, tableError)
     }
   }
 
@@ -276,18 +261,16 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in SQLiteDatabase>): TableCrud.Extras<T> {
-    return checkTableExist(tableCrud).onFind(readableDatabase)
-  }
+  override fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in SQLiteDatabase>): TableCrud.Extras<T> =
+      checkTableExist(tableCrud).onFind(readableDatabase)
 
   /**
    * @param tableCrud
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>): IdentifiableList<out T> {
-    return checkTableExist(tableCrud).onFindAll(readableDatabase, true)
-  }
+  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>): IdentifiableList<out T> =
+      checkTableExist(tableCrud).onFindAll(readableDatabase, true)
 
   /**
    * @param t
@@ -295,9 +278,8 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean {
-    return checkTableExist(tableCrud).onUpdate(t, writableDatabase)
-  }
+  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean =
+      checkTableExist(tableCrud).onUpdate(t, writableDatabase)
 
   /**
    * @param t
@@ -306,14 +288,13 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>, column: Column<*>): Boolean {
-    return try {
-      checkTableExist(tableCrud).onUpdate(t, writableDatabase, column)
-    } catch (tableError: TableError) {
-      LogUtil.e(TAG, "updateAsync error", tableError)
-      false
-    }
-  }
+  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>, column: Column<*>): Boolean =
+      try {
+        checkTableExist(tableCrud).onUpdate(t, writableDatabase, column)
+      } catch (tableError: TableError) {
+        LogUtil.e(TAG, "update error", tableError)
+        false
+      }
 
   /**
    * @param tableCrud
@@ -321,9 +302,9 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>, vararg columns: Column<*>): IdentifiableList<out T> {
-    return checkTableExist(tableCrud).onFindAll(readableDatabase, *columns)
-  }
+  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>,
+                                               vararg columns: Column<*>): IdentifiableList<out T> =
+      checkTableExist(tableCrud).onFindAll(readableDatabase, *columns)
 
   /**
    * @param tableCrud
@@ -331,26 +312,23 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in SQLiteDatabase>, t: T): Boolean {
-    return checkTableExist(tableCrud).onDelete(t, writableDatabase)
-  }
+  override fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in SQLiteDatabase>, t: T): Boolean =
+      checkTableExist(tableCrud).onDelete(t, writableDatabase)
 
   /**
    * @param tableCrud
    * @param column
    * @return
    */
-  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<*>): Boolean {
-    return checkTableExist(tableCrud).onDelete(writableDatabase, column)
-  }
+  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<*>): Boolean =
+      checkTableExist(tableCrud).onDelete(writableDatabase, column)
 
   /**
    * @param tableCrud
    * @return
    */
-  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>): Boolean {
-    return checkTableExist(tableCrud).onDelete(writableDatabase)
-  }
+  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>): Boolean =
+      checkTableExist(tableCrud).onDelete(writableDatabase)
 
   /**
    * @param tableCruds
@@ -370,9 +348,8 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T> delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<T>, list: List<out T>): Boolean {
-    return checkTableExist(tableCrud).onDelete(writableDatabase, column, list)
-  }
+  override fun <T> delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<T>, list: List<out T>): Boolean =
+      checkTableExist(tableCrud).onDelete(writableDatabase, column, list)
 
   /**
    * @param t
@@ -380,9 +357,8 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Long {
-    return checkTableExist(tableCrud).onSave(t, writableDatabase)
-  }
+  override fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Long =
+      checkTableExist(tableCrud).onSave(t, writableDatabase)
 
   /**
    * @param list
@@ -390,9 +366,8 @@ open class FastDatabase internal constructor(
    * @param <T>
    * @return
   </T> */
-  override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean {
-    return checkTableExist(tableCrud).onSave(list, writableDatabase)
-  }
+  override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean =
+      checkTableExist(tableCrud).onSave(list, writableDatabase)
 
   /**
    * @return
@@ -410,6 +385,17 @@ open class FastDatabase internal constructor(
   override fun getLastId(tableCrud: TableCrud<*, in SQLiteDatabase>): Int =
       checkTableExist(tableCrud).onGetLastId(readableDatabase)
 
+  inline fun transact(block: FastDatabase.() -> Unit) = synchronized(this) {
+    val db = writableDatabase
+    try {
+      db.beginTransaction()
+      block.invoke(this)
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+  }
+
   /**
    * @param tableCrud
    * @param <T>
@@ -421,27 +407,28 @@ open class FastDatabase internal constructor(
   companion object {
 
     private val dbCache: ArrayMap<String, FastDatabase> = ArrayMap()
+
     /**
      *
      */
     const val DEFAULT_NAME = "fast"
 
     @JvmOverloads
-    fun createDatabase(dbClass: Class<*>, migration: Migration? = null): FastDatabase {
+    fun createDatabase(dbClass: Class<*>, name: String, migration: Migration? = null): FastDatabase {
       val lock = Any()
       fun makeDatabase(dbClass: Class<*>): FastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
-          if (dbCache.containsKey(database.name)) return dbCache[database.name] as FastDatabase
+          if (dbCache.containsKey(name)) return dbCache[name] as FastDatabase
           val databaseObject = makeInstance(FastDatabase::class,
-              arrayOf(database.name, database.version)) as FastDatabase
+              arrayOf(name, database.version)) as FastDatabase
           val classList: List<Class<out FastTable<*>>> = List()
           database.tables.forEach {
             classList.add(it.java)
           }
           databaseObject.setTables<FastTable<*>>(classList)
           databaseObject.setMigration(migration)
-          dbCache[database.name] = databaseObject
+          dbCache[name] = databaseObject
           return databaseObject
         }
         throw IllegalArgumentException("The class must be annotated with @Database")
@@ -451,21 +438,63 @@ open class FastDatabase internal constructor(
       }
     }
 
-    fun createReactiveDatabase(dbClass: Class<*>, migration: Migration? = null): ReactiveFastDatabase {
+    fun createInMemoryDatabase(dbClass: Class<*>): FastDatabase {
+      val lock = Any()
+      fun makeDatabase(dbClass: Class<*>): FastDatabase {
+        if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
+          val database = dbClass.getAnnotation(Database::class.java)!!
+          val databaseObject = makeInstance(FastDatabase::class,
+              arrayOf(null, database.version)) as FastDatabase
+          val classList: List<Class<out FastTable<*>>> = List()
+          database.tables.forEach {
+            classList.add(it.java)
+          }
+          databaseObject.setTables<FastTable<*>>(classList)
+          return databaseObject
+        }
+        throw IllegalArgumentException("The class must be annotated with @Database")
+      }
+      return synchronized(lock) {
+        makeDatabase(dbClass)
+      }
+    }
+
+    fun createReactiveDatabase(dbClass: Class<*>,name: String, migration: Migration? = null): ReactiveFastDatabase {
       val lock = Any()
       fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
-          if (dbCache.containsKey(database.name)) return dbCache[database.name] as ReactiveFastDatabase
+          if (dbCache.containsKey(name)) return dbCache[name] as ReactiveFastDatabase
           val databaseObject = makeInstance(ReactiveFastDatabase::class,
-              arrayOf(database.name, database.version)) as ReactiveFastDatabase
+              arrayOf(name, database.version)) as ReactiveFastDatabase
           val classList: List<Class<out FastTable<*>>> = List()
           database.tables.forEach {
             classList.add(it.java)
           }
           databaseObject.setTables<FastTable<*>>(classList)
           databaseObject.setMigration(migration)
-          dbCache[database.name] = databaseObject
+          dbCache[name] = databaseObject
+          return databaseObject
+        }
+        throw IllegalArgumentException("The class must be annotated with @Database")
+      }
+      return synchronized(lock) {
+        makeDatabase(dbClass)
+      }
+    }
+
+    fun createInMemoryReactiveDatabase(dbClass: Class<*>): ReactiveFastDatabase {
+      val lock = Any()
+      fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
+        if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
+          val database = dbClass.getAnnotation(Database::class.java)!!
+          val databaseObject = makeInstance(ReactiveFastDatabase::class,
+              arrayOf(null, database.version)) as ReactiveFastDatabase
+          val classList: List<Class<out FastTable<*>>> = List()
+          database.tables.forEach {
+            classList.add(it.java)
+          }
+          databaseObject.setTables<FastTable<*>>(classList)
           return databaseObject
         }
         throw IllegalArgumentException("The class must be annotated with @Database")
@@ -481,7 +510,5 @@ open class FastDatabase internal constructor(
 
   init {
     LogUtil.d(TAG, "fast db init")
-    context = Promise.instance().context()
-    /*initTables();*/
   }
 }

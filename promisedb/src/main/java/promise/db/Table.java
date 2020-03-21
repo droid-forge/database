@@ -18,8 +18,64 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ *
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Table {
-  String tableName() default "";
+  /**
+   * @return
+   */
+  String tableName();
+
+  /**
+   * @return
+   */
+  Index[] indexes() default {};
+
+  /**
+   * @return
+   */
+  ForeignKey[] foreignKeys() default {};
+
+  /**
+   *
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface Index {
+    /**
+     * @return
+     */
+    String columnName() default "";
+
+    /**
+     * @return
+     */
+    boolean unique() default false;
+  }
+
+  /**
+   *
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface ForeignKey {
+    /**
+     * @return
+     */
+    String columnName();
+
+    /**
+     * @return
+     */
+    String referencedTableName();
+
+    /**
+     * @return
+     */
+    String referencedColumnName();
+  }
+
 }

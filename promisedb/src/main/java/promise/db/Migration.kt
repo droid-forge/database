@@ -15,7 +15,6 @@ package promise.db
 
 import android.database.sqlite.SQLiteDatabase
 
-
 interface Migration {
   fun onMigrate(database: FastDatabase,
                 sqLiteDatabase: SQLiteDatabase,

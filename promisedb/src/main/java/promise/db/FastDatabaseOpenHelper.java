@@ -17,25 +17,23 @@ import android.content.Context;
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
+
+import promise.commons.AndroidPromise;
+
 
 public abstract class FastDatabaseOpenHelper extends SQLiteOpenHelper {
-  public FastDatabaseOpenHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
-    super(context, name, factory, version);
 
-  }
+  private Context context;
 
-  public FastDatabaseOpenHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version, @Nullable DatabaseErrorHandler errorHandler) {
-    super(context, name, factory, version, errorHandler);
-  }
-
-  @RequiresApi(api = Build.VERSION_CODES.P)
-  public FastDatabaseOpenHelper(@Nullable Context context, @Nullable String name, int version, @NonNull SQLiteDatabase.OpenParams openParams) {
-    super(context, name, version, openParams);
+  public FastDatabaseOpenHelper(@Nullable String name,
+                                @Nullable SQLiteDatabase.CursorFactory factory,
+                                int version,
+                                @Nullable DatabaseErrorHandler errorHandler) {
+    super(AndroidPromise.instance().context(), name, factory, version, errorHandler);
+    this.context = AndroidPromise.instance().context();
   }
 
   @Override
