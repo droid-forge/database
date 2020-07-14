@@ -41,6 +41,19 @@ allprojects {
     }
 }
 
+subprojects { subProject ->
+
+    configurations.all { configuration ->
+        // Workaround for kapt bug with MPP dependencies
+        // https://youtrack.jetbrains.com/issue/KT-31641
+        // https://youtrack.jetbrains.com/issue/KT-33206
+        if (name.contains('kapt')) {
+            attributes.attribute(Usage.USAGE_ATTRIBUTE, subProject.objects.named(Usage.class, Usage.JAVA_RUNTIME))
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
+

@@ -11,8 +11,10 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/PromiseDatabase" />
+            <option value="$PROJECT_DIR$/androidpromisedatabase" />
+            <option value="$PROJECT_DIR$/androidpromisedatabasecompiler" />
             <option value="$PROJECT_DIR$/dbapp" />
-            <option value="$PROJECT_DIR$/promisedb" />
           </set>
         </option>
         <option name="resolveModulePerSourceSet" value="false" />

@@ -11,7 +11,10 @@
  * limitations under the License.
  */
 
-include  'dbapp', 'androidpromisedatabase'
-//include ':promisedatabase'
-include ':androidpromisedatabasecompiler'
-include ':PromiseDatabase'
+package promise.db.ompiler
+
+
+interface CodeBlockGenerator<out T> {
+  @Throws(Exception::class)
+  fun generate(): T
+}

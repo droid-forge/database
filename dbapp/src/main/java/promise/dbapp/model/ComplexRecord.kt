@@ -16,8 +16,10 @@ package promise.dbapp.model
 import android.os.Parcel
 import android.os.Parcelable
 import promise.commons.model.List
+import promise.db.Persistable
 import promise.model.TimeAware
 
+@Persistable("complex_records")
 class ComplexRecord constructor() : TimeAware() {
 
   var intVariable: Int? = null

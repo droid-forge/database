@@ -11,7 +11,11 @@
  * limitations under the License.
  */
 
-include  'dbapp', 'androidpromisedatabase'
-//include ':promisedatabase'
-include ':androidpromisedatabasecompiler'
-include ':PromiseDatabase'
+package promise.db.model;
+
+public interface ITimeAware {
+
+  void setCreatedAt(long createdAt);
+
+  void setUpdatedAt(long updatedAt);
+}

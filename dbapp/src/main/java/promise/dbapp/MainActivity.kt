@@ -60,5 +60,7 @@ class MainActivity : AppCompatActivity() {
       items = newRecordTable.findAll()
     }
     complex_values_textview.text = items.toString()
+
+
   }
 }

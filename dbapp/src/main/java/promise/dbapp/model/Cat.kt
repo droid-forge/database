@@ -11,7 +11,31 @@
  * limitations under the License.
  */
 
-include  'dbapp', 'androidpromisedatabase'
-//include ':promisedatabase'
-include ':androidpromisedatabasecompiler'
-include ':PromiseDatabase'
+package promise.dbapp.model
+
+import promise.commons.model.Identifiable
+import promise.db.Persistable
+import promise.db.Number
+import promise.db.PrimaryKeyAutoIncrement
+import promise.db.Varchar
+
+@Persistable(name = "cats")
+class Cat: Identifiable<Int> {
+    @Varchar(length = 20) var name: String? = null
+    @Number var age: Int? = null
+
+    var legs: Int? = null
+
+    var bodyType: String? = null
+
+    @PrimaryKeyAutoIncrement
+    var uid: Int? = null
+
+    override fun getId(): Int {
+        return uid!!
+    }
+
+    override fun setId(t: Int) {
+
+    }
+}

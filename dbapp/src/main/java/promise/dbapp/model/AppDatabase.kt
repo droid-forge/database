@@ -66,4 +66,5 @@ object AppDatabase {
   val newRecordTable: NewRecordTable by lazy {
     instance.obtain<NewRecordTable>(NewRecordTable::class.java)
   }
+
 }

@@ -11,7 +11,18 @@
  * limitations under the License.
  */
 
-include  'dbapp', 'androidpromisedatabase'
-//include ':promisedatabase'
-include ':androidpromisedatabasecompiler'
-include ':PromiseDatabase'
+package promise.db.criteria;
+
+
+import promise.db.QueryBuilder;
+
+public class NotExistsCriteria extends ExistsCriteria {
+  public NotExistsCriteria(QueryBuilder subQuery) {
+    super(subQuery);
+  }
+
+  @Override
+  public String build() {
+    return "NOT " + super.build();
+  }
+}

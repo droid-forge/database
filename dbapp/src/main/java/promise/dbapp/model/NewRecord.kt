@@ -15,8 +15,10 @@ package promise.dbapp.model
 
 import promise.commons.model.Identifiable
 import promise.commons.model.List
+import promise.db.Persistable
 
 // added when version of database is 1
+@Persistable(name = "new_records")
 class NewRecord : Identifiable<Int> {
   var pkId = 0
   override fun getId(): Int = pkId
