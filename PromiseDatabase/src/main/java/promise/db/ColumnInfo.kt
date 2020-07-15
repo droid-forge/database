@@ -14,7 +14,7 @@ package promise.db
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Varchar(val name: String = "",
+annotation class VarChar(val name: String = "",
                          val length: Int,
                          val nullable: Boolean = true,
                          val unique: Boolean = false,
@@ -37,12 +37,15 @@ annotation class Number(val name: String = "",
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class PrimaryKey(val name: String = "",
-                            val length: Int = 11)
+annotation class PrimaryKey(val name: String = "")
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Embedded(val prefix: String = "")
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Ignore
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
@@ -62,12 +65,12 @@ annotation class Real(val name: String = "",
                       val unique: Boolean = false,
                       val index: Boolean = false)
 
-enum class MigrationActions {
+enum class Migrations {
   CREATE, DROP
 }
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class MigrationAction(val from: Int,
-                                 val to: Int,
-                                 val action: MigrationActions)
+annotation class Migrate(val from: Int,
+                         val to: Int,
+                         val action: Migrations)

@@ -13,22 +13,66 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.*
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.UnknownHostException
 import java.util.*
-import kotlin.reflect.KClass
+import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
+import javax.tools.Diagnostic
+import kotlin.collections.HashMap
+import kotlin.reflect.jvm.internal.impl.name.FqName
+import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
 
-fun TypeName.isSameAs(javaClass: Class<*>): Boolean {
-
-  return this.toString() == javaClass.canonicalName ||
-      this.toString() == javaClass.kotlin.qualifiedName
+fun  wrap(c: Class<*>): ClassName? {
+  if (c == String::class.java) return STRING
+  return if (c.isPrimitive) PRIMITIVES_TO_WRAPPERS[c] else c.asClassName()
 }
 
-fun KClass<*>.boxedJava(): Class<*> {
-  if (this == Int::class) return Integer::class.java
-  return this.java
+private val PRIMITIVES_TO_WRAPPERS: Map<Class<*>, ClassName> = HashMap<Class<*>, ClassName>().apply {
+  put(Boolean::class.java, BOOLEAN)
+  put(Byte::class.java, BYTE)
+  put(Char::class.java, CHAR)
+  put(Double::class.java, DOUBLE)
+  put(Float::class.java, FLOAT)
+  put(Int::class.java, INT)
+  put(Integer::class.java, INT)
+  put(Long::class.java, LONG)
+  put(Short::class.java, SHORT)
+}
+
+fun TypeName.isSameAs(javaClass: Class<*>): Boolean {
+  return this.toString() == wrap(javaClass).toString()
+}
+
+fun TypeName.isSameAs2(processingEnvironment: ProcessingEnvironment, javaClass: Class<*>): Boolean {
+  processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "comparing \n: elem typeName ${this}, javaClass: ${javaClass.name} wrapClassName: ${wrap(javaClass)} ")
+  return this.toString() == wrap(javaClass).toString()
+}
+
+fun Element.toTypeName(): TypeName {
+  return this.asType().asTypeName().javaToKotlinType()
+}
+
+fun Element.javaToKotlinType(): TypeName =
+    asType().asTypeName().javaToKotlinType()
+
+fun TypeName.javaToKotlinType(): TypeName {
+  return if (this is ParameterizedTypeName) {
+    (rawType.javaToKotlinType() as ClassName).parameterizedBy(*typeArguments.map { it.javaToKotlinType() }.toTypedArray())
+  } else {
+    val className =
+        JavaToKotlinClassMap.INSTANCE.mapJavaToKotlin(FqName(toString()))
+            ?.asSingleFqName()?.asString()
+
+    return if (className == null) {
+      this
+    } else {
+      ClassName.bestGuess(className)
+    }
+  }
 }
 
 object Utils {

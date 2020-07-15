@@ -73,7 +73,7 @@ class ComplexRecordTable(database: FastDatabase) : FastTable<ComplexRecord>(data
 
   companion object {
     val intVariableColumn: Column<Int> = Column("int", Column.Type.INTEGER.NOT_NULL(), 1)
-    val floatVariableColumn: Column<Float> = Column("float", Column.Type.INTEGER.NOT_NULL(), 2)
+    val floatVariableColumn: Column<Float> = Column("float", Column.Type.INTEGER.UNIQUE(), 2)
     val doubleVariableColumn: Column<Double> = Column("double", Column.Type.INTEGER.NOT_NULL(), 3)
     val stringVariableColumn: Column<String> = Column("string", Column.Type.INTEGER.NOT_NULL(), 4)
     val flagVariableColumn: Column<String> = Column("flag", Column.Type.TEXT.NULLABLE(), 5)

@@ -14,22 +14,22 @@
 package promise.dbapp
 
 import promise.commons.model.Identifiable
-import promise.db.MigrationAction
-import promise.db.MigrationActions
+import promise.db.Migrate
+import promise.db.Migrations
 import promise.db.Persistable
 import promise.db.Number
 import promise.db.PrimaryKeyAutoIncrement
-import promise.db.Varchar
+import promise.db.VarChar
 import promise.dbapp.model.Cat
 
 @Persistable(name = "persons")
 class Person: Identifiable<Int> {
-    @Varchar(name = "nm", length = 40) var name: String? = null
+    @VarChar(name = "nm", length = 40) var name: String? = null
 
-    @MigrationAction(from = 2, to = 3, action = MigrationActions.DROP)
+    @Migrate(from = 2, to = 3, action = Migrations.DROP)
     @Number(name = "ag") var age: Int? = null
 
-    @MigrationAction(from = 1, to = 2, action = MigrationActions.CREATE)
+    @Migrate(from = 1, to = 2, action = Migrations.CREATE)
     var marks: Int? = null
 
     var cat: Cat? = null

@@ -20,8 +20,8 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.asClassName
-import promise.db.MigrationAction
-import promise.db.MigrationActions
+import promise.db.Migrate
+import promise.db.Migrations
 import javax.lang.model.element.Element
 
 class MigrationGenerator(
@@ -33,22 +33,26 @@ class MigrationGenerator(
 
   override fun generate(): FunSpec? {
     val migrateFields = elements.filter {
-      it.key.getAnnotation(MigrationAction::class.java) != null
+      it.key.getAnnotation(Migrate::class.java) != null
     }
     if (migrateFields.isEmpty()) return null
     val codeBlock = CodeBlock.builder()
         .addStatement("super.onUpgrade(x, v1, v2)")
 
     migrateFields.forEach {
-      val annotation = it.key.getAnnotation(MigrationAction::class.java)
-      if (annotation.action == MigrationActions.CREATE) {
+      val annotation = it.key.getAnnotation(Migrate::class.java)
+      if (annotation.action == Migrations.CREATE) {
         codeBlock.add("if (v1 == ${annotation.from} && v2 == ${annotation.to}) {\n")
+        codeBlock.indent()
         codeBlock.addStatement("addColumns(x, ${it.value})")
+        codeBlock.unindent()
         codeBlock.add("}\n")
       }
-     else if (annotation.action == MigrationActions.DROP) {
+     else if (annotation.action == Migrations.DROP) {
         codeBlock.add("if (v1 == ${annotation.from} && v2 == ${annotation.to}) {\n")
+        codeBlock.indent()
         codeBlock.addStatement("dropColumns(x, ${it.value})")
+        codeBlock.unindent()
         codeBlock.add("}\n")
       }
     }
@@ -62,7 +66,4 @@ class MigrationGenerator(
         .build()
   }
 
-  private fun generatePutStatement(typeVariable: String, columnName: String): String {
-    return "put(${columnName}.name, t.${typeVariable}) \n"
-  }
 }

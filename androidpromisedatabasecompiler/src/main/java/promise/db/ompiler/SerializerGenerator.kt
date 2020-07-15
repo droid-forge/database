@@ -48,7 +48,7 @@ class SerializerGenerator(
   }
 
   private fun generatePutStatement(typeVariable: String, columnName: String, varTypeName: TypeName): String {
-    if (varTypeName.isSameAs(Boolean::class.boxedJava())) {
+    if (varTypeName.isSameAs(Boolean::class.java)) {
       return "put(${columnName}.name, if (t.${typeVariable}) 1 else 0) \n"
     }
     return "put(${columnName}.name, t.${typeVariable}) \n"

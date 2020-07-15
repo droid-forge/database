@@ -16,14 +16,16 @@ package promise.dbapp.model
 import promise.commons.model.Identifiable
 import promise.db.Persistable
 import promise.db.Number
+import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
-import promise.db.Varchar
+import promise.db.VarChar
 
 @Persistable(name = "cats")
 class Cat: Identifiable<Int> {
-    @Varchar(length = 20) var name: String? = null
+    @VarChar(length = 20) var name: String? = null
     @Number var age: Int? = null
 
+    @PrimaryKey
     var legs: Int? = null
 
     var bodyType: String? = null

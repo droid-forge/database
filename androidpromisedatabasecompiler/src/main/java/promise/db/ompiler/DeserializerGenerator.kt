@@ -52,7 +52,7 @@ class DeserializerGenerator(
   }
 
   private fun generateSetStatement(varName: String, varType: TypeName, colName: String): String {
-    if (varType.isSameAs(Boolean::class.boxedJava())) {
+    if (varType.isSameAs(Boolean::class.java)) {
       return "$varName = e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1\n"
     }
     return "$varName = e.${getCursorReturn(varType)}(${colName}.getIndex(e))\n"
@@ -61,10 +61,10 @@ class DeserializerGenerator(
   private fun getCursorReturn(varType: TypeName): String {
     //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")
     return when {
-      varType.isSameAs(Int::class.boxedJava()) -> "getInt"
-      varType.isSameAs(Boolean::class.boxedJava()) -> "getInt"
-      varType.isSameAs(Double::class.boxedJava()) -> "getDouble"
-      varType.isSameAs(Float::class.boxedJava()) -> "getFloat"
+      varType.isSameAs(Int::class.java) -> "getInt"
+      varType.isSameAs(Boolean::class.java) -> "getInt"
+      varType.isSameAs(Double::class.java) -> "getDouble"
+      varType.isSameAs(Float::class.java) -> "getFloat"
       else -> "getString"
     }
   }

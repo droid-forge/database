@@ -19,7 +19,8 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.asTypeName
+import promise.db.Ignore
+import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
@@ -37,6 +38,7 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
 
   init {
     fileSpec.addImport("promise.db", "Column")
+
   }
 
   override fun generate(): Map<Pair<Element, String>, PropertySpec> {
@@ -44,13 +46,14 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
     filterPrimitiveElements(setElements.filter {
       it.kind.isField
     }).forEachIndexed { i, element ->
-      if (element.getAnnotation(PrimaryKeyAutoIncrement::class.java) != null) return@forEachIndexed
-      val colVariableName = "${element.simpleName}Column"
-      var variableClassType: TypeName? = null
-      variableClassType = element.asType().asTypeName()
-
+      if (element.getAnnotation(PrimaryKeyAutoIncrement::class.java) != null ||
+          element.getAnnotation(Ignore::class.java) != null) return@forEachIndexed
       val nameOfColumn = getNameOfColumn(element)
       if (nameOfColumn == "id") return@forEachIndexed
+
+      val colVariableName = "${element.simpleName}Column"
+      val variableClassType = element.toTypeName()
+      //processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "gen column : ${element.simpleName} type: $variableClassType")
 
       val parameterizedColumnTypeName = ClassName("promise.db", "Column")
           .parameterizedBy(variableClassType)
@@ -71,17 +74,17 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
   }
 
   private fun getNameOfColumn(element: Element): String {
-    //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "elemtype: "+element.asType().asTypeName().toString()+"\n")
+    //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "elemtype: "+element.toTypeName().toString()+"\n")
     //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "class type: "+Int::class.java.name+"\n")
     var name: String? = null
-    if ((element.asType().asTypeName().isSameAs(Int::class.boxedJava()) ||
-            element.asType().asTypeName().isSameAs(Float::class.boxedJava()) ||
-            element.asType().asTypeName().isSameAs(Double::class.boxedJava()) ||
-            element.asType().asTypeName().isSameAs(Boolean::class.boxedJava())) &&
+    if ((element.toTypeName().isSameAs(Int::class.java) ||
+            element.toTypeName().isSameAs(Float::class.java) ||
+            element.toTypeName().isSameAs(Double::class.java) ||
+            element.toTypeName().isSameAs(Boolean::class.java)) &&
         element.getAnnotation(promise.db.Number::class.java) != null) {
       name = element.getAnnotation(promise.db.Number::class.java).name
-    } else if (element.asType().asTypeName().isSameAs(String::class.boxedJava()) && element.getAnnotation(promise.db.Varchar::class.java) != null) {
-      name = element.getAnnotation(promise.db.Varchar::class.java).name
+    } else if (element.toTypeName().isSameAs(String::class.java) && element.getAnnotation(promise.db.VarChar::class.java) != null) {
+      name = element.getAnnotation(promise.db.VarChar::class.java).name
     }
     if (name != null && name.isNotEmpty()) return name
     return element.simpleName.toString()
@@ -89,12 +92,16 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
 
   private fun getColumnInitializer(element: Element): String {
     var str = "Column.Type"
-    if (element.asType().asTypeName().isSameAs(Int::class.boxedJava()) ||
-        element.asType().asTypeName().isSameAs(Float::class.boxedJava()) ||
-        element.asType().asTypeName().isSameAs(Double::class.boxedJava()) ||
-        element.asType().asTypeName().isSameAs(Boolean::class.boxedJava())) {
+    if (element.toTypeName().isSameAs(Int::class.java) ||
+        element.toTypeName().isSameAs(Integer::class.java) ||
+        element.toTypeName().isSameAs(Float::class.java) ||
+        element.toTypeName().isSameAs(Double::class.java) ||
+        element.toTypeName().isSameAs(Boolean::class.java)) {
       str += ".INTEGER"
-      if (element.getAnnotation(promise.db.Number::class.java) != null) {
+      if (element.getAnnotation(PrimaryKey::class.java) != null) {
+        str += ".PRIMARY_KEY()"
+      }
+      else if (element.getAnnotation(promise.db.Number::class.java) != null) {
         val annotation = element.getAnnotation(promise.db.Number::class.java)
         if (annotation.default != 0) {
           str += ".DEFAULT(${annotation.default})"
@@ -109,11 +116,13 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
         str += ".NULLABLE()"
       }
     }
-    else if (element.asType().asTypeName().isSameAs(String::class.boxedJava())) {
-      if (element.getAnnotation(promise.db.Varchar::class.java) != null) {
+    else if (element.toTypeName().isSameAs(String::class.java)) {
+      if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
-        val annotation = element.getAnnotation(promise.db.Varchar::class.java)
-        str += if (annotation.nullable && annotation.length != 0) {
+        val annotation = element.getAnnotation(promise.db.VarChar::class.java)
+        str += if (annotation.unique && annotation.length != 0) {
+          ".UNIQUE(${annotation.length})"
+        } else if (annotation.nullable && annotation.length != 0) {
           ".NULLABLE(${annotation.length})"
         } else if (!annotation.nullable && annotation.length != 0) {
           ".NOT_NULL(${annotation.length})"
@@ -140,12 +149,13 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
   }
 
   private fun filterPrimitiveElements(elements: List<Element>): List<Element> =  elements.filter {
+
     try {
-      it.asType().asTypeName().isSameAs(Int::class.boxedJava()) ||
-          it.asType().asTypeName().isSameAs(String::class.boxedJava())  ||
-          it.asType().asTypeName().isSameAs(Float::class.boxedJava()) ||
-          it.asType().asTypeName().isSameAs(Double::class.boxedJava()) ||
-          it.asType().asTypeName().isSameAs(Boolean::class.boxedJava())
+      it.toTypeName().isSameAs2(processingEnvironment,Int::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment,String::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment,Float::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment,Double::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment,Boolean::class.java)
     } catch (e: Throwable) {
       processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
           "FilterPrimitiveElement ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")

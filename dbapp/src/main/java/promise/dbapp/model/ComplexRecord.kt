@@ -16,22 +16,37 @@ package promise.dbapp.model
 import android.os.Parcel
 import android.os.Parcelable
 import promise.commons.model.List
+import promise.db.Ignore
+import promise.db.Migrate
+import promise.db.Migrations
+import promise.db.Number
 import promise.db.Persistable
+import promise.db.VarChar
 import promise.model.TimeAware
+import java.sql.Blob
 
 @Persistable("complex_records")
 class ComplexRecord constructor() : TimeAware() {
 
   var intVariable: Int? = null
 
+  @Number
   var floatVariable: Float? = null
 
+  @Ignore
   var doubleVariable: Double? = null
 
+  @VarChar(length = 244, unique = true)
   var stringVariable: String? = null
+
+  @Migrate(from = 1, to = 2, action = Migrations.CREATE)
+  var booleanVariable: Boolean = false
 
   // added new field
   var flagString: String? = null
+  @promise.db.Blob
+  var picBlob: Blob? = null
+
 
   constructor(source: Parcel) : this() {
     intVariable = source.readInt()
