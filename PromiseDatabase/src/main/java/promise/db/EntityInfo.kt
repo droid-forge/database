@@ -13,28 +13,28 @@
 
 package promise.db
 
+import kotlin.reflect.KClass
+
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Persistable(val name: String = "",
-                             /**
+annotation class AddedEntity(val fromVersion: Int,
+                             val toVersion: Int)
+
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Entity(val tableName: String = "",
+                        /**
                               * @return
                               */
-                             val indexes: Array<EntityIndex> = [],
-                             /**
-                              * @return
-                              */
-                             val foreignKeys: Array<EntityForeignKey> = []
+                             val compoundIndices: Array<CompoundIndex> = []
 ) {
   /**
    *
    */
-  @Target(AnnotationTarget.CLASS, AnnotationTarget.ANNOTATION_CLASS)
+  @Target(AnnotationTarget.FIELD)
   @Retention(AnnotationRetention.SOURCE)
-  annotation class EntityIndex(
-      /**
-       * @return
-       */
-      val columnName: String = "",
+  annotation class CompoundIndex(
+      val columns: Array<String>,
       /**
        * @return
        */
@@ -43,19 +43,24 @@ annotation class Persistable(val name: String = "",
   /**
    *
    */
-  @Target(AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.CLASS)
-  @Retention(AnnotationRetention.SOURCE)
-  annotation class EntityForeignKey(
-      /**
-       * @return
-       */
-      val columnName: String,
-      /**
-       * @return
-       */
-      val referencedTableName: String,
-      /**
-       * @return
-       */
-      val referencedColumnName: String)
+
 }
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Index(
+    /**
+     * @return
+     */
+    val unique: Boolean = false)
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class ForeignKey(
+    /**
+     * @return
+     */
+    val referencedEntity: KClass<*>,
+    /**
+     * @return
+     */
+    val referencedEntityColumnName: String = "id")

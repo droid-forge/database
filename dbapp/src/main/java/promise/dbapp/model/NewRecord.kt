@@ -15,11 +15,13 @@ package promise.dbapp.model
 
 import promise.commons.model.Identifiable
 import promise.commons.model.List
-import promise.db.Persistable
+import promise.db.AddedEntity
+import promise.db.Entity
 import promise.db.PrimaryKeyAutoIncrement
 
 // added when version of database is 1
-@Persistable(name = "new_records")
+@Entity(tableName = "new_records")
+@AddedEntity(fromVersion = 3, toVersion = 4)
 class NewRecord : Identifiable<Int> {
 
   @PrimaryKeyAutoIncrement

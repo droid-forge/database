@@ -20,7 +20,6 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
 import promise.commons.tx.PromiseResult
 import promise.dbapp.model.ComplexRecord
-import promise.dbapp.model.AppDatabase
 import promise.dbapp.model.NewRecord
 import promise.model.IdentifiableList
 
@@ -40,7 +39,10 @@ class MainActivity : AppCompatActivity() {
   override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
 
-    AppDatabase.allComplexModels(PromiseResult<IdentifiableList<out ComplexRecord>, Throwable>()
+    val generatedDatabase: AppDatabase = AppDatabase_Impl.createDatabase("gn")
+
+
+    generatedDatabase.allComplexModels(PromiseResult<IdentifiableList<out ComplexRecord>, Throwable>()
         .withCallback {
           if (it.isNotEmpty()) {
             complex_values_textview.text = it.toString()
@@ -49,11 +51,11 @@ class MainActivity : AppCompatActivity() {
         .withErrorCallback { complex_values_textview.text = it.message })
 
     clear_button.setOnClickListener {
-      AppDatabase.instance.deleteAll()
+      AppDatabase_Impl.getDatabaseInstance().deleteAll()
       complex_values_textview.text = ""
     }
 
-    val newRecordTable = AppDatabase.newRecordTable
+    val newRecordTable = generatedDatabase.newRecordTable()
     var items = newRecordTable.findAll()
     if (items.isEmpty()) {
       newRecordTable.save(IdentifiableList(NewRecord.someModels()))

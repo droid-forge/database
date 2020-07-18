@@ -13,6 +13,7 @@
 
 package promise.db.ompiler
 
+import com.google.auto.common.MoreTypes.asElement
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import java.io.PrintWriter
@@ -20,13 +21,24 @@ import java.io.StringWriter
 import java.net.UnknownHostException
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.AnnotationMirror
+import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
+import javax.lang.model.element.TypeElement
+import javax.lang.model.element.VariableElement
+import javax.lang.model.type.DeclaredType
+import javax.lang.model.type.MirroredTypeException
+import javax.lang.model.type.TypeKind
+import javax.lang.model.type.TypeMirror
+import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 import kotlin.collections.HashMap
-import kotlin.reflect.jvm.internal.impl.name.FqName
+import kotlin.reflect.KClass
 import kotlin.reflect.jvm.internal.impl.builtins.jvm.JavaToKotlinClassMap
+import kotlin.reflect.jvm.internal.impl.name.FqName
 
-fun  wrap(c: Class<*>): ClassName? {
+
+fun wrap(c: Class<*>): ClassName? {
   if (c == String::class.java) return STRING
   return if (c.isPrimitive) PRIMITIVES_TO_WRAPPERS[c] else c.asClassName()
 }
@@ -75,8 +87,95 @@ fun TypeName.javaToKotlinType(): TypeName {
   }
 }
 
+fun VariableElement.getClass(): KClass<*> {
+  val type = this.asType()
+  return when (type.kind) {
+    TypeKind.DECLARED -> Class.forName(type.toString()).kotlin
+    TypeKind.BOOLEAN -> Boolean::class
+    TypeKind.BYTE -> Byte::class
+    TypeKind.SHORT -> Short::class
+    TypeKind.INT -> Int::class
+    TypeKind.LONG -> Long::class
+    TypeKind.CHAR -> Char::class
+    TypeKind.FLOAT -> Float::class
+    TypeKind.DOUBLE -> Double::class
+    else -> throw Exception("Unknown type: $type, kind: ${type.kind}")
+  }
+}
+
+fun getAnnotationMirror(element: Element, annotationClass: Class<out Annotation?>): Optional<out AnnotationMirror?>? {
+  val annotationClassName = annotationClass.name
+  return element.annotationMirrors.stream()
+      .filter { m: AnnotationMirror? -> m!!.annotationType.toString() == annotationClassName }
+      .findFirst()
+}
+
+fun TypeMirror.asTypeElement(processingEnv: ProcessingEnvironment): TypeElement {
+  val typeUtils: Types = processingEnv.typeUtils
+  return (try {
+    typeUtils.asElement(this)
+  } catch (mte: MirroredTypeException) {
+    mte.typeMirror
+  }) as TypeElement
+}
+
 object Utils {
 
+  fun getAnnotationMirror(typeElement: TypeElement, clazz: Class<*>): AnnotationMirror? {
+    val clazzName = clazz.name
+    for (m in typeElement.annotationMirrors) {
+      if (m.annotationType.toString() == clazzName) {
+        return m
+      }
+    }
+    return null
+  }
+
+  fun getAnnotationValue(annotationMirror: AnnotationMirror, key: String): AnnotationValue? {
+    for ((key1, value) in annotationMirror.elementValues) {
+      if (key1!!.simpleName.toString() == key) {
+        return value
+      }
+    }
+    return null
+  }
+
+  fun classImplementsInterface(classElement: TypeElement, interfaceElement: TypeElement): Boolean {
+    for (interfaceType in classElement.interfaces) {
+      if ((interfaceType as DeclaredType).asElement() == interfaceElement) return true
+    }
+//    val classMethods: List<ExecutableElement> = getClassMethods(classElement)
+//    var implementsMethod: Boolean
+//    for (interfaceMethod in ElementFilter.methodsIn(interfaceElement.enclosedElements)) {
+//      implementsMethod = false
+//      for (classMethod in classMethods) {
+//        if (sameMethod(interfaceMethod, classMethod)) {
+//          implementsMethod = true
+//          classMethods.remove(classMethod)
+//          break
+//        }
+//      }
+//      if (!implementsMethod) {
+//        builder.processError(WebserviceapMessages.WEBSERVICEAP_METHOD_NOT_IMPLEMENTED(interfaceElement.simpleName, classElement.simpleName, interfaceMethod), interfaceMethod)
+//        return false
+//      }
+//    }
+    return true
+  }
+
+  fun isFromInterface(typeElement: TypeElement, interfaceName: String): Boolean {
+    for (anInterface in typeElement.interfaces) {
+      if (anInterface.toString() == interfaceName) {
+        return true
+      } else {
+        val isInterface = isFromInterface(asElement(anInterface) as TypeElement, interfaceName)
+        if (isInterface) {
+          return true
+        }
+      }
+    }
+    return false
+  }
 
   /**
    * Returns true if a and b are equal, including if they are both null.

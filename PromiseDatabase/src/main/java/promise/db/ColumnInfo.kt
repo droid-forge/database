@@ -12,9 +12,10 @@
  */
 package promise.db
 
+
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class VarChar(val name: String = "",
+annotation class VarChar(val columnName: String = "",
                          val length: Int,
                          val nullable: Boolean = true,
                          val unique: Boolean = false,
@@ -22,18 +23,18 @@ annotation class VarChar(val name: String = "",
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Text(val name: String = "",
+annotation class Text(val columnName: String = "",
                       val nullable: Boolean = true,
                       val unique: Boolean = false,
                       val index: Boolean = false)
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Number(val name: String = "",
+annotation class Number(val columnName: String = "",
                         val default: Int = 0,
-                         val nullable: Boolean = true,
-                         val unique: Boolean = false,
-                         val index: Boolean = false)
+                        val nullable: Boolean = true,
+                        val unique: Boolean = false,
+                        val index: Boolean = false)
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
@@ -53,24 +54,39 @@ annotation class PrimaryKeyAutoIncrement
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Blob(val name: String = "",
+annotation class Blob(val columnName: String = "",
                       val nullable: Boolean = true,
                       val unique: Boolean = false,
                       val index: Boolean = false)
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Real(val name: String = "",
+annotation class Real(val columnName: String = "",
                       val nullable: Boolean = true,
                       val unique: Boolean = false,
                       val index: Boolean = false)
 
-enum class Migrations {
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class OneToOne(val name: String = "")
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class ManyToOne(val name: String = "")
+
+enum class MigrationOptions {
   CREATE, DROP
 }
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Migrate(val from: Int,
-                         val to: Int,
-                         val action: Migrations)
+annotation class Migrate(val fromVersion: Int,
+                         val toVersion: Int,
+                         val action: MigrationOptions)
+
+
+
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Migrations(val values: Array<Migrate>)
+

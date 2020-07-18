@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler
+package promise.db.ompiler.migration
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
@@ -21,7 +21,9 @@ import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.asClassName
 import promise.db.Migrate
+import promise.db.MigrationOptions
 import promise.db.Migrations
+import promise.db.ompiler.CodeBlockGenerator
 import javax.lang.model.element.Element
 
 class MigrationGenerator(
@@ -31,29 +33,40 @@ class MigrationGenerator(
     fileSpec.addImport("android.content", "ContentValues")
   }
 
+  private fun buildMigration(codeBlock: CodeBlock.Builder, column: String, migration: Migrate) {
+    if (migration.action == MigrationOptions.CREATE) {
+      codeBlock.add("if (v1 == ${migration.fromVersion} && v2 == ${migration.toVersion}) {\n")
+      codeBlock.indent()
+      codeBlock.addStatement("addColumns(x, ${column})")
+      codeBlock.unindent()
+      codeBlock.add("}\n")
+    } else if (migration.action == MigrationOptions.DROP) {
+      codeBlock.add("if (v1 == ${migration.fromVersion} && v2 == ${migration.toVersion}) {\n")
+      codeBlock.indent()
+      codeBlock.addStatement("dropColumns(x, ${column})")
+      codeBlock.unindent()
+      codeBlock.add("}\n")
+    }
+  }
+
   override fun generate(): FunSpec? {
     val migrateFields = elements.filter {
-      it.key.getAnnotation(Migrate::class.java) != null
+      it.key.getAnnotation(Migrate::class.java) != null ||
+          it.key.getAnnotation(Migrations::class.java) != null
     }
     if (migrateFields.isEmpty()) return null
     val codeBlock = CodeBlock.builder()
         .addStatement("super.onUpgrade(x, v1, v2)")
 
     migrateFields.forEach {
-      val annotation = it.key.getAnnotation(Migrate::class.java)
-      if (annotation.action == Migrations.CREATE) {
-        codeBlock.add("if (v1 == ${annotation.from} && v2 == ${annotation.to}) {\n")
-        codeBlock.indent()
-        codeBlock.addStatement("addColumns(x, ${it.value})")
-        codeBlock.unindent()
-        codeBlock.add("}\n")
+      val migration = it.key.getAnnotation(Migrate::class.java)
+      if (migration != null) {
+        buildMigration(codeBlock, it.value, migration)
+        return@forEach
       }
-     else if (annotation.action == Migrations.DROP) {
-        codeBlock.add("if (v1 == ${annotation.from} && v2 == ${annotation.to}) {\n")
-        codeBlock.indent()
-        codeBlock.addStatement("dropColumns(x, ${it.value})")
-        codeBlock.unindent()
-        codeBlock.add("}\n")
+      val migrations = it.key.getAnnotation(Migrations::class.java)
+      migrations?.values?.forEach { m ->
+        buildMigration(codeBlock, it.value, m)
       }
     }
 

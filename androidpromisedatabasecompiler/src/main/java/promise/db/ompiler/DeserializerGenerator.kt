@@ -20,11 +20,9 @@ import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterSpec
 import com.squareup.kotlinpoet.TypeName
-import javax.annotation.processing.ProcessingEnvironment
 
 class DeserializerGenerator(
     private val fileSpec: FileSpec.Builder,
-    private val processingEnvironment: ProcessingEnvironment,
     private val typeDataTypePack: String,
     private val typeDataType: String,
     private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<FunSpec> {
@@ -34,14 +32,21 @@ class DeserializerGenerator(
   }
 
   override fun generate(): FunSpec {
-    var stmt =
-        "    return $typeDataType().apply { \n"
-
+    var stmt = """
+      try {
+      return $typeDataType().apply {
+    """
     columns.forEach {
       stmt += generateSetStatement(it.first.first, it.first.second, it.second)
     }
+    stmt += """
+      }
+    } catch(e: CursorIndexOutOfBoundsException) {
+      return $typeDataType()
+    }
+    """
 
-    stmt += "}"
+    fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
 
     return FunSpec.builder("deserialize")
         .addParameter(ParameterSpec("e", ClassName("android.database", "Cursor")))

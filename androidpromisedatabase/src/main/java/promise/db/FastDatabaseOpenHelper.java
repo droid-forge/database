@@ -49,6 +49,7 @@ public abstract class FastDatabaseOpenHelper extends SQLiteOpenHelper {
   @Override
   public final void onOpen(SQLiteDatabase db) {
     super.onOpen(db);
+    db.execSQL("PRAGMA foreign_keys = ON");
   }
 
   @Override

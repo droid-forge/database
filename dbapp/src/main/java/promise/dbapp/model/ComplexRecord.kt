@@ -18,14 +18,15 @@ import android.os.Parcelable
 import promise.commons.model.List
 import promise.db.Ignore
 import promise.db.Migrate
-import promise.db.Migrations
+import promise.db.MigrationOptions
 import promise.db.Number
-import promise.db.Persistable
+import promise.db.OneToOne
+import promise.db.Entity
 import promise.db.VarChar
 import promise.model.TimeAware
 import java.sql.Blob
 
-@Persistable("complex_records")
+@Entity("complex_records")
 class ComplexRecord constructor() : TimeAware() {
 
   var intVariable: Int? = null
@@ -39,7 +40,7 @@ class ComplexRecord constructor() : TimeAware() {
   @VarChar(length = 244, unique = true)
   var stringVariable: String? = null
 
-  @Migrate(from = 1, to = 2, action = Migrations.CREATE)
+  @Migrate(fromVersion = 1, toVersion = 2, action = MigrationOptions.CREATE)
   var booleanVariable: Boolean = false
 
   // added new field
@@ -47,6 +48,8 @@ class ComplexRecord constructor() : TimeAware() {
   @promise.db.Blob
   var picBlob: Blob? = null
 
+  @OneToOne
+  var cat: Cat? = null
 
   constructor(source: Parcel) : this() {
     intVariable = source.readInt()

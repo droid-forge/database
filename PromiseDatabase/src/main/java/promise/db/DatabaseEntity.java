@@ -11,13 +11,17 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler
+package promise.db;
 
-import com.squareup.kotlinpoet.FunSpec
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-class RelationsGenerator : CodeBlockGenerator<List<FunSpec>?> {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface DatabaseEntity {
+  int version() default 1;
 
-  override fun generate(): List<FunSpec>? {
-    TODO("Not yet implemented")
-  }
+  Class<?>[] persistableEntities();
 }

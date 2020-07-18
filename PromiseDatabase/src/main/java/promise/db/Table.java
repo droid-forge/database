@@ -34,6 +34,8 @@ public @interface Table {
    */
   Index[] indexes() default {};
 
+  CompoundIndex[] compoundIndexes() default {};
+
   /**
    * @return
    */
@@ -48,12 +50,18 @@ public @interface Table {
     /**
      * @return
      */
-    String columnName() default "";
+    String columnName();
+    ;
+  }
 
-    /**
-     * @return
-     */
+  /**
+   *
+   */
+  @Target(ElementType.TYPE)
+  @Retention(RetentionPolicy.RUNTIME)
+  @interface CompoundIndex {
     boolean unique() default false;
+    Index[] indexes() default {};
   }
 
   /**

@@ -13,6 +13,7 @@
 package promise.db
 
 import android.annotation.SuppressLint
+import android.app.ActionBar
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.SQLException
@@ -34,6 +35,7 @@ import promise.model.IdentifiableList
 import java.util.*
 
 internal const val INDEXES = "indexes"
+internal const val COMPOUND_INDEXES = "compound_indexes"
 internal const val FOREIGN_kEYS = "foreign_keys"
 
 /**
@@ -149,15 +151,32 @@ abstract class FastTable<T : Identifiable<Int>>
   final override val name: String
     get() = nameOfTable
 
-  private fun generateCreateIndexQuery(indexes: Array<Table.Index>): String {
+  private fun generateCompoundIndexQuery(index: Table.CompoundIndex): String {
     var columnNames = ""
     var indexSql = "("
+    val indexes = index.indexes
     indexes.forEachIndexed { i, index ->
       columnNames = if (i == indexes.size - 1) columnNames + index.columnName else "$columnNames${index.columnName}_"
       indexSql = if (i == indexes.size - 1) indexSql + index.columnName else "$indexSql${index.columnName}, "
     }
     indexSql = "$indexSql);"
-    return "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
+    return if (index.unique) {
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
+    }
+    else "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
+  }
+
+  private fun generateIndexQuery(index: Table.Index): String {
+    val indexSql = "(${index.columnName});"
+    return "CREATE INDEX IF NOT EXISTS idx_${index.columnName} ON $nameOfTable $indexSql"
+  }
+
+  fun addForeignKet(x: SQLiteDatabase,
+                    column: Column<*>,
+                    referenceTable: String,
+                    referenceColumn: Column<*>) {
+    val sql = "ALTER TABLE $name ADD FOREIGN KEY (${column.name}) REFERENCES $referenceTable(${referenceColumn.name});"
+    x.execSQL(sql)
   }
 
   /**
@@ -203,8 +222,10 @@ abstract class FastTable<T : Identifiable<Int>>
     try {
       LogUtil.d(TAG, sql)
       x.execSQL(sql)
-      val indexes = args[INDEXES] as Array<Table.Index>
-      if (!indexes.isNullOrEmpty()) addIndies(x, indexes)
+      val arrayOfCompoundIndices = args[COMPOUND_INDEXES] as Array<Table.CompoundIndex>
+      if (!arrayOfCompoundIndices.isNullOrEmpty()) addCompoundIndices(x, arrayOfCompoundIndices)
+      val arrayOfIndices = args[INDEXES] as Array<Table.Index>
+      if (!arrayOfIndices.isNullOrEmpty()) addIndices(x, arrayOfIndices)
     } catch (e: SQLException) {
       throw TableError(e)
     }
@@ -250,10 +271,20 @@ abstract class FastTable<T : Identifiable<Int>>
   }
 
   @Throws(TableError::class)
-  fun addIndies(database: SQLiteDatabase, indexes: Array<Table.Index>) {
-    val indexSql = generateCreateIndexQuery(indexes)
-    LogUtil.d(TAG, indexSql)
-    database.execSQL(indexSql)
+  fun addCompoundIndices(database: SQLiteDatabase, indexes: Array<Table.CompoundIndex>) {
+    indexes.forEach {
+      val indexSql = generateCompoundIndexQuery(it)
+      LogUtil.d(TAG, indexSql)
+      database.execSQL(indexSql)
+    }
+  }
+
+  fun addIndices(database: SQLiteDatabase, indexes: Array<Table.Index>) {
+    indexes.forEach {
+      val indexSql = generateIndexQuery(it)
+      LogUtil.d(TAG, indexSql)
+      database.execSQL(indexSql)
+    }
   }
 
   /**
@@ -462,7 +493,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param x readable sql database
    * @return an extras instance for more concise reads
    */
-  override fun onFind(x: SQLiteDatabase): TableCrud.Extras<T> =
+   override fun onFind(x: SQLiteDatabase): TableCrud.Extras<T> =
       object : QueryExtras<T>(x) {
         override fun serialize(t: T): ContentValues = this@FastTable.serialize(t)
         override fun deserialize(e: Cursor): T = this@FastTable.deserialize(e)

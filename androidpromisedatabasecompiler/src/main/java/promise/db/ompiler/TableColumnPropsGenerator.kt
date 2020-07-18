@@ -19,6 +19,7 @@ import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeName
+import com.squareup.kotlinpoet.jvm.jvmStatic
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
@@ -29,10 +30,10 @@ import javax.tools.Diagnostic
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class ColumnsGenerator(fileSpec: FileSpec.Builder,
-                       private val processingEnvironment: ProcessingEnvironment
-                       ,
-                       private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, PropertySpec>> {
+class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
+                                private val processingEnvironment: ProcessingEnvironment
+                                ,
+                                private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, PropertySpec>> {
 
   var genColValues: ArrayList<Pair<Pair<String, TypeName>, String>> = ArrayList()
 
@@ -60,6 +61,7 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
       val columnInitializer = getColumnInitializer(element)
 
       val spec = PropertySpec.builder(colVariableName, parameterizedColumnTypeName)
+          .jvmStatic()
           .initializer(CodeBlock.of("""
               Column<%T>("$nameOfColumn", $columnInitializer, %L)
             """.trimIndent(), variableClassType, i + 1)
@@ -82,9 +84,9 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
             element.toTypeName().isSameAs(Double::class.java) ||
             element.toTypeName().isSameAs(Boolean::class.java)) &&
         element.getAnnotation(promise.db.Number::class.java) != null) {
-      name = element.getAnnotation(promise.db.Number::class.java).name
+      name = element.getAnnotation(promise.db.Number::class.java).columnName
     } else if (element.toTypeName().isSameAs(String::class.java) && element.getAnnotation(promise.db.VarChar::class.java) != null) {
-      name = element.getAnnotation(promise.db.VarChar::class.java).name
+      name = element.getAnnotation(promise.db.VarChar::class.java).columnName
     }
     if (name != null && name.isNotEmpty()) return name
     return element.simpleName.toString()
@@ -100,8 +102,7 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
       str += ".INTEGER"
       if (element.getAnnotation(PrimaryKey::class.java) != null) {
         str += ".PRIMARY_KEY()"
-      }
-      else if (element.getAnnotation(promise.db.Number::class.java) != null) {
+      } else if (element.getAnnotation(promise.db.Number::class.java) != null) {
         val annotation = element.getAnnotation(promise.db.Number::class.java)
         if (annotation.default != 0) {
           str += ".DEFAULT(${annotation.default})"
@@ -115,8 +116,7 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
       } else {
         str += ".NULLABLE()"
       }
-    }
-    else if (element.toTypeName().isSameAs(String::class.java)) {
+    } else if (element.toTypeName().isSameAs(String::class.java)) {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
@@ -148,14 +148,14 @@ class ColumnsGenerator(fileSpec: FileSpec.Builder,
     return str
   }
 
-  private fun filterPrimitiveElements(elements: List<Element>): List<Element> =  elements.filter {
+  private fun filterPrimitiveElements(elements: List<Element>): List<Element> = elements.filter {
 
     try {
-      it.toTypeName().isSameAs2(processingEnvironment,Int::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment,String::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment,Float::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment,Double::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment,Boolean::class.java)
+      it.toTypeName().isSameAs2(processingEnvironment, Int::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment, String::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment, Float::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment, Double::class.java) ||
+          it.toTypeName().isSameAs2(processingEnvironment, Boolean::class.java)
     } catch (e: Throwable) {
       processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
           "FilterPrimitiveElement ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")

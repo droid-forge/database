@@ -14,30 +14,31 @@
 package promise.dbapp.model
 
 import promise.commons.model.Identifiable
-import promise.db.Entity
+import promise.db.*
 import promise.db.Number
-import promise.db.PrimaryKey
-import promise.db.PrimaryKeyAutoIncrement
-import promise.db.VarChar
 
-@Entity(tableName = "cats")
-class Cat: Identifiable<Int> {
-    @VarChar(length = 20) var name: String? = null
-    @Number var age: Int? = null
+@Entity(
+    tableName = "d",
+    compoundIndices = [
+      Entity.CompoundIndex(columns = ["a", "c"], unique = true)
+    ]
+)
+@AddedEntity(fromVersion = 5, toVersion = 6)
+class Dog : Identifiable<Int> {
 
-    @PrimaryKey
-    var legs: Int? = null
+  @VarChar(columnName = "c", length = 40, unique = true)
+  @Index(true)
+  var color: String? = null
 
-    var bodyType: String? = null
+  @Number(columnName = "a")
+  var age: Int? = null
 
-    @PrimaryKeyAutoIncrement
-    var uid: Int? = null
+  @PrimaryKeyAutoIncrement
+  var uid: Int? = null
 
-    override fun getId(): Int {
-        return uid!!
-    }
+  override fun getId(): Int = uid!!
 
-    override fun setId(t: Int) {
-
-    }
+  override fun setId(t: Int) {
+    this.uid = t
+  }
 }

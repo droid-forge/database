@@ -124,6 +124,7 @@ open class FastDatabase internal constructor(
         tableObject.setArgs(ArrayMap<String, Any>().apply {
           put(INDEXES, table.indexes)
           put(FOREIGN_kEYS, table.foreignKeys)
+          put(COMPOUND_INDEXES, table.compoundIndexes)
         })
         cacheMap[table.tableName] = tableObject
         return tableObject
@@ -373,7 +374,13 @@ open class FastDatabase internal constructor(
    */
   override fun deleteAll(): Boolean = synchronized(FastDatabase::class.java) {
     var deleted = true
-    for (table in Conditions.checkNotNull(tables())) deleted = deleted && delete(checkTableExist(table))
+    try {
+      writableDatabase.execSQL("PRAGMA foreign_keys = FALSE");
+      transact {
+        for (table in Conditions.checkNotNull(tables())) deleted = deleted && delete(checkTableExist(table))
+      }
+      writableDatabase.execSQL("PRAGMA foreign_keys = TRUE");
+    } catch (e: Exception) { }
     return deleted
   }
 
@@ -407,6 +414,7 @@ open class FastDatabase internal constructor(
 
     private val dbCache: ArrayMap<String, FastDatabase> = ArrayMap()
 
+    private val lock = Any()
     /**
      *
      */
@@ -414,7 +422,6 @@ open class FastDatabase internal constructor(
 
     @JvmOverloads
     fun createDatabase(dbClass: Class<*>, name: String, migration: Migration? = null): FastDatabase {
-      val lock = Any()
       fun makeDatabase(dbClass: Class<*>): FastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
@@ -438,7 +445,6 @@ open class FastDatabase internal constructor(
     }
 
     fun createInMemoryDatabase(dbClass: Class<*>): FastDatabase {
-      val lock = Any()
       fun makeDatabase(dbClass: Class<*>): FastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
@@ -459,7 +465,6 @@ open class FastDatabase internal constructor(
     }
 
     fun createReactiveDatabase(dbClass: Class<*>,name: String, migration: Migration? = null): ReactiveFastDatabase {
-      val lock = Any()
       fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
@@ -483,7 +488,6 @@ open class FastDatabase internal constructor(
     }
 
     fun createInMemoryReactiveDatabase(dbClass: Class<*>): ReactiveFastDatabase {
-      val lock = Any()
       fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
