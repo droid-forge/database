@@ -33,7 +33,6 @@ public @interface Table {
    * @return
    */
   Index[] indexes() default {};
-
   CompoundIndex[] compoundIndexes() default {};
 
   /**

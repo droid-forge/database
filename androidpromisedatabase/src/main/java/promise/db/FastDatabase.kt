@@ -43,6 +43,8 @@ open class FastDatabase internal constructor(
 
   private var migration: Migration? = null
 
+  private var databaseCreationCallback: DatabaseCreationCallback? = null
+
   /**
    * @param name
    * @param version
@@ -67,7 +69,13 @@ open class FastDatabase internal constructor(
   /**
    * @param db
    */
-  final override fun onCreate(db: SQLiteDatabase) = create(db)
+  final override fun onCreate(db: SQLiteDatabase) {
+    if (databaseCreationCallback != null) {
+      databaseCreationCallback!!.beforeCreate(db)
+      create(db)
+      databaseCreationCallback!!.afterCreate(db)
+    } else create(db)
+  }
 
   /**
    * @param database
@@ -84,7 +92,7 @@ open class FastDatabase internal constructor(
         i++
       }
     }
-    upgrade(database, oldVersion, newVersion)
+    upgradeTables(database, oldVersion, newVersion)
   }
 
   /**
@@ -144,6 +152,11 @@ open class FastDatabase internal constructor(
     this.migration = migration
   }
 
+  fun setDatabaseCreationCallback(creationCallback: DatabaseCreationCallback?): FastDatabase {
+    this.databaseCreationCallback = creationCallback
+    return this
+  }
+
   /**
    * @param database
    */
@@ -162,7 +175,7 @@ open class FastDatabase internal constructor(
    * @param v1
    * @param v2
    */
-  private fun upgrade(database: SQLiteDatabase, v1: Int, v2: Int) {
+  private fun upgradeTables(database: SQLiteDatabase, v1: Int, v2: Int) {
     for (table in Conditions.checkNotNull(tables())) try {
       if (v2 - v1 == 1)
         checkTableExist(table).onUpgrade(database, v1, v2)
@@ -421,6 +434,7 @@ open class FastDatabase internal constructor(
     const val DEFAULT_NAME = "fast"
 
     @JvmOverloads
+    @JvmStatic
     fun createDatabase(dbClass: Class<*>, name: String, migration: Migration? = null): FastDatabase {
       fun makeDatabase(dbClass: Class<*>): FastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
@@ -444,6 +458,7 @@ open class FastDatabase internal constructor(
       }
     }
 
+    @JvmStatic
     fun createInMemoryDatabase(dbClass: Class<*>): FastDatabase {
       fun makeDatabase(dbClass: Class<*>): FastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
@@ -464,7 +479,12 @@ open class FastDatabase internal constructor(
       }
     }
 
-    fun createReactiveDatabase(dbClass: Class<*>,name: String, migration: Migration? = null): ReactiveFastDatabase {
+    @JvmOverloads
+    @JvmStatic
+    fun createReactiveDatabase(dbClass: Class<*>,
+                               name: String,
+                               migration: Migration? = null,
+                               databaseCreationCallback: DatabaseCreationCallback? = null): ReactiveFastDatabase {
       fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
@@ -477,6 +497,7 @@ open class FastDatabase internal constructor(
           }
           databaseObject.setTables<FastTable<*>>(classList)
           databaseObject.setMigration(migration)
+          databaseObject.setDatabaseCreationCallback(databaseCreationCallback)
           dbCache[name] = databaseObject
           return databaseObject
         }
@@ -487,7 +508,10 @@ open class FastDatabase internal constructor(
       }
     }
 
-    fun createInMemoryReactiveDatabase(dbClass: Class<*>): ReactiveFastDatabase {
+    @JvmOverloads
+    @JvmStatic
+    fun createInMemoryReactiveDatabase(dbClass: Class<*>,
+                                       databaseCreationCallback: DatabaseCreationCallback? = null): ReactiveFastDatabase {
       fun makeDatabase(dbClass: Class<*>): ReactiveFastDatabase {
         if (ClassUtil.hasAnnotation(dbClass, Database::class.java)) {
           val database = dbClass.getAnnotation(Database::class.java)!!
@@ -498,6 +522,7 @@ open class FastDatabase internal constructor(
             classList.add(it.java)
           }
           databaseObject.setTables<FastTable<*>>(classList)
+          databaseObject.setDatabaseCreationCallback(databaseCreationCallback)
           return databaseObject
         }
         throw IllegalArgumentException("The class must be annotated with @Database")

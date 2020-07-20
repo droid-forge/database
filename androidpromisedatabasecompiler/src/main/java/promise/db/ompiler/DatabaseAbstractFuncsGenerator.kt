@@ -13,11 +13,13 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeVariableName
+import com.squareup.javapoet.WildcardTypeName
+import org.jetbrains.annotations.NotNull
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
@@ -29,12 +31,11 @@ import javax.tools.Diagnostic
 
 
 class DatabaseAbstractFuncsGenerator(
-    private val fileSpec: FileSpec.Builder,
     private val element: TypeElement,
-    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<List<FunSpec>?> {
+    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<List<MethodSpec>?> {
 
 
-  override fun generate(): List<FunSpec>? {
+  override fun generate(): List<MethodSpec>? {
     val enclosedElements: List<Element?> = element.enclosedElements
     val methods: MutableList<ExecutableElement> = ArrayList(ElementFilter.methodsIn(enclosedElements))
 
@@ -42,10 +43,17 @@ class DatabaseAbstractFuncsGenerator(
       it.modifiers.contains(Modifier.ABSTRACT)
     }
     //if (abstractFunctions.isNullOrEmpty()) return null
-    val funSpecs = ArrayList<FunSpec>()
+    val funSpecs = ArrayList<MethodSpec>()
 
     val entityClasses = element.getTableEntities(processingEnv)
 
+    val gen = """
+      @NotNull
+    @Override
+    public PersonFastTable getPersonFastTable() {
+        return getDatabaseInstance().obtain(PersonFastTable.class);
+    }
+    """.trimIndent()
     abstractFunctions.filter {
       it.parameters.isEmpty() && it.returnType.kind != TypeKind.VOID
     }.forEach { method ->
@@ -55,30 +63,67 @@ class DatabaseAbstractFuncsGenerator(
       val typeElement = returnType.asTypeElement(processingEnv)
       val returnTypeName = method.returnType.toString()
       val pack = processingEnv.elementUtils.getPackageOf(typeElement).toString()
-      //processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "ReturnType: $pack $returnTypeName")
-      val className = ClassName(pack, returnTypeName)
-      funSpecs.add(FunSpec.builder(methodName.toString())
-          .addModifiers(KModifier.OVERRIDE)
-          //.returns(className)
-          .addCode(CodeBlock.of("return getDatabaseInstance().obtain<${className}>(${className}::class.java)"))
+      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "ReturnType: $pack $returnTypeName")
+      val className = ClassName.get(getPackage(element, returnTypeName), returnTypeName)
+      funSpecs.add(MethodSpec.methodBuilder(methodName.toString())
+          .addAnnotation(Override::class.java)
+          .addAnnotation(NotNull::class.java)
+          .addModifiers(Modifier.PUBLIC)
+          .returns(className)
+          .addCode(CodeBlock.builder()
+              .addStatement("return getDatabaseInstance().obtain(${className}.class)")
+              .build())
           .build())
-      //fileSpec.addImport(ClassName.bestGuess(returnTypeName))
-      // val tableClassNameStrings = entityClasses.map { it.getTableName() }
 
-//      if (tableClassNameStrings.contains(returnTypeName)) {
-//        """
-//          override fun getPersonFastTable(): PersonFastTable {
-//            return getDatabaseInstance().obtain<PersonFastTable>(PersonFastTable::class.java)
-//          }
-//        """.trimIndent()
-//        funSpecs.add(FunSpec.builder(methodName.toString())
-//            .addModifiers(KModifier.OVERRIDE)
-//            .returns(ClassName.bestGuess(returnTypeName))
-//            .addCode(CodeBlock.of("return getDatabaseInstance().obtain<${returnTypeName}>(${returnTypeName}::class.java)"))
-//            .build())
-//      }
     }
+
+    val codeBlock = CodeBlock.builder()
+    element.getTableEntities(processingEnv).forEach {
+      JavaUtils.generateIfStatementObtainClassString(processingEnv, codeBlock, it)
+    }
+    codeBlock.addStatement("throw new IllegalArgumentException(entityClass.getCanonicalName() + \"not registered with this database\")")
+
+    /**
+     * @Override
+    @NotNull
+    public <T extends Identifiable<Integer>> FastTable<T> getTable(Class<? extends T> entityClass) throws IllegalArgumentException {
+    if (entityClass == Person.class) return getDatabaseInstance().obtain(PersonFastTable.class);
+    if (entityClass == Exam.class) return getDatabaseInstance().obtain(ExamFastTable.class);
+    throw new IllegalArgumentException(entityClass.getCanonicalName() + "not registered with this database");
+    }
+     */
+    val typeVariable: TypeVariableName? = TypeVariableName.get("T").withBounds(
+        ParameterizedTypeName.get(
+            ClassName.get("promise.commons.model", "Identifiable"),
+            ClassName.get(Integer::class.java)))
+    funSpecs.add(MethodSpec.methodBuilder("getTable")
+        .addTypeVariable(typeVariable)
+        .addParameter(ParameterizedTypeName.get(ClassName.get(Class::class.java),
+            WildcardTypeName.subtypeOf(TypeVariableName.get("T"))
+        ), "entityClass")
+        .addAnnotation(Override::class.java)
+        .addAnnotation(NotNull::class.java)
+        .addException(IllegalArgumentException::class.java)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .returns(ParameterizedTypeName.get(ClassName.get("promise.db", "FastTable"), TypeVariableName.get("T")))
+        .addCode(codeBlock.build())
+        .build())
+
     return funSpecs
+  }
+
+  private var entities: Array<TypeElement> = emptyArray()
+
+  private fun getPackage(element: TypeElement, returnTypeName: String): String {
+    if (entities.isEmpty()) entities = element.getTableEntities(processingEnv)
+    var pack = ""
+    entities.forEach {
+      if (returnTypeName == it.getClassName()) {
+        pack = processingEnv.elementUtils.getPackageOf(it).toString()
+      }
+    }
+    return pack
+
   }
 
 

@@ -13,26 +13,40 @@
 
 package promise.db.ompiler.migration
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.asClassName
+import com.squareup.javapoet.AnnotationSpec
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterSpec
+import org.jetbrains.annotations.NotNull
 import promise.db.Migrate
 import promise.db.MigrationOptions
 import promise.db.Migrations
 import promise.db.ompiler.CodeBlockGenerator
 import javax.lang.model.element.Element
+import javax.lang.model.element.Modifier
 
 class MigrationGenerator(
-    fileSpec: FileSpec.Builder,
-    private val elements: Map<Element, String>) : CodeBlockGenerator<FunSpec?> {
+    private val elements: Map<Element, String>) : CodeBlockGenerator<MethodSpec?> {
   init {
-    fileSpec.addImport("android.content", "ContentValues")
+    //fileSpec.addImport("android.content", "ContentValues")
   }
 
+  /**
+   * @Override
+  public void onUpgrade(@NotNull SQLiteDatabase x, int v1, int v2) throws TableError {
+  super.onUpgrade(x, v1, v2);
+  if (v1 == 3 && v2 == 4) {
+  dropColumns(x, ageColumn);
+  }
+  if (v1 == 4 && v2 == 5) {
+  addColumns(x, marksColumn);
+  }
+  if (v1 == 7 && v2 == 8) {
+  dropColumns(x, marksColumn);
+  }
+  }
+   */
   private fun buildMigration(codeBlock: CodeBlock.Builder, column: String, migration: Migrate) {
     if (migration.action == MigrationOptions.CREATE) {
       codeBlock.add("if (v1 == ${migration.fromVersion} && v2 == ${migration.toVersion}) {\n")
@@ -49,7 +63,7 @@ class MigrationGenerator(
     }
   }
 
-  override fun generate(): FunSpec? {
+  override fun generate(): MethodSpec? {
     val migrateFields = elements.filter {
       it.key.getAnnotation(Migrate::class.java) != null ||
           it.key.getAnnotation(Migrations::class.java) != null
@@ -70,11 +84,16 @@ class MigrationGenerator(
       }
     }
 
-    return FunSpec.builder("onUpgrade")
-        .addParameter(ParameterSpec("x", ClassName("android.database.sqlite", "SQLiteDatabase")))
-        .addParameter(ParameterSpec("v1", Int::class.asClassName()))
-        .addParameter(ParameterSpec("v2", Int::class.asClassName()))
-        .addModifiers(KModifier.OVERRIDE)
+    return MethodSpec.methodBuilder("onUpgrade")
+        .addParameter(
+            ClassName.get("android.database.sqlite", "SQLiteDatabase")
+                .annotated(AnnotationSpec.builder(NotNull::class.java).build()),
+            "x")
+        .addParameter(Integer::class.javaPrimitiveType, "v1")
+        .addParameter(Integer::class.javaPrimitiveType, "v2")
+        .addAnnotation(Override::class.java)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .addException(ClassName.get("promise.db", "TableError"))
         .addCode(codeBlock.build())
         .build()
   }

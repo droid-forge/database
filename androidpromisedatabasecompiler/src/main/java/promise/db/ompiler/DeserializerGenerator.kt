@@ -13,60 +13,84 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterSpec
-import com.squareup.kotlinpoet.TypeName
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.TypeName
+import javax.lang.model.element.Modifier
 
 class DeserializerGenerator(
-    private val fileSpec: FileSpec.Builder,
     private val typeDataTypePack: String,
     private val typeDataType: String,
-    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<FunSpec> {
+    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<MethodSpec> {
 
   init {
     //fileSpec.addImport(ClassName("android.database", "Cursor"))
   }
 
-  override fun generate(): FunSpec {
+  override fun generate(): MethodSpec {
     var stmt = """
       try {
-      return $typeDataType().apply {
-    """
+        $typeDataType v1 = new $typeDataType();
+        
+    """.trimIndent()
     columns.forEach {
       stmt += generateSetStatement(it.first.first, it.first.second, it.second)
     }
     stmt += """
-      }
-    } catch(e: CursorIndexOutOfBoundsException) {
-      return $typeDataType()
+      return v1;      
+    } catch(android.database.CursorIndexOutOfBoundsException ex) {
+      promise.commons.data.log.LogUtil.e(TAG, "deserialize", ex);
+      return new $typeDataType();
     }
-    """
+    """.trimIndent()
 
-    fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
+    //fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
 
-    return FunSpec.builder("deserialize")
-        .addParameter(ParameterSpec("e", ClassName("android.database", "Cursor")))
-        .addModifiers(KModifier.OVERRIDE)
-        .returns(ClassName(typeDataTypePack, typeDataType))
+    val gen = """
+      @Override
+  public Person deserialize(Cursor cursor) {
+    try {
+      Person person = new Person();
+      person.setAge(cursor.getInt(ageColumn.getIndex(cursor)));
+      person.setMarks(cursor.getInt(marksColumn.getIndex(cursor)));
+      person.setName(cursor.getString(nameColumn.getIndex(cursor)));
+      person.setAdult(cursor.getInt(isAdultColumn.getIndex(cursor)) == 1);
+      return person;
+    } catch (CursorIndexOutOfBoundsException ex) {
+      LogUtil.e(TAG, "deserialize", ex);
+      return new Person();
+    }
+  }
+    """.trimIndent()
+
+    return MethodSpec.methodBuilder("deserialize")
+        .addParameter(ClassName.get("android.database", "Cursor"),"e")
+        .addAnnotation(Override::class.java)
+        .addModifiers(Modifier.PUBLIC)
+        .returns(ClassName.get(typeDataTypePack, typeDataType))
         .addCode(CodeBlock.of(stmt))
         .build()
   }
 
+  /**
+   * person.setAge(cursor.getInt(ageColumn.getIndex(cursor)));
+   */
   private fun generateSetStatement(varName: String, varType: TypeName, colName: String): String {
     if (varType.isSameAs(Boolean::class.java)) {
-      return "$varName = e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1\n"
+      return " v1.set${capitalizeFirst(varName)}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1);\n"
     }
-    return "$varName = e.${getCursorReturn(varType)}(${colName}.getIndex(e))\n"
+    return " v1.set${capitalizeFirst(varName)}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
+  }
+
+  private fun capitalizeFirst(varname: String): String {
+    return varname.replace(varname.first(), varname.first().toUpperCase())
   }
 
   private fun getCursorReturn(varType: TypeName): String {
     //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")
     return when {
-      varType.isSameAs(Int::class.java) -> "getInt"
+      varType.isSameAs(Integer::class.java) -> "getInt"
       varType.isSameAs(Boolean::class.java) -> "getInt"
       varType.isSameAs(Double::class.java) -> "getDouble"
       varType.isSameAs(Float::class.java) -> "getFloat"

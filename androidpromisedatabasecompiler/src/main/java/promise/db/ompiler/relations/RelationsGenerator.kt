@@ -13,8 +13,7 @@
 
 package promise.db.ompiler.relations
 
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
+import com.squareup.javapoet.MethodSpec
 import promise.db.ManyToOne
 import promise.db.OneToOne
 import promise.db.ompiler.CodeBlockGenerator
@@ -25,14 +24,13 @@ import javax.tools.Diagnostic
 import kotlin.collections.ArrayList
 
 class RelationsGenerator(
-    fileSpec: FileSpec.Builder,
     private val processingEnvironment: ProcessingEnvironment
     ,
     private val setElements: List<Element>
-) : CodeBlockGenerator<List<FunSpec>?> {
+) : CodeBlockGenerator<List<MethodSpec>?> {
 
-  override fun generate(): List<FunSpec>? {
-    val funSpecs = ArrayList<FunSpec>()
+  override fun generate(): List<MethodSpec>? {
+    val funSpecs = ArrayList<MethodSpec>()
     filterNotPrimitiveElements(setElements.filter {
       it.kind.isField
     }).also {

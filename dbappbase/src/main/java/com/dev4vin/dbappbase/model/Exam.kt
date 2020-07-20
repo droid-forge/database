@@ -11,13 +11,28 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
+package com.dev4vin.dbappbase.model
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+import promise.commons.model.Identifiable
+import promise.db.*
+import promise.db.Number
+
+@Entity(
+    tableName = "exams"
+)
+class Exam : Identifiable<Int> {
+
+  @Index(true)
+  var name: String? = null
+
+  var type: String? = null
+
+  @PrimaryKeyAutoIncrement
+  var uid: Int? = null
+
+  override fun getId(): Int = uid!!
+
+  override fun setId(t: Int) {
+    this.uid = t
+  }
 }
-
-sourceCompatibility = "8"
-targetCompatibility = "8"

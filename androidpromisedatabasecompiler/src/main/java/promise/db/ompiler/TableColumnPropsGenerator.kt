@@ -13,37 +13,37 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeName
-import com.squareup.kotlinpoet.jvm.jvmStatic
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.Modifier
 import javax.tools.Diagnostic
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
+class TableColumnPropsGenerator(
+                                private val classBuilder: TypeSpec.Builder,
                                 private val processingEnvironment: ProcessingEnvironment
                                 ,
-                                private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, PropertySpec>> {
+                                private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, FieldSpec>> {
 
   var genColValues: ArrayList<Pair<Pair<String, TypeName>, String>> = ArrayList()
 
   init {
-    fileSpec.addImport("promise.db", "Column")
-
+    //fileSpec.addImport("promise.db", "Column")
   }
 
-  override fun generate(): Map<Pair<Element, String>, PropertySpec> {
-    val map = HashMap<Pair<Element, String>, PropertySpec>()
+  override fun generate(): Map<Pair<Element, String>, FieldSpec> {
+    val map = HashMap<Pair<Element, String>, FieldSpec>()
     filterPrimitiveElements(setElements.filter {
       it.kind.isField
     }).forEachIndexed { i, element ->
@@ -56,15 +56,18 @@ class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
       val variableClassType = element.toTypeName()
       //processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "gen column : ${element.simpleName} type: $variableClassType")
 
-      val parameterizedColumnTypeName = ClassName("promise.db", "Column")
-          .parameterizedBy(variableClassType)
+      val parameterizedColumnTypeName = ParameterizedTypeName.get(ClassName.get("promise.db", "Column"), variableClassType)
+
       val columnInitializer = getColumnInitializer(element)
 
-      val spec = PropertySpec.builder(colVariableName, parameterizedColumnTypeName)
-          .jvmStatic()
+      val gen = """
+        public static Column<String> nameColumn = new Column<>("n", Column.Type.VARCHAR.UNIQUE(40), 1);
+      """.trimIndent()
+      val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
+          .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
           .initializer(CodeBlock.of("""
-              Column<%T>("$nameOfColumn", $columnInitializer, %L)
-            """.trimIndent(), variableClassType, i + 1)
+              new Column<${variableClassType}>("$nameOfColumn", $columnInitializer, ${i + 1})
+            """.trimIndent())
           )
           .build()
       map[Pair(element, colVariableName)] = spec
@@ -79,7 +82,7 @@ class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
     //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "elemtype: "+element.toTypeName().toString()+"\n")
     //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "class type: "+Int::class.java.name+"\n")
     var name: String? = null
-    if ((element.toTypeName().isSameAs(Int::class.java) ||
+    if ((element.toTypeName().isSameAs(Integer::class.java) ||
             element.toTypeName().isSameAs(Float::class.java) ||
             element.toTypeName().isSameAs(Double::class.java) ||
             element.toTypeName().isSameAs(Boolean::class.java)) &&
@@ -94,7 +97,7 @@ class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
 
   private fun getColumnInitializer(element: Element): String {
     var str = "Column.Type"
-    if (element.toTypeName().isSameAs(Int::class.java) ||
+    if (element.toTypeName().isSameAs(Integer::class.java) ||
         element.toTypeName().isSameAs(Integer::class.java) ||
         element.toTypeName().isSameAs(Float::class.java) ||
         element.toTypeName().isSameAs(Double::class.java) ||
@@ -151,7 +154,7 @@ class TableColumnPropsGenerator(fileSpec: FileSpec.Builder,
   private fun filterPrimitiveElements(elements: List<Element>): List<Element> = elements.filter {
 
     try {
-      it.toTypeName().isSameAs2(processingEnvironment, Int::class.java) ||
+      it.toTypeName().isSameAs2(processingEnvironment, Integer::class.java) ||
           it.toTypeName().isSameAs2(processingEnvironment, String::class.java) ||
           it.toTypeName().isSameAs2(processingEnvironment, Float::class.java) ||
           it.toTypeName().isSameAs2(processingEnvironment, Double::class.java) ||

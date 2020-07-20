@@ -11,13 +11,14 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
+package promise.db
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+import android.database.sqlite.SQLiteDatabase
+
+interface DatabaseCreationCallback {
+
+  fun beforeCreate(database: SQLiteDatabase)
+
+  fun afterCreate(database: SQLiteDatabase)
+
 }
-
-sourceCompatibility = "8"
-targetCompatibility = "8"

@@ -13,7 +13,7 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
+import com.squareup.javapoet.ClassName
 import com.sun.tools.javac.code.Attribute
 import promise.db.DatabaseEntity
 import promise.db.Entity
@@ -25,11 +25,13 @@ import javax.lang.model.type.TypeMirror
 fun TypeElement.asTableClassName(processingEnv: ProcessingEnvironment): ClassName {
   val className = this.getClassName()
   val pack = processingEnv.elementUtils.getPackageOf(this).toString()
-  return ClassName(pack, className)
+  return ClassName.get(pack, className)
 }
+
 
 fun Element.getClassName(): String = "${this.simpleName}FastTable"
 
+//@JvmName("PersistableEntityUtils")
 fun Element.getTableName(): String {
   val entityTableAnnotation = this.getAnnotation(Entity::class.java)
       ?: throw IllegalArgumentException("Element is not annotated with Entity")

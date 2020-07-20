@@ -87,7 +87,7 @@ interface ReactiveTable {
      * @param b      upper bound of between
      * @return a list of matched records
      */
-    fun <N : Number> between(column: Column<N>, a: N, b: N): Maybe<IdentifiableList<out T>>
+    fun between(column: Column<Number>, a: Number, b: Number): Maybe<IdentifiableList<out T>>
 
     /**
      * gets all the data matched in where in the columns
@@ -107,7 +107,7 @@ interface ReactiveTable {
      * @param <N>    type of bound
      * @return list of records
     </N> */
-    fun <N : Number> notIn(column: Column<N>, vararg bounds: N): Maybe<IdentifiableList<out T>>
+    fun notIn(column: Column<Number>, vararg bounds: Number): Maybe<IdentifiableList<out T>>
 
     /**
      * fetches all the data where the column contains the value

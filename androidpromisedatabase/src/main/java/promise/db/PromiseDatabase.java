@@ -11,13 +11,15 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
+package promise.db;
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+import promise.commons.model.Identifiable;
+
+public interface PromiseDatabase {
+
+  FastDatabase getDatabaseInstance();
+
+  <T extends Identifiable<Integer>> FastTable<T> getTable(Class<? extends T> entityClass) throws IllegalArgumentException;
 }
 
-sourceCompatibility = "8"
-targetCompatibility = "8"
+

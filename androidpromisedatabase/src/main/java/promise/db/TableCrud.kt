@@ -220,7 +220,7 @@ interface TableCrud<T : Identifiable<Int>, X> : DoubleConverter<T, Cursor, Conte
      * @param b
      * @return
      */
-    fun <N : Number> between(column: Column<N>, a: N, b: N): IdentifiableList<out T>
+    fun between(column: Column<Number>, a: Number, b: Number): IdentifiableList<out T>
 
     /**
      * @param column
@@ -233,7 +233,7 @@ interface TableCrud<T : Identifiable<Int>, X> : DoubleConverter<T, Cursor, Conte
      * @param bounds
      * @return
      */
-    fun <N : Number> notIn(column: Column<N>, vararg bounds: N): IdentifiableList<out T>
+    fun notIn(column: Column<Number>, vararg bounds: Number): IdentifiableList<out T>
 
     /**
      * @param column

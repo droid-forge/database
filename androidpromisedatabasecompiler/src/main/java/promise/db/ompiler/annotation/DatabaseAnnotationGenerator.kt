@@ -14,7 +14,8 @@
 package promise.db.ompiler.annotation
 
 import com.squareup.javapoet.AnnotationSpec
-import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
 import promise.db.ompiler.CodeBlockGenerator
 import promise.db.ompiler.Utils
 import promise.db.ompiler.getClassName
@@ -28,7 +29,6 @@ import javax.tools.Diagnostic
 
 class DatabaseAnnotationGenerator(
     private val processingEnv: ProcessingEnvironment,
-    private val fileBuilder: JavaFile.Builder,
     private val element: Element) : CodeBlockGenerator<AnnotationSpec> {
   /*
   @Database(
@@ -40,7 +40,7 @@ class DatabaseAnnotationGenerator(
    */
   override fun generate(): AnnotationSpec {
     if (element is TypeElement) {
-      var stmt = "tables = [\n"
+      var stmt = " {"
       var entities: Array<TypeElement>? = null
       try {
         entities = element.getTableEntities(processingEnv)
@@ -52,26 +52,19 @@ class DatabaseAnnotationGenerator(
         entities?.forEachIndexed { index, entityClass ->
           val className = entityClass.getClassName()
           val pack = processingEnv.elementUtils.getPackageOf(entityClass).toString()
-          fileBuilder.addStaticImport(pack, className)
-          stmt += "$className::class"
+          //fileBuilder.addImport(pack, className)
+          stmt += "$className.class"
           if (index != entities.size - 1) {
-            stmt += ", \n"
+            stmt += ", "
           }
         }
-        stmt += """
-          ]
-          ,
-        """.trimIndent()
-        stmt += """
-          version = $version
-        """.trimIndent()
+        stmt += "}"
       } catch (e: Throwable) {
         processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "DatabaseAnnotationGenerator: ${Utils.getStackTraceString(e)}")
       }
-      return AnnotationSpec.builder(ClassName("promise.db", "Database"))
-          .addMember(CodeBlock.builder()
-              .addStatement(stmt)
-              .build())
+      return AnnotationSpec.builder(ClassName.get("promise.db", "Database"))
+          .addMember("tables", CodeBlock.of(stmt))
+          .addMember("version", "$version")
           .build()
     }
     throw IllegalStateException("Element must be a type element")

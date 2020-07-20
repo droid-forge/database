@@ -13,52 +13,59 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.STRING
-import com.squareup.kotlinpoet.TypeSpec
-import com.squareup.kotlinpoet.jvm.jvmStatic
-import com.squareup.kotlinpoet.jvm.volatile
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.TypeSpec
 import promise.db.AddedEntity
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 class DatabaseCompanionPropsGenerator(
-    private val fileSpec: FileSpec.Builder,
+    private val typeSpec: TypeSpec.Builder,
     private val element: Element,
-    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<TypeSpec> {
+    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<String> {
 
-
-  override fun generate(): TypeSpec {
+  override fun generate(): String {
     val className = element.simpleName.toString()
     val classnameImpl = "${className}_Impl"
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
-    val typeSpec = TypeSpec.companionObjectBuilder()
 
     try {
-      fileSpec.addImport("android.database.sqlite", "SQLiteDatabase")
+      //fileSpec.addImport("android.database.sqlite", "SQLiteDatabase")
     } catch (e: Throwable) {
       processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Add Import: ${Utils.getStackTraceString(e)}")
     }
 
     val entities = (element as TypeElement).getTableEntities(processingEnv)
 
+    /**
+     * private static Migration getMigration() {
+            return new Migration() {
+              @Override
+              public void onMigrate(@NotNull FastDatabase database, @NotNull SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+                if (oldVersion == 2 && newVersion == 3) {
+                  database.add(sqLiteDatabase, database.obtain(PersonFastTable.class));
+                }
+              }
+            };
+          }
+     */
     var migrationInitialzer = """
-      return object: Migration {
-        override fun onMigrate(database: FastDatabase, sqLiteDatabase: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+      return new Migration() {
+              @Override
+              public void onMigrate(FastDatabase database, android.database.sqlite.SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
     """.plus("\n").trimIndent()
     entities.forEach {
       val migrationAnnoTation = it.getAnnotation(AddedEntity::class.java)
       if (migrationAnnoTation != null) {
         migrationInitialzer += """
           if (oldVersion == ${migrationAnnoTation.fromVersion} && newVersion == ${migrationAnnoTation.toVersion}) {
-            database.add(sqLiteDatabase, database.obtain(${it.getClassName()}::class.java))
+            database.add(sqLiteDatabase, database.obtain(${it.getClassName()}.class));
           } 
           
     """.trimIndent()
@@ -68,23 +75,21 @@ class DatabaseCompanionPropsGenerator(
 
     migrationInitialzer += """
         }
-      }
+      };
     """.trimIndent()
 
-    val migrationPropSpec = FunSpec.builder("getMigration")
-        .returns(ClassName("promise.db", "Migration"))
-        .addModifiers(KModifier.PRIVATE)
+    val migrationPropSpec = MethodSpec.methodBuilder("getMigration")
+        .returns(ClassName.get("promise.db", "Migration"))
+        .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
         .addCode(CodeBlock.of(migrationInitialzer))
         .build()
 
-    typeSpec.addFunction(migrationPropSpec)
+    typeSpec.addMethod(migrationPropSpec)
     // adding db instance var
-    // var instance: FastDatabase? = null
-    typeSpec.addProperty(PropertySpec.builder("instance", ClassName("promise.db", "FastDatabase").copy(nullable = true))
+    // private static volatile FastDatabase instance = null;
+    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"),"instance")
         .initializer("null")
-        .mutable(true)
-        .jvmStatic()
-        .volatile()
+        .addModifiers(Modifier.PRIVATE, Modifier.VOLATILE, Modifier.STATIC)
         .build())
 
 
@@ -95,14 +100,27 @@ class DatabaseCompanionPropsGenerator(
     //          name, migration)
     //      return GeneratedDatabaseImpl()
     //    }
-    typeSpec.addFunction(FunSpec.builder("createDatabase")
-        .addAnnotation(JvmStatic::class.java)
-        .addParameter("name", STRING)
-        .returns(ClassName(pack, className))
+    typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get(String::class.java),"name")
+        .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
-          if (instance != null) throw IllegalStateException("Database already created")
-          instance = FastDatabase.createDatabase($classnameImpl::class.java, name, getMigration())
-          return $classnameImpl()
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createDatabase($classnameImpl.class, name, getMigration());
+          return new $classnameImpl();
+        """.trimIndent()))
+        .build())
+
+    // add with creation callback
+    typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .returns(ClassName.get(pack, className))
+        .addCode(CodeBlock.of("""
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createDatabase($classnameImpl.class, name, getMigration()).setDatabaseCreationCallback(databaseCreationCallback);
+          return new $classnameImpl();
         """.trimIndent()))
         .build())
 
@@ -112,13 +130,24 @@ class DatabaseCompanionPropsGenerator(
     //      instance = FastDatabase.createInMemoryDatabase(GeneratedDatabaseImpl::class.java)
     //      return GeneratedDatabaseImpl()
     //    }
-    typeSpec.addFunction(FunSpec.builder("createInMemoryDatabase")
-        .addAnnotation(JvmStatic::class.java)
-        .returns(ClassName(pack, className))
+    typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
-          if (instance != null) throw IllegalStateException("Database already created")
-          instance = FastDatabase.createInMemoryDatabase($classnameImpl::class.java)
-          return $classnameImpl()
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createInMemoryDatabase($classnameImpl.class);
+          return new $classnameImpl();
+        """.trimIndent()))
+        .build())
+    // with in memory database
+    typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .returns(ClassName.get(pack, className))
+        .addCode(CodeBlock.of("""
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createInMemoryDatabase($classnameImpl.class).setDatabaseCreationCallback(databaseCreationCallback);
+          return new $classnameImpl();
         """.trimIndent()))
         .build())
 
@@ -128,13 +157,24 @@ class DatabaseCompanionPropsGenerator(
     //      instance = FastDatabase.createInMemoryReactiveDatabase(GeneratedDatabaseImpl::class.java)
     //      return GeneratedDatabaseImpl()
     //    }
-    typeSpec.addFunction(FunSpec.builder("createReactiveInMemoryDatabase")
-        .addAnnotation(JvmStatic::class.java)
-        .returns(ClassName(pack, className))
+    typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
-          if (instance != null) throw IllegalStateException("Database already created")
-          instance = FastDatabase.createInMemoryReactiveDatabase($classnameImpl::class.java)
-          return $classnameImpl()
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createInMemoryReactiveDatabase($classnameImpl.class);
+          return new $classnameImpl();
+        """.trimIndent()))
+        .build())
+    // with callback
+    typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .returns(ClassName.get(pack, className))
+        .addCode(CodeBlock.of("""
+          if (instance != null) throw new IllegalStateException("Database already created");
+          instance = FastDatabase.createInMemoryReactiveDatabase($classnameImpl.class, databaseCreationCallback);
+          return new $classnameImpl();
         """.trimIndent()))
         .build())
 
@@ -145,14 +185,27 @@ class DatabaseCompanionPropsGenerator(
     //          name, migration)
     //      return GeneratedDatabaseImpl()
     //    }
-    typeSpec.addFunction(FunSpec.builder("createReactiveDatabase")
-        .addAnnotation(JvmStatic::class.java)
-        .addParameter("name", STRING)
-        .returns(ClassName(pack, className))
+    typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get(String::class.java),"name")
+        .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
-          if (instance != null) throw IllegalStateException("Database already created")
-           instance = FastDatabase.createReactiveDatabase($classnameImpl::class.java, name, getMigration())
-          return $classnameImpl()
+          if (instance != null) throw new IllegalStateException("Database already created");
+           instance = FastDatabase.createReactiveDatabase($classnameImpl.class, name, getMigration());
+          return new $classnameImpl();
+        """.trimIndent()))
+        .build())
+
+    // with creation callback
+    typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
+        .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .returns(ClassName.get(pack, className))
+        .addCode(CodeBlock.of("""
+          if (instance != null) throw new IllegalStateException("Database already created");
+           instance = FastDatabase.createReactiveDatabase($classnameImpl.class, name, getMigration(), databaseCreationCallback);
+          return new $classnameImpl();
         """.trimIndent()))
         .build())
     //    @JvmStatic
@@ -160,17 +213,17 @@ class DatabaseCompanionPropsGenerator(
     //      if (instance == null) throw IllegalStateException("Database not initialized or created yet")
     //      return instance!!
     //    }
-    typeSpec.addFunction(FunSpec.builder("getDatabaseInstance")
-        .addAnnotation(JvmStatic::class.java)
-        .returns(ClassName("promise.db", "FastDatabase"))
+    typeSpec.addMethod(MethodSpec.methodBuilder("getDatabaseInstance")
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .addAnnotation(Override::class.java)
+        .returns(ClassName.get("promise.db", "FastDatabase"))
         .addCode(CodeBlock.of("""
-          if (instance == null) throw IllegalStateException("Database not initialized or created yet")
-          return instance!!
+          if (instance == null) throw new IllegalStateException("Database not initialized or created yet");
+          return instance;
         """.trimIndent()))
         .build())
 
-    return typeSpec.build()
+    return "created"
   }
-
 
 }

@@ -48,7 +48,7 @@ public class App extends Application {
 ```
 
 ## Making your Record Class and Table
-A Record is a POJO that is stored in a table in the database, A sample [ComplexRecord class](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecord.kt) referenced below
+A Record is a POJO that is stored in a table in the database, A sample [ComplexRecord class](https://github.com/android-promise/database/blob/master/dbappbase/src/main/java/com/dev4vin/dbappbase/baseapp/model/ComplexRecord.kt) referenced below
 ### Record Class
 
 ```kotlin
@@ -68,7 +68,7 @@ This class can extend from [TimeAware class](https://github.com/android-promise/
 
 ### The Table Class
 A table is a functional class that has methods that manipulate records in the database.
-A sample [ComplexRecordTable class](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecordTable.kt) will manipulate [ComplexRecord](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecord.kt) within the database.
+A sample [ComplexRecordTable class](https://github.com/android-promise/database/blob/master/dbapp/src/main/java/promise/dbapp/model/ComplexRecordTable.kt) will manipulate [ComplexRecord](https://github.com/android-promise/database/blob/master/dbappbase/src/main/java/com/dev4vin/dbappbase/baseapp/model/ComplexRecord.kt) within the database.
 ```kotlin
 
 @Table(

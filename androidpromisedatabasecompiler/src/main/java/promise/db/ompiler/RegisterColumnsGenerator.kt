@@ -13,22 +13,35 @@
 
 package promise.db.ompiler
 
-import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
-import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.FunSpec
-import com.squareup.kotlinpoet.KModifier
-import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.STAR
-import com.squareup.kotlinpoet.WildcardTypeName
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.WildcardTypeName
+import org.jetbrains.annotations.NotNull
+import java.lang.reflect.Type
+import javax.lang.model.element.Modifier
+import javax.lang.model.type.TypeVariable
+import javax.lang.model.type.WildcardType
 
-class RegisterColumnsGenerator(fileSpec: FileSpec.Builder, private val columns: List<String>) : CodeBlockGenerator<PropertySpec> {
+
+class RegisterColumnsGenerator(
+    private val columns: List<String>) : CodeBlockGenerator<MethodSpec> {
   init {
-    fileSpec.addImport("promise.commons.model", "List")
+    //fileSpec.addImport("promise.commons.model", "List")
   }
 
-  override fun generate(): PropertySpec {
+  override fun generate(): MethodSpec {
+    val gen = """
+      
+        @NotNull
+        @Override
+        public List<? extends Column<?>> getColumns() {
+          return List.fromArray(nameColumn, ageColumn, marksColumn);
+        }
+
+    """.trimIndent()
     var stmt = "return List.fromArray("
     columns.forEachIndexed { index, s ->
       stmt += s
@@ -36,14 +49,21 @@ class RegisterColumnsGenerator(fileSpec: FileSpec.Builder, private val columns: 
         stmt += ", "
       }
     }
-    stmt += ")"
-    return PropertySpec.builder("columns", ClassName("promise.commons.model", "List")
-        .parameterizedBy(WildcardTypeName.producerOf(ClassName("promise.db", "Column")
-            .parameterizedBy(STAR))))
-        .addModifiers(KModifier.OVERRIDE)
-        .getter(FunSpec.getterBuilder()
-            .addCode(CodeBlock.of(stmt))
-            .build())
+    stmt += ");"
+    return MethodSpec.methodBuilder("getColumns")
+        .returns(
+            ParameterizedTypeName.get(ClassName.get("promise.commons.model", "List"),
+                WildcardTypeName.subtypeOf(
+                    ParameterizedTypeName.get(ClassName.get("promise.db", "Column"),
+                        WildcardTypeName.subtypeOf(TypeName.OBJECT)
+                    )
+                )
+            )
+        )
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .addAnnotation(Override::class.java)
+        .addAnnotation(NotNull::class.java)
+        .addCode(CodeBlock.of(stmt))
         .build()
 
   }

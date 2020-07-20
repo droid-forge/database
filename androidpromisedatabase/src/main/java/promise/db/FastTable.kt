@@ -13,7 +13,6 @@
 package promise.db
 
 import android.annotation.SuppressLint
-import android.app.ActionBar
 import android.content.ContentValues
 import android.database.Cursor
 import android.database.SQLException
@@ -77,6 +76,7 @@ abstract class FastTable<T : Identifiable<Int>>
      * Each table must have a primary column as well al timestamp columns
      * see [Column] for more info
      */
+    @JvmStatic
     var id: Column<Int>
     var createdAt: Column<Int>
     var updatedAt: Column<Int>
@@ -890,7 +890,7 @@ abstract class FastTable<T : Identifiable<Int>>
      * @param b      upper between bound
      * @return a list of items
      */
-    override fun <N : Number> between(column: Column<N>, a: N, b: N): IdentifiableList<out Q> {
+    override fun between(column: Column<Number>, a: Number, b: Number): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
         val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll().whereAnd(Criteria.between(column, a, b))
@@ -933,7 +933,7 @@ abstract class FastTable<T : Identifiable<Int>>
      * @return a list of items
      */
     @SafeVarargs
-    override fun <N : Number> notIn(column: Column<N>, vararg bounds: N): IdentifiableList<out Q> {
+    override fun notIn(column: Column<Number>, vararg bounds: Number): IdentifiableList<out Q> {
       val cursor: Cursor
       val items = arrayOfNulls<Any>(bounds.size)
       System.arraycopy(bounds, 0, items, 0, bounds.size)

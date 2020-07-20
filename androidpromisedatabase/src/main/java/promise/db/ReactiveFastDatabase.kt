@@ -62,6 +62,7 @@ class ReactiveFastDatabase private constructor(
 
   constructor(name: String?, version: Int) : this(name, version, null, null)
 
+
   /**
    * @param tableCrud
    * @param database
@@ -189,8 +190,7 @@ class ReactiveFastDatabase private constructor(
       Maybe.zip(tables().map { tableCrud: TableCrud<*, in SQLiteDatabase> -> this.deleteAsync(tableCrud) }
       ) { objects: Array<Any> ->
         List.fromArray<Any>(*objects).allMatch { aBoolean: Any ->
-          aBoolean is Boolean &&
-              aBoolean
+          aBoolean is Boolean &&  aBoolean
         }
       }
 
@@ -253,7 +253,7 @@ class ReactiveFastDatabase private constructor(
      * @param b
      * @return
      */
-    override fun <N : Number> between(column: Column<N>, a: N, b: N): Maybe<IdentifiableList<out T>> =
+    override fun between(column: Column<Number>, a: Number, b: Number): Maybe<IdentifiableList<out T>> =
         Maybe.fromCallable { tableCrud.onFind(database).between(column, a, b) }
 
     /**
@@ -269,7 +269,7 @@ class ReactiveFastDatabase private constructor(
      * @return
      */
     @SafeVarargs
-    override fun <N : Number> notIn(column: Column<N>, vararg bounds: N): Maybe<IdentifiableList<out T>> =
+    override fun  notIn(column: Column<Number>, vararg bounds: Number): Maybe<IdentifiableList<out T>> =
         Maybe.fromCallable { tableCrud.onFind(database).notIn(column, *bounds) }
 
     /**
