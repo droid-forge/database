@@ -11,10 +11,17 @@
  * limitations under the License.
  */
 
+package promise.db;
 
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface DatabaseEntity {
+  int version() default 1;
+  boolean generateCrudStubs() default false;
+  Class<?>[] persistableEntities();
+}

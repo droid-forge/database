@@ -11,10 +11,10 @@
  * limitations under the License.
  */
 
-
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
+package promise.db.ompiler
 
 
+interface CodeBlockGenerator<out T> {
+  @Throws(Exception::class)
+  fun generate(): T
+}

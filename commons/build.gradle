@@ -11,10 +11,16 @@
  * limitations under the License.
  */
 
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
 
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
+apply plugin: 'maven'
 
 
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
+
+sourceCompatibility = "8"
+targetCompatibility = "8"

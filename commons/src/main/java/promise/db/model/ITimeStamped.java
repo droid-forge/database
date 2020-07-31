@@ -11,10 +11,11 @@
  * limitations under the License.
  */
 
+package promise.db.model;
 
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
+public interface ITimeStamped {
 
+  void setCreatedAt(long createdAt);
 
+  void setUpdatedAt(long updatedAt);
+}

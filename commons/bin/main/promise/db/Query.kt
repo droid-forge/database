@@ -11,10 +11,8 @@
  * limitations under the License.
  */
 
+package promise.db
 
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
-
-
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Query(val value: String)

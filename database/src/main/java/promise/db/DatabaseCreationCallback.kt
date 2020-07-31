@@ -11,10 +11,14 @@
  * limitations under the License.
  */
 
+package promise.db
 
-include  'app'
-include 'database'
-include ':compiler'
-include ':commons'
+import android.database.sqlite.SQLiteDatabase
 
+interface DatabaseCreationCallback {
 
+  fun beforeCreate(database: SQLiteDatabase)
+
+  fun afterCreate(database: SQLiteDatabase)
+
+}
