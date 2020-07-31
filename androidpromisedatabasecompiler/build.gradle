@@ -18,19 +18,19 @@ apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
 
-apply plugin: 'maven-publish'
+apply plugin: 'maven'
 
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId 'com.github.android-promise:database'
-            artifactId 'compiler'
-            version '1.0.0'
-
-            from components.java
-        }
-    }
-}
+//publishing {
+//    publications {
+//        maven(MavenPublication) {
+//            groupId 'com.github.android-promise:database'
+//            artifactId 'compiler'
+//            version '1.0.0'
+//
+//            from components.java
+//        }
+//    }
+//}
 
 
 //android {
