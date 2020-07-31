@@ -111,7 +111,7 @@ class EntityProcessor : AbstractProcessor() {
 
     classBuilder.addAnnotation(tableAnnotationSpec)
 
-    if (Utils.elementExtendsSuperClass(processingEnv, (element as TypeElement), processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord")))
+    if (Utils.elementExtendsSuperClass((element as TypeElement), "promise.db.ActiveRecord"))
       classBuilder.addMethod(MethodSpec.methodBuilder("createEntityInstance")
         .addAnnotation(Override::class.java)
         .addAnnotation(NotNull::class.java)
