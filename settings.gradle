@@ -11,7 +11,8 @@
  * limitations under the License.
  */
 
-include  'dbapp', 'androidpromisedatabase'
+include  'dbapp'
+include 'androidpromisedatabase'
 //include ':promisedatabase'
 include ':androidpromisedatabasecompiler'
 include ':PromiseDatabase'
