@@ -19,15 +19,11 @@ apply plugin: 'com.github.dcendents.android-maven'
 android {
     compileSdkVersion 29
 
-    group "com.github.android-promise" //add group id
-    version "1.0.1-alpha05" //add version
-
     defaultConfig {
         minSdkVersion 17
         targetSdkVersion 29
         versionCode 1
-        versionName "$version"
-        archivesBaseName = "database"
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
     }
