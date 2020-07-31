@@ -14,19 +14,7 @@
 apply plugin: 'java-library'
 apply plugin: 'kotlin'
 
-apply plugin: 'maven-publish'
-
-publishing {
-    publications {
-        maven(MavenPublication) {
-            groupId 'com.github.android-promise:database'
-            artifactId 'commons'
-            version '1.0.0'
-
-            from components.java
-        }
-    }
-}
+apply plugin: 'maven'
 
 
 dependencies {
