@@ -13,10 +13,7 @@
 
 package promise.db.ompiler
 
-import com.google.auto.common.MoreTypes.asElement
-import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeName.*
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.UnknownHostException
@@ -31,17 +28,20 @@ import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
+import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Types
-import kotlin.collections.HashMap
+import javax.tools.Diagnostic
 import kotlin.reflect.KClass
 
 
 fun TypeName.isSameAs(javaClass: Class<*>): Boolean {
+  if (this.isPrimitive) this.box()
   return this.toString() == JavaUtils.wrap(javaClass).name
 }
 
 fun TypeName.isSameAs2(processingEnvironment: ProcessingEnvironment, javaClass: Class<*>): Boolean {
-  //processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "comparing \n: elem typeName ${this}, javaClass: ${javaClass.name}")
+  processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "comparing \n: elem typeName ${this}, javaClass: ${JavaUtils.wrap(javaClass).name}")
+  if (this.isPrimitive) return this.box().toString() == JavaUtils.wrap(javaClass).name
   return this.toString() == JavaUtils.wrap(javaClass).name
 }
 
@@ -94,6 +94,16 @@ object Utils {
     return null
   }
 
+  fun getAnnotationMirror(typeElement: VariableElement, clazz: Class<*>): AnnotationMirror? {
+    val clazzName = clazz.name
+    for (m in typeElement.annotationMirrors) {
+      if (m.annotationType.toString() == clazzName) {
+        return m
+      }
+    }
+    return null
+  }
+
   fun getAnnotationValue(annotationMirror: AnnotationMirror, key: String): AnnotationValue? {
     for ((key1, value) in annotationMirror.elementValues) {
       if (key1!!.simpleName.toString() == key) {
@@ -103,38 +113,38 @@ object Utils {
     return null
   }
 
+  fun elementExtendsSuperClass(
+      classElement: TypeElement,
+      superClassCanonicalName: String): Boolean {
+    return classElement.superclass.toString() == superClassCanonicalName
+//    if (typeUtils.isSameType(classElement.superclass, superClass.asType())) return true
+//    //if (classElement.superclass == superClass.asType()) return true
+//    val objectType = processingEnv.elementUtils.getTypeElement("java.lang.Object").asType()
+//    var extends = false
+//    while (classElement.superclass != objectType) {
+//      extends = elementExtendsSuperClass(processingEnv, classElement.superclass.asTypeElement(processingEnv), superClass)
+//      if (extends) break
+//    }
+//    return extends
+
+  }
+
   fun classImplementsInterface(classElement: TypeElement, interfaceElement: TypeElement): Boolean {
     for (interfaceType in classElement.interfaces) {
       if ((interfaceType as DeclaredType).asElement() == interfaceElement) return true
     }
-//    val classMethods: List<ExecutableElement> = getClassMethods(classElement)
-//    var implementsMethod: Boolean
-//    for (interfaceMethod in ElementFilter.methodsIn(interfaceElement.enclosedElements)) {
-//      implementsMethod = false
-//      for (classMethod in classMethods) {
-//        if (sameMethod(interfaceMethod, classMethod)) {
-//          implementsMethod = true
-//          classMethods.remove(classMethod)
-//          break
-//        }
-//      }
-//      if (!implementsMethod) {
-//        builder.processError(WebserviceapMessages.WEBSERVICEAP_METHOD_NOT_IMPLEMENTED(interfaceElement.simpleName, classElement.simpleName, interfaceMethod), interfaceMethod)
-//        return false
-//      }
-//    }
-    return true
-  }
-
-  fun isFromInterface(typeElement: TypeElement, interfaceName: String): Boolean {
-    for (anInterface in typeElement.interfaces) {
-      if (anInterface.toString() == interfaceName) {
-        return true
-      } else {
-        val isInterface = isFromInterface(asElement(anInterface) as TypeElement, interfaceName)
-        if (isInterface) {
-          return true
+    val classMethods: List<Element> = classElement.enclosedElements
+    var implementsMethod: Boolean
+    for (interfaceMethod in ElementFilter.methodsIn(interfaceElement.enclosedElements)) {
+      implementsMethod = false
+      for (classMethod in classMethods) {
+        if (interfaceMethod == classMethod) {
+          implementsMethod = true
+          break
         }
+      }
+      if (!implementsMethod) {
+        return false
       }
     }
     return false

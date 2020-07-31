@@ -31,27 +31,7 @@ import promise.model.IdentifiableList
  * @param <T> the type to be stored in this particular table must be a type of [Identifiable]
  * @param <X> the type of database that this table resides in
 </X></T> */
-interface TableCrud<T : Identifiable<Int>, X> : DoubleConverter<T, Cursor, ContentValues> {
-  /**
-   * creates the table in the database
-   *
-   * @param x the database instance
-   * @return true if the table is created
-   * @throws TableError if theirs an error creating the table
-   */
-  @Throws(TableError::class)
-  fun onCreate(x: X): Boolean
-
-  /**
-   * upgraded the table from one version to the next
-   *
-   * @param x  database instance
-   * @param v1 last version of [X]
-   * @param v2 next version of [X]
-   * @throws TableError if theirs problem running the migration
-   */
-  @Throws(TableError::class)
-  fun onUpgrade(x: X, v1: Int, v2: Int)
+interface TableCrud<T : Identifiable<Int>, X> : DoubleConverter<T, Cursor, ContentValues>, DDLFunctions<X> {
 
   /**
    * provides concise readAsync from the table

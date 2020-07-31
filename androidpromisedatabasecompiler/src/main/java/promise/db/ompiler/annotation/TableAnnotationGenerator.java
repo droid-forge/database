@@ -16,7 +16,9 @@ package promise.db.ompiler.annotation;
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.CodeBlock;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -38,19 +40,19 @@ public class TableAnnotationGenerator implements CodeBlockGenerator<AnnotationSp
   }
 
   private String getCompoundIndexAnnotation(Entity.CompoundIndex annotation) {
-    StringBuilder stmt = new StringBuilder("@Table.CompoundIndex(indexes = {");
+    StringBuilder stmt = new StringBuilder("@Table.CompoundIndex(indexes = {\n");
     for (int i = 0; i < annotation.columns().length; i++) {
       String index = annotation.columns()[i];
       stmt.append("@Table.Index(columnName = \"").append(index).append("\")");
       if (i != annotation.columns().length - 1) {
-        stmt.append(", \n");
+        stmt.append(",\n");
       }
     }
     if (annotation.unique()) {
       stmt.append("},\n" +
-          "      unique = true\n" +
-          "      )");
-    } else stmt.append("})");
+          "unique = true\n" +
+          ")");
+    } else stmt.append("\n})");
 
     return stmt.toString();
   }
@@ -84,7 +86,7 @@ public class TableAnnotationGenerator implements CodeBlockGenerator<AnnotationSp
     Entity.CompoundIndex[] compoundIndices = PersistableEntityUtilsKt.getTableCompoundIndices((TypeElement) element);
     //System.out.println(compoundIndices.toString());
     //this.processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, "CompoundIndices " + Arrays.toString(compoundIndices));
-    StringBuilder stmt = new StringBuilder(" {\n");
+    StringBuilder stmt = new StringBuilder("{\n");
     if (compoundIndices.length > 0) {
       //fileBuilder.addImport("promise.db", "Table")
       try {
@@ -92,15 +94,53 @@ public class TableAnnotationGenerator implements CodeBlockGenerator<AnnotationSp
           Entity.CompoundIndex compoundIndex = compoundIndices[index];
           stmt.append(getCompoundIndexAnnotation(compoundIndex));
           if (index != compoundIndices.length - 1) {
-            stmt.append(", \n");
+            stmt.append(",\n");
           }
         }
-        stmt.append(" }\n" +
-            "          ");
+        stmt.append("}\n");
 
         annotationSpec.addMember("compoundIndexes", CodeBlock.of(stmt.toString()));
       } catch (Throwable e) {
         this.processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, "CompoundIndex gen error " + Arrays.toString(e.getStackTrace()));
+      }
+    }
+    String[] indices = PersistableEntityUtilsKt.getTableIndices((TypeElement) element);
+    if (indices != null) {
+      StringBuilder stmt2 = new StringBuilder("{\n");
+      try {
+        for (int i = 0; i < indices.length; i++) {
+          stmt2.append("@Table.Index(columnName = \"").append(indices[i]).append("\")\n");
+          if (i != indices.length - 1) {
+            stmt2.append(",\n");
+          }
+        }
+        stmt2.append("}\n");
+        annotationSpec.addMember("indices", CodeBlock.of(stmt2.toString()));
+      } catch (Throwable e) {
+        this.processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, "Index gen error " + Arrays.toString(e.getStackTrace()));
+      }
+    }
+    Map<String, String>[] foreignKeys = PersistableEntityUtilsKt.getTableForeignKeys((TypeElement) element, processingEnvironment);
+    if (foreignKeys != null) {
+      StringBuilder stmt3 = new StringBuilder("{\n");
+      try {
+        for (int i = 0; i < foreignKeys.length; i++) {
+          StringBuilder stmt4 = new StringBuilder("@Table.ForeignKey(");
+          Map<String, String> pairs = foreignKeys[i];
+          for (int j = 0; j < pairs.entrySet().size(); j++) {
+            Map.Entry<String, String> entry = new ArrayList<>(pairs.entrySet()).get(j);
+            stmt4.append(entry.getKey()).append(" = \"").append(entry.getValue()).append("\"");
+            if (j != pairs.entrySet().size() - 1) stmt4.append(", ");
+          }
+          stmt4.append(")");
+          stmt3.append(stmt4);
+          if (i != foreignKeys.length - 1) stmt3.append(", \n");
+        }
+
+        stmt3.append("}\n");
+        annotationSpec.addMember("foreignKeys", CodeBlock.of(stmt3.toString()));
+      } catch (Throwable e) {
+        this.processingEnvironment.getMessager().printMessage(Diagnostic.Kind.ERROR, "Index gen error " + Arrays.toString(e.getStackTrace()));
       }
     }
     annotationSpec.addMember("tableName", "$S", PersistableEntityUtilsKt.getTableName(element));

@@ -29,16 +29,19 @@ class DeserializerGenerator(
   }
 
   override fun generate(): MethodSpec {
+    val varName = typeDataType.camelCase()
     var stmt = """
       try {
-        $typeDataType v1 = new $typeDataType();
-        
+        $typeDataType $varName = new $typeDataType();   
+
     """.trimIndent()
     columns.forEach {
-      stmt += generateSetStatement(it.first.first, it.first.second, it.second)
+      stmt += generateSetStatement(
+          varName,
+          it.first.first, it.first.second, it.second)
     }
     stmt += """
-      return v1;      
+      return $varName;      
     } catch(android.database.CursorIndexOutOfBoundsException ex) {
       promise.commons.data.log.LogUtil.e(TAG, "deserialize", ex);
       return new $typeDataType();
@@ -47,25 +50,8 @@ class DeserializerGenerator(
 
     //fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
 
-    val gen = """
-      @Override
-  public Person deserialize(Cursor cursor) {
-    try {
-      Person person = new Person();
-      person.setAge(cursor.getInt(ageColumn.getIndex(cursor)));
-      person.setMarks(cursor.getInt(marksColumn.getIndex(cursor)));
-      person.setName(cursor.getString(nameColumn.getIndex(cursor)));
-      person.setAdult(cursor.getInt(isAdultColumn.getIndex(cursor)) == 1);
-      return person;
-    } catch (CursorIndexOutOfBoundsException ex) {
-      LogUtil.e(TAG, "deserialize", ex);
-      return new Person();
-    }
-  }
-    """.trimIndent()
-
     return MethodSpec.methodBuilder("deserialize")
-        .addParameter(ClassName.get("android.database", "Cursor"),"e")
+        .addParameter(ClassName.get("android.database", "Cursor"), "e")
         .addAnnotation(Override::class.java)
         .addModifiers(Modifier.PUBLIC)
         .returns(ClassName.get(typeDataTypePack, typeDataType))
@@ -76,26 +62,23 @@ class DeserializerGenerator(
   /**
    * person.setAge(cursor.getInt(ageColumn.getIndex(cursor)));
    */
-  private fun generateSetStatement(varName: String, varType: TypeName, colName: String): String {
+  private fun generateSetStatement(
+      objectName: String,
+      varName: String,
+      varType: TypeName,
+      colName: String): String {
     if (varType.isSameAs(Boolean::class.java)) {
-      return " v1.set${capitalizeFirst(varName)}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1);\n"
+      return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1);\n"
     }
-    return " v1.set${capitalizeFirst(varName)}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
+    return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
   }
 
-  private fun capitalizeFirst(varname: String): String {
-    return varname.replace(varname.first(), varname.first().toUpperCase())
-  }
-
-  private fun getCursorReturn(varType: TypeName): String {
-    //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")
-    return when {
-      varType.isSameAs(Integer::class.java) -> "getInt"
-      varType.isSameAs(Boolean::class.java) -> "getInt"
-      varType.isSameAs(Double::class.java) -> "getDouble"
-      varType.isSameAs(Float::class.java) -> "getFloat"
-      else -> "getString"
-    }
-  }
-
+  private fun getCursorReturn(varType: TypeName): String =//processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")
+      when {
+        varType.isSameAs(Integer::class.java) -> "getInt"
+        varType.isSameAs(Boolean::class.java) -> "getInt"
+        varType.isSameAs(Double::class.java) -> "getDouble"
+        varType.isSameAs(Float::class.java) -> "getFloat"
+        else -> "getString"
+      }
 }

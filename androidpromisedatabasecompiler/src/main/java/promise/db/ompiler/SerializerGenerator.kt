@@ -30,17 +30,6 @@ class SerializerGenerator(
 
   override fun generate(): MethodSpec {
 
-    val gen = """
-      @Override
-  public ContentValues serialize(Person person) {
-    ContentValues values = new ContentValues();
-    values.put(nameColumn.getName(), person.getName());
-    values.put(ageColumn.getName(), person.getAge());
-    values.put(marksColumn.getName(), person.getMarks());
-    values.put(isAdultColumn.getName(), person.isAdult() ? 1 : 0);
-    return values;
-  }
-    """.trimIndent()
     var stmt =
         "ContentValues values = new ContentValues();\n"
     columns.forEach {
@@ -67,12 +56,10 @@ class SerializerGenerator(
    */
   private fun generatePutStatement(typeVariable: String, columnName: String, varTypeName: TypeName): String {
     if (varTypeName.isSameAs(Boolean::class.java)) {
-      return "values.put(${columnName}.getName(), t.get${capitalizeFirst(typeVariable)}() ? 1 : 0); \n"
+      return "values.put(${columnName}.getName(), t.is${typeVariable.capitalizeFirst()}() ? 1 : 0); \n"
     }
-    return "values.put(${columnName}.getName(), t.get${capitalizeFirst(typeVariable)}()); \n"
+    return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
   }
 
-  private fun capitalizeFirst(varname: String): String {
-    return varname.replace(varname.first(), varname.first().toUpperCase())
-  }
+
 }

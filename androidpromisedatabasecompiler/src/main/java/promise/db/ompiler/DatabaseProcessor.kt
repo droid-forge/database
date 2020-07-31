@@ -13,12 +13,10 @@
 
 package promise.db.ompiler
 
-import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
-import org.jetbrains.annotations.NotNull
 import promise.db.DatabaseEntity
 import promise.db.ompiler.annotation.DatabaseAnnotationGenerator
 import javax.annotation.processing.ProcessingEnvironment
@@ -30,20 +28,28 @@ import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
-  fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
+  fun process(_mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
     environment?.getElementsAnnotatedWith(DatabaseEntity::class.java)
-        ?.forEach {
-          if (it.kind != ElementKind.CLASS) {
+        ?.forEach { element ->
+          if (element.kind != ElementKind.CLASS) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
             return false
           }
-          processElement(it)
+//          val promiseDatabaseInterface = processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase")
+//          if (JavaUtils.implementsInterface(processingEnv, element as TypeElement, promiseDatabaseInterface.asType())) {
+//            processElement(element)
+//          }
+//          else {
+//            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The database class ${element.simpleName} must implement PromiseDatabase")
+//            return false
+//          }
+          processElement(element)
         }
     return true
   }
 
   private fun processElement(element: Element) {
-    processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "DatabaseProcessor Processing: ${element.simpleName}")
+    processingEnv.messager.printMessage(Diagnostic.Kind.OTHER, "DatabaseProcessor Processing: ${element.simpleName}")
 
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
@@ -60,8 +66,10 @@ class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
         .addAnnotation(tableAnnotationSpec)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addMethod(MethodSpec.constructorBuilder()
+            .addParameter(ClassName.get("promise.db", "FastDatabase"),"instance")
             .addModifiers(Modifier.PRIVATE)
             .addStatement("super()")
+            .addStatement("this.instance = instance")
             .build())
     DatabaseCompanionPropsGenerator(classBuilder, element, processingEnv).generate()
 
@@ -70,6 +78,8 @@ class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
     abstractFuncsBuilder.generate()?.forEach {
       classBuilder.addMethod(it)
     }
+
+    DatabaseCrudStubsGenerator(classBuilder, element, processingEnv).generate()
 
 //    // static column block generation
 //    val columnsGenerator: ColumnsGenerator = ColumnsGenerator(fileBuilder, processingEnv, element.enclosedElements)
@@ -121,7 +131,7 @@ class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
         .skipJavaLangImports(true)
         .addFileComment(
             """
-            Copyright 2017, Peter Vincent
+            Copyright 2017, Android Promise Database
             Licensed under the Apache License, Version 2.0, Android Promise.
             you may not use this file except in compliance with the License.
             You may obtain a copy of the License at

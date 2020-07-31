@@ -29,7 +29,7 @@ import promise.commons.util.Conditions
 import promise.commons.util.DoubleConverter
 import promise.db.criteria.Criteria
 import promise.db.projection.Projection
-import promise.db.model.ITimeAware
+import promise.db.model.ITimeStamped
 import promise.model.IdentifiableList
 import java.util.*
 
@@ -49,7 +49,7 @@ abstract class FastTable<T : Identifiable<Int>>
     /**
      *
      */
-    val database: FastDatabase) : TableCrud<T, SQLiteDatabase> {
+    val database: FastDatabase) : TableCrud<T, SQLiteDatabase>, DMLFunctions<T> {
   companion object {
     /**
      * The create prefix in a prefix for queries that create a table structure
@@ -95,6 +95,18 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     private const val ALTER_COMMAND = "ALTER TABLE"
 
+  }
+
+  open fun createEntityInstance(): T {
+    throw RuntimeException("STUB ONLY SUPPORTED FOR ACTIVE RECORD ENTITIES")
+  }
+
+  fun create(block: T.() -> Unit): T {
+    val instance = createEntityInstance()
+    block.invoke(instance)
+    instance.setId(save(instance).toInt())
+    (instance as ActiveRecord<T>).table = this
+    return instance
   }
 
   /**
@@ -151,16 +163,16 @@ abstract class FastTable<T : Identifiable<Int>>
   final override val name: String
     get() = nameOfTable
 
-  private fun generateCompoundIndexQuery(index: Table.CompoundIndex): String {
+  private fun generateCompoundIndexQuery(compoundIndex: Table.CompoundIndex): String {
     var columnNames = ""
     var indexSql = "("
-    val indexes = index.indexes
+    val indexes = compoundIndex.indexes
     indexes.forEachIndexed { i, index ->
       columnNames = if (i == indexes.size - 1) columnNames + index.columnName else "$columnNames${index.columnName}_"
       indexSql = if (i == indexes.size - 1) indexSql + index.columnName else "$indexSql${index.columnName}, "
     }
     indexSql = "$indexSql);"
-    return if (index.unique) {
+    return if (compoundIndex.unique) {
       "CREATE UNIQUE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
     }
     else "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
@@ -169,6 +181,11 @@ abstract class FastTable<T : Identifiable<Int>>
   private fun generateIndexQuery(index: Table.Index): String {
     val indexSql = "(${index.columnName});"
     return "CREATE INDEX IF NOT EXISTS idx_${index.columnName} ON $nameOfTable $indexSql"
+  }
+
+  private fun generateIndexQuery(index: String): String {
+    val indexSql = "(${index});"
+    return "CREATE INDEX IF NOT EXISTS idx_${index} ON $nameOfTable $indexSql"
   }
 
   fun addForeignKet(x: SQLiteDatabase,
@@ -243,7 +260,7 @@ abstract class FastTable<T : Identifiable<Int>>
    */
   @Throws(TableError::class)
   override fun onUpgrade(x: SQLiteDatabase, v1: Int, v2: Int) {
-    val builder: QueryBuilder = QueryBuilder().from(this)
+    val builder: QueryBuilder = queryBuilder()
     @SuppressLint("Recycle") val c = x.rawQuery(builder.build(), builder.buildParameters())
     val set: Set<String> = HashSet(fromArray(*c.columnNames))
     if (!set.contains(createdAt.name)) addColumns(x, createdAt)
@@ -271,7 +288,7 @@ abstract class FastTable<T : Identifiable<Int>>
   }
 
   @Throws(TableError::class)
-  fun addCompoundIndices(database: SQLiteDatabase, indexes: Array<Table.CompoundIndex>) {
+  private fun addCompoundIndices(database: SQLiteDatabase, indexes: Array<Table.CompoundIndex>) {
     indexes.forEach {
       val indexSql = generateCompoundIndexQuery(it)
       LogUtil.d(TAG, indexSql)
@@ -279,12 +296,18 @@ abstract class FastTable<T : Identifiable<Int>>
     }
   }
 
-  fun addIndices(database: SQLiteDatabase, indexes: Array<Table.Index>) {
+  private fun addIndices(database: SQLiteDatabase, indexes: Array<Table.Index>) {
     indexes.forEach {
       val indexSql = generateIndexQuery(it)
       LogUtil.d(TAG, indexSql)
       database.execSQL(indexSql)
     }
+  }
+
+  fun addIndex(database: SQLiteDatabase, index: String) {
+    val indexSql = generateIndexQuery(index)
+    LogUtil.d(TAG, indexSql)
+    database.execSQL(indexSql)
   }
 
   /**
@@ -308,133 +331,144 @@ abstract class FastTable<T : Identifiable<Int>>
     return true
   }
 
-  /**
-   * @param t
-   * @return
-   */
-  fun save(t: T): Long = database.save(t, this)
+  override fun querySql(sql: String) = database.querySql(sql)
 
   /**
    * @param t
    * @return
    */
-  fun saveAsync(t: T): Single<Long> = reactiveDatabase.saveAsync(t, this)
+  override fun save(t: T): Long = database.save(t, this)
+
+  /**
+   * @param t
+   * @return
+   */
+  override fun saveAsync(t: T): Single<Long> = reactiveDatabase.saveAsync(t, this)
 
   /**
    * @param list
    * @return
    */
-  fun save(list: IdentifiableList<out T>): Boolean = database.save(list, this)
+  override fun save(list: IdentifiableList<out T>): Boolean = database.save(list, this)
 
   /**
    * @param list
    * @return
    */
-  fun saveAsync(list: IdentifiableList<out T>): Single<Boolean> =
+  override fun saveAsync(list: IdentifiableList<out T>): Single<Boolean> =
       reactiveDatabase.saveAsync(list, this)
 
   /**
    * @param t
    * @return
    */
-  fun update(t: T): Boolean = database.update(t, this)
+  override fun update(t: T): Boolean = database.update(t, this)
 
   /**
    * @param t
    * @return
    */
-  fun updateAsync(t: T): Maybe<Boolean> = reactiveDatabase.updateAsync(t, this)
-
-  /**
-   * @param t
-   * @param column
-   * @return
-   */
-  fun update(t: T, column: Column<*>): Boolean = database.update(t, this, column)
+  override fun updateAsync(t: T): Maybe<Boolean> = reactiveDatabase.updateAsync(t, this)
 
   /**
    * @param t
    * @param column
    * @return
    */
-  fun updateAsync(t: T, column: Column<*>): Maybe<Boolean> =
+  override fun update(t: T, column: Column<*>): Boolean = database.update(t, this, column)
+
+  /**
+   * @param t
+   * @param column
+   * @return
+   */
+  override fun updateAsync(t: T, column: Column<*>): Maybe<Boolean> =
       reactiveDatabase.updateAsync(t, this, column)
 
-  fun queryBuilder(): QueryBuilder = QueryBuilder().from(this)
+  /**
+   *
+   */
+  override fun queryBuilder(): QueryBuilder = QueryBuilder().from(this)
 
-  fun query(queryBuilder: QueryBuilder): Cursor = database.query(queryBuilder)
+  /**
+   *
+   */
+  override  fun query(queryBuilder: QueryBuilder): Cursor = database.query(queryBuilder)
 
-  fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> =
+  /**
+   *
+   */
+  override  fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> =
       reactiveDatabase.queryAsync(queryBuilder)
 
   /**
    * @return
    */
-  fun find(): TableCrud.Extras<T> = database.find(this)
+  override fun find(): TableCrud.Extras<T> = database.find(this)
 
   /**
    * @return
    */
-  fun findById(idLong: Long): T? = database.find(this).where(id.with(idLong.toInt())).first()
+  override  fun findById(idLong: Long): T? = database.find(this).where(id.with(idLong.toInt())).first()
 
   /**
    * @return
    */
-  fun findOne(vararg columns: Column<*>): T? = database.find(this).where(*columns).first()
+  override  fun findOne(vararg columns: Column<*>): T? = database.find(this).where(*columns).first()
 
   /**
    * @return
    * @throws TableError
    */
   @Throws(TableError::class)
-  fun findAsync(): ReactiveTable.Extras<T> = reactiveDatabase.readAsync(this)
+  override  fun findAsync(): ReactiveTable.Extras<T> = reactiveDatabase.readAsync(this)
 
   /**
    * @return
    */
-  fun findAll(): IdentifiableList<out T> = database.findAll(this)
+  override  fun findAll(): IdentifiableList<out T> = database.findAll(this)
 
   /**
    * @return
    */
-  fun findAllAsync(): Maybe<IdentifiableList<out T>> = reactiveDatabase.readAllAsync(this)
-
-  /**
-   * @param column
-   * @return
-   */
-  fun findAll(vararg column: Column<*>): IdentifiableList<out T> = database.findAll(this, *column)
+  override  fun findAllAsync(): Maybe<IdentifiableList<out T>> = reactiveDatabase.readAllAsync(this)
 
   /**
    * @param column
    * @return
    */
-  fun findAllAsync(vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
+  override  fun findAll(vararg column: Column<*>): IdentifiableList<out T> = database.findAll(this, *column)
+
+  /**
+   * @param column
+   * @return
+   */
+  override  fun findAllAsync(vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
       reactiveDatabase.readAllAsync(this, *column)
 
   /**
    * @param column
    * @return
    */
-  fun delete(column: Column<*>): Boolean = database.delete(this, column)
+  override fun delete(column: Column<*>): Boolean = database.delete(this, column)
 
   /**
    * @param column
    * @return
    */
-  fun deleteAsync(column: Column<*>): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, column)
+  override  fun deleteAsync(column: Column<*>): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, column)
 
   /**
    * @param t
    * @return
    */
-  fun delete(t: T): Boolean = database.delete(this, t)
+  override  fun delete(t: T): Boolean = database.delete(this, t)
 
   /**
    * @param t
    * @return
    */
-  fun deleteAsync(t: T): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, t)
+  override  fun deleteAsync(t: T): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, t)
 
   /**
    * @param column
@@ -442,7 +476,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param <N>
    * @return
   </N> */
-  fun <N> delete(column: Column<N>, list: List<out N>): Boolean =
+  override fun <N> delete(column: Column<N>, list: List<out N>): Boolean =
       database.delete(this, column, list)
 
   /**
@@ -451,31 +485,34 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param <C>
    * @return
   </C> */
-  fun <C> deleteAsync(column: Column<C>, list: List<out C>): Maybe<Boolean> =
+  override  fun <C> deleteAsync(column: Column<C>, list: List<out C>): Maybe<Boolean> =
       reactiveDatabase.deleteAsync(this, column, list)
 
   /**
    * @return
    */
-  fun clear(): Boolean = database.delete(this)
+  override  fun clear(): Boolean = database.delete(this)
 
   /**
    * @return
    */
-  fun clearAsync(): Maybe<Boolean> = reactiveDatabase.deleteAsync(this)
+  override  fun clearAsync(): Maybe<Boolean> = reactiveDatabase.deleteAsync(this)
 
   /**
    * @return
    */
-  val lastId: Int
+  override  val lastId: Int
     get() = database.getLastId(this)
 
   /**
    * @return
    */
-  val lastIdAsync: Maybe<Int>
+  override val lastIdAsync: Maybe<Int>
     get() = reactiveDatabase.getLastIdAsync(this)
 
+  /**
+   *
+   */
   inline fun transact(block: FastTable<T>.() -> Unit) = synchronized(this) {
     val db = database.writableDatabase
     try {
@@ -495,7 +532,14 @@ abstract class FastTable<T : Identifiable<Int>>
    */
    override fun onFind(x: SQLiteDatabase): TableCrud.Extras<T> =
       object : QueryExtras<T>(x) {
+        /**
+         *
+         */
         override fun serialize(t: T): ContentValues = this@FastTable.serialize(t)
+
+        /**
+         *
+         */
         override fun deserialize(e: Cursor): T = this@FastTable.deserialize(e)
       }
 
@@ -507,7 +551,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @return a list of records
    */
   override fun onFindAll(x: SQLiteDatabase, close: Boolean): IdentifiableList<out T> {
-    val builder: QueryBuilder = QueryBuilder().from(this@FastTable)
+    val builder: QueryBuilder = queryBuilder()
     val cursor: Cursor
     return try {
       cursor = x.rawQuery(builder.build(), builder.buildParameters())
@@ -531,7 +575,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @return list of records satisfying the criteria
    */
   override fun onFindAll(x: SQLiteDatabase, vararg column: Column<*>): IdentifiableList<out T> {
-    val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+    val builder: QueryBuilder = queryBuilder().takeAll()
     column.forEach {
       if (it.value() != null) builder.whereAnd(Criteria.equals(it, it.value()))
       if (it.order() != null) {
@@ -696,7 +740,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @return the id
    */
   override fun onGetLastId(x: SQLiteDatabase): Int {
-    val builder: QueryBuilder = QueryBuilder().from(this).select(Projection.count(id).`as`("num"))
+    val builder: QueryBuilder = queryBuilder().select(Projection.count(id).`as`("num"))
     @SuppressLint("Recycle") val cursor = x.rawQuery(builder.build(), builder.buildParameters())
     return cursor.getInt(id.index)
   }
@@ -733,12 +777,13 @@ abstract class FastTable<T : Identifiable<Int>>
   private fun getWithId(cursor: Cursor): T {
     var t = deserialize(cursor)
     t.setId(cursor.getInt(id.index))
-    if (t is ITimeAware) {
-      val iTimeAware = t as ITimeAware
+    if (t is ITimeStamped) {
+      val iTimeAware = t as ITimeStamped
       iTimeAware.setCreatedAt(cursor.getInt(createdAt.getIndex(cursor)).toLong())
       iTimeAware.setUpdatedAt(cursor.getInt(updatedAt.getIndex(cursor)).toLong())
       t = iTimeAware as T
     }
+    if (t is ActiveRecord<*>) (t as ActiveRecord<T>).table = this
     return t
   }
 
@@ -765,13 +810,14 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     fun getWithId(cursor: Cursor): Q {
       var t = deserialize(cursor)
-      t.setId(cursor.getInt(id.index))
-      if (t is ITimeAware) {
-        val iTimeAware = t as ITimeAware
+      t.setId(cursor.getInt(id.getIndex(cursor)))
+      if (t is ITimeStamped) {
+        val iTimeAware = t as ITimeStamped
         iTimeAware.setCreatedAt(cursor.getInt(createdAt.getIndex(cursor)).toLong())
         iTimeAware.setUpdatedAt(cursor.getInt(updatedAt.getIndex(cursor)).toLong())
         t = iTimeAware as Q
       }
+      if (t is ActiveRecord<*>) (t as ActiveRecord<T>).table = this@FastTable
       return t
     }
 
@@ -783,8 +829,9 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun first(): Q? {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).take(1)
+        val builder: QueryBuilder = queryBuilder().take(1)
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
+        cursor.moveToFirst()
         getWithId(cursor)
       } catch (e: SQLiteException) {
         LogUtil.e(TAG, e)
@@ -800,8 +847,9 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun last(): Q? {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).orderByDescending(id).take(1)
+        val builder: QueryBuilder = queryBuilder().orderByDescending(id).take(1)
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
+        cursor.moveToFirst()
         getWithId(cursor)
       } catch (e: SQLiteException) {
         LogUtil.e(TAG, e)
@@ -817,7 +865,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun all(): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+        val builder: QueryBuilder = queryBuilder().takeAll()
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
@@ -836,7 +884,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun limit(limit: Int): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).take(limit)
+        val builder: QueryBuilder = queryBuilder().take(limit)
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
@@ -857,7 +905,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun paginate(skip: Int, limit: Int): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).take(limit).skip(skip)
+        val builder: QueryBuilder = queryBuilder().take(limit).skip(skip)
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
@@ -871,7 +919,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun paginateDescending(skip: Int, limit: Int): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).orderByDescending(id).take(limit).skip(skip)
+        val builder: QueryBuilder = queryBuilder().orderByDescending(id).take(limit).skip(skip)
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
@@ -893,7 +941,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun between(column: Column<Number>, a: Number, b: Number): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll().whereAnd(Criteria.between(column, a, b))
+        val builder: QueryBuilder = queryBuilder().takeAll().whereAnd(Criteria.between(column, a, b))
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
@@ -913,7 +961,7 @@ abstract class FastTable<T : Identifiable<Int>>
     override fun where(vararg column: Column<*>): IdentifiableList<out Q> {
       val cursor: Cursor
       return try {
-        val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+        val builder: QueryBuilder = queryBuilder().takeAll()
         for (column1 in column) if (column1.value() != null) builder.whereAnd(Criteria.equals(column1, column1.value()))
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
@@ -937,7 +985,7 @@ abstract class FastTable<T : Identifiable<Int>>
       val cursor: Cursor
       val items = arrayOfNulls<Any>(bounds.size)
       System.arraycopy(bounds, 0, items, 0, bounds.size)
-      val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+      val builder: QueryBuilder = queryBuilder().takeAll()
           .whereAnd(Criteria.notIn(column, items))
       return try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
@@ -962,7 +1010,7 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     override fun like(vararg column: Column<*>): IdentifiableList<out Q> {
       val cursor: Cursor
-      val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+      val builder: QueryBuilder = queryBuilder().takeAll()
       for (column1 in column) builder.whereAnd(Criteria.contains(column1, column1.value().toString()))
       return try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
@@ -987,7 +1035,7 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     override fun orderBy(column: Column<*>): IdentifiableList<out Q> {
       val cursor: Cursor
-      val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll()
+      val builder: QueryBuilder = queryBuilder().takeAll()
       if (column.order() == Column.DESCENDING) {
         builder.orderByDescending(column)
       } else builder.orderByAscending(column)
@@ -1014,7 +1062,7 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     override fun groupBy(column: Column<*>): IdentifiableList<out Q> {
       val cursor: Cursor
-      val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll().groupBy(column)
+      val builder: QueryBuilder = queryBuilder().takeAll().groupBy(column)
       return try {
         cursor = database.rawQuery(builder.build(), builder.buildParameters())
         val ts = IdentifiableList<Q>()
@@ -1039,7 +1087,7 @@ abstract class FastTable<T : Identifiable<Int>>
      */
     override fun groupAndOrderBy(column: Column<*>, column1: Column<*>): IdentifiableList<out Q> {
       val cursor: Cursor
-      val builder: QueryBuilder = QueryBuilder().from(this@FastTable).takeAll().groupBy(column)
+      val builder: QueryBuilder = queryBuilder().takeAll().groupBy(column)
       if (column1.order() == Column.DESCENDING) {
         builder.orderByDescending(column1)
       } else builder.orderByAscending(column1)

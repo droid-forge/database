@@ -130,7 +130,7 @@ open class FastDatabase internal constructor(
         val tableObject = makeInstance(tableClass.kotlin, arrayOf(this)) as T
         tableObject.setNameOfTable(table.tableName)
         tableObject.setArgs(ArrayMap<String, Any>().apply {
-          put(INDEXES, table.indexes)
+          put(INDEXES, table.indices)
           put(FOREIGN_kEYS, table.foreignKeys)
           put(COMPOUND_INDEXES, table.compoundIndexes)
         })
@@ -256,6 +256,11 @@ open class FastDatabase internal constructor(
       throw DBError(e)
     }
     return true
+  }
+
+  override fun querySql(sql: String): Cursor {
+    LogUtil.d(TAG, "query: $sql")
+    return readableDatabase.rawQuery(sql, null)
   }
 
   /**

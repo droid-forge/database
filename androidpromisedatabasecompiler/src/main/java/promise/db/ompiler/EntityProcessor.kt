@@ -31,6 +31,7 @@ import promise.db.ompiler.annotation.TableAnnotationGenerator
 import promise.db.ompiler.migration.MigrationGenerator
 import java.util.*
 import javax.annotation.processing.AbstractProcessor
+import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedOptions
@@ -49,27 +50,42 @@ import javax.tools.Diagnostic
 @SupportedOptions(EntityProcessor.KAPT_JAVA_GENERATED_OPTION_NAME)
 class EntityProcessor : AbstractProcessor() {
 
+  override fun init(processingEnv: ProcessingEnvironment?) {
+    super.init(processingEnv)
+  }
+
   override fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
     try {
       environment?.getElementsAnnotatedWith(Entity::class.java)
-          ?.forEach {
-            if (it.kind != ElementKind.CLASS) {
+          ?.forEach { element ->
+            if (element.kind != ElementKind.CLASS) {
               processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
               return false
             }
-            processAnnotation(it)
+
+//            val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
+//            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Entity class ${element.simpleName}, interfaceType ${identifiableInterface.toString()}")
+//            if (JavaUtils.implementsInterface(processingEnv, element as TypeElement, identifiableInterface.asType())) {
+//              processAnnotation(element)
+//            }
+             processAnnotation(element)
+//            else {
+//              processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
+//              return false
+//            }
           }
       //return true
       return DatabaseProcessor(processingEnv).process(mutableSet, environment)
     } catch (e: Throwable) {
-      //processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "EntityProcessor: ${Utils.getStackTraceString(e)}")
-      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
+      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
+          //"EntityProcessor: ${Utils.getStackTraceString(e)} " +
+              "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
       return false
     }
   }
 
   private fun processAnnotation(element: Element) {
-    processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Entity Processing: ${element.simpleName}")
+    processingEnv.messager.printMessage(Diagnostic.Kind.OTHER, "Entity Processing: ${element.simpleName}")
 
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
@@ -94,6 +110,15 @@ class EntityProcessor : AbstractProcessor() {
             .build())
 
     classBuilder.addAnnotation(tableAnnotationSpec)
+
+    if (Utils.elementExtendsSuperClass(processingEnv, (element as TypeElement), processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord")))
+      classBuilder.addMethod(MethodSpec.methodBuilder("createEntityInstance")
+        .addAnnotation(Override::class.java)
+        .addAnnotation(NotNull::class.java)
+        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+        .returns(ClassName.get(pack, className))
+        .addCode("return new $className();")
+        .build())
 
     // static column block generation
     val tableColumnPropsGenerator = TableColumnPropsGenerator(classBuilder, processingEnv, element.enclosedElements)
@@ -154,7 +179,7 @@ class EntityProcessor : AbstractProcessor() {
         .skipJavaLangImports(true)
         .addFileComment(
             """
-            Copyright 2017, Peter Vincent
+            Copyright 2017, Android Promise Database
             Licensed under the Apache License, Version 2.0, Android Promise.
             you may not use this file except in compliance with the License.
             You may obtain a copy of the License at

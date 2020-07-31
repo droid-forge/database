@@ -45,15 +45,6 @@ class DatabaseAbstractFuncsGenerator(
     //if (abstractFunctions.isNullOrEmpty()) return null
     val funSpecs = ArrayList<MethodSpec>()
 
-    val entityClasses = element.getTableEntities(processingEnv)
-
-    val gen = """
-      @NotNull
-    @Override
-    public PersonFastTable getPersonFastTable() {
-        return getDatabaseInstance().obtain(PersonFastTable.class);
-    }
-    """.trimIndent()
     abstractFunctions.filter {
       it.parameters.isEmpty() && it.returnType.kind != TypeKind.VOID
     }.forEach { method ->
@@ -96,7 +87,7 @@ class DatabaseAbstractFuncsGenerator(
         ParameterizedTypeName.get(
             ClassName.get("promise.commons.model", "Identifiable"),
             ClassName.get(Integer::class.java)))
-    funSpecs.add(MethodSpec.methodBuilder("getTable")
+    funSpecs.add(MethodSpec.methodBuilder("tableOf")
         .addTypeVariable(typeVariable)
         .addParameter(ParameterizedTypeName.get(ClassName.get(Class::class.java),
             WildcardTypeName.subtypeOf(TypeVariableName.get("T"))

@@ -20,6 +20,7 @@ import java.util.Collections;
 
 import promise.commons.model.Identifiable;
 import promise.commons.model.List;
+import promise.db.ActiveRecord;
 
 public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
   public IdentifiableList(Collection<? extends T> c) {
@@ -69,15 +70,30 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
   }
 
   public boolean remove(T t) {
+    if (t instanceof ActiveRecord<?>) {
+      try {
+        ((ActiveRecord) t).delete();
+      } catch (Exception ignored) {}
+    }
     super.remove(getIndex(t));
     return true;
   }
 
   public void delete(T t) {
+    if (t instanceof ActiveRecord<?>) {
+      try {
+        ((ActiveRecord) t).delete();
+      } catch (Exception ignored) {}
+    }
     removeWithID(t.getId());
   }
 
   public void update(T t) {
+    if (t instanceof ActiveRecord<?>) {
+      try {
+        ((ActiveRecord) t).update();
+      } catch (Exception ignored) {}
+    }
     super.set(getIndex(t), t);
   }
 

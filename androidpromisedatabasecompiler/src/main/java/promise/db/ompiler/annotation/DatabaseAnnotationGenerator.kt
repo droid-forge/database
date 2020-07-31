@@ -40,7 +40,7 @@ class DatabaseAnnotationGenerator(
    */
   override fun generate(): AnnotationSpec {
     if (element is TypeElement) {
-      var stmt = " {"
+      var stmt = " {\n"
       var entities: Array<TypeElement>? = null
       try {
         entities = element.getTableEntities(processingEnv)
@@ -51,14 +51,13 @@ class DatabaseAnnotationGenerator(
       try {
         entities?.forEachIndexed { index, entityClass ->
           val className = entityClass.getClassName()
-          val pack = processingEnv.elementUtils.getPackageOf(entityClass).toString()
           //fileBuilder.addImport(pack, className)
           stmt += "$className.class"
           if (index != entities.size - 1) {
-            stmt += ", "
+            stmt += ", \n"
           }
         }
-        stmt += "}"
+        stmt += "\n}"
       } catch (e: Throwable) {
         processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "DatabaseAnnotationGenerator: ${Utils.getStackTraceString(e)}")
       }

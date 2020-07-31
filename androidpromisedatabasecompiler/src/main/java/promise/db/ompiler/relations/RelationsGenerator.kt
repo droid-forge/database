@@ -14,8 +14,8 @@
 package promise.db.ompiler.relations
 
 import com.squareup.javapoet.MethodSpec
-import promise.db.ManyToOne
-import promise.db.OneToOne
+import promise.db.HasMany
+import promise.db.HasOne
 import promise.db.ompiler.CodeBlockGenerator
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
@@ -47,8 +47,8 @@ class RelationsGenerator(
 
   private fun filterNotPrimitiveElements(elements: List<Element>): List<Element> = elements.filter {
     try {
-      it.getAnnotation(OneToOne::class.java) != null ||
-          it.getAnnotation(ManyToOne::class.java) != null
+      it.getAnnotation(HasOne::class.java) != null ||
+          it.getAnnotation(HasMany::class.java) != null
     } catch (e: Throwable) {
       processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
           "FilterPrimitiveElement ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")

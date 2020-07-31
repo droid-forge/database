@@ -389,16 +389,16 @@ public class QueryBuilder {
 
   public String toDebugSqlString() {
     String[] parameters = buildParameters();
-    String saida = build();
+    String s = build();
 
     if (parameters != null) {
       for (Object p : parameters) {
-        if (p == null) saida = saida.replaceFirst("\\?", "NULL");
-        else saida = saida.replaceFirst("\\?", escapeSQLString(Utils.toString(p)));
+        if (p == null) s = s.replaceFirst("\\?", "NULL");
+        else s = s.replaceFirst("\\?", escapeSQLString(Utils.toString(p)));
       }
     }
 
-    return saida;
+    return s;
   }
 
   private void preProcessDateValues(List<String> values) {

@@ -12,22 +12,80 @@
  */
 package promise.db
 
+import android.database.Cursor
 import promise.commons.model.Identifiable
 import promise.commons.model.List
 import promise.model.IdentifiableList
 
+/**
+ *
+ */
 internal interface Crud<X> {
+
+  fun querySql(sql: String): Cursor
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in X>): TableCrud.Extras<T>
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in X>): IdentifiableList<out T>
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in X>, column: Column<*>): Boolean
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in X>): Boolean
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in X>, vararg columns: Column<*>): IdentifiableList<out T>
+
+  /**
+   *
+   */
   fun delete(tableCrud: TableCrud<*, in X>, column: Column<*>): Boolean
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in X>, t: T): Boolean
+
+  /**
+   *
+   */
   fun delete(tableCrud: TableCrud<*, in X>): Boolean
+
+  /**
+   *
+   */
   fun <T> delete(tableCrud: TableCrud<*, in X>, column: Column<T>, list: List<out T>): Boolean
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in X>): Long
+
+  /**
+   *
+   */
   fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in X>): Boolean
+
+  /**
+   *
+   */
   fun deleteAll(): Boolean
+
+  /**
+   *
+   */
   fun getLastId(tableCrud: TableCrud<*, in X>): Int
 }

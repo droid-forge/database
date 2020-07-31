@@ -15,11 +15,24 @@ package promise.db;
 
 import promise.commons.model.Identifiable;
 
+/**
+ * Base class for classes annotated with DatabaseEntity
+ */
 public interface PromiseDatabase {
 
+  /**
+   * @return an instance of FastDatabase
+   */
   FastDatabase getDatabaseInstance();
 
-  <T extends Identifiable<Integer>> FastTable<T> getTable(Class<? extends T> entityClass) throws IllegalArgumentException;
+  /**
+   * returns the table associated with the entity class
+   * @param entityClass class of the entity persisted
+   * @param <T> entity
+   * @return FastTable of the entity
+   * @throws IllegalArgumentException if entity is not registered with the database
+   */
+  <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException;
 }
 
 

@@ -15,14 +15,29 @@ package promise.db.ompiler;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.TypeName;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 
 public class JavaUtils {
+  private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS
+      = new HashMap<Class<?>, Class<?>>() {{
+    put(boolean.class, Boolean.class);
+    put(byte.class, Byte.class);
+    put(char.class, Character.class);
+    put(double.class, Double.class);
+    put(float.class, Float.class);
+    put(int.class, Integer.class);
+    put(long.class, Long.class);
+    put(short.class, Short.class);
+    put(void.class, Void.class);
+  }};
+
   public static void generateIfStatementObtainClassString(
       ProcessingEnvironment processingEnv,
       CodeBlock.Builder codeBlock,
@@ -39,16 +54,33 @@ public class JavaUtils {
     return c.isPrimitive() ? (Class<T>) PRIMITIVES_TO_WRAPPERS.get(c) : c;
   }
 
-  private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS
-      = new HashMap<Class<?>, Class<?>>() {{
-        put(boolean.class, Boolean.class);
-        put(byte.class, Byte.class);
-        put(char.class, Character.class);
-        put(double.class, Double.class);
-        put(float.class, Float.class);
-        put(int.class, Integer.class);
-        put(long.class, Long.class);
-        put(short.class, Short.class);
-        put(void.class, Void.class);
-  }};
+  public static boolean implementsInterface(
+      ProcessingEnvironment processingEnv,
+      TypeElement myTypeElement,
+      TypeMirror desiredInterface) {
+    boolean found = false;
+    while (myTypeElement.getSuperclass()
+        != processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType()
+        &&   !found) {
+      for (TypeMirror t : myTypeElement.getInterfaces()) {
+        if (processingEnv.getTypeUtils().isAssignable(t, desiredInterface)){
+          found = true;
+          break;
+        }
+        else {
+          TypeElement elem = (TypeElement) processingEnv.getTypeUtils().asElement(t);
+          return implementsInterface(processingEnv, elem, desiredInterface);
+        }
+      }
+    }
+
+    return found;
+  }
+
+  public static boolean extendsClass(
+      TypeElement myTypeElement,
+      TypeMirror desiredInterface) {
+    return myTypeElement.getSuperclass().toString().equals(desiredInterface.toString());
+
+  }
 }

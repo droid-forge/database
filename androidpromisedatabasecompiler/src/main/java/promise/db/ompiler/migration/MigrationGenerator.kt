@@ -17,12 +17,12 @@ import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.ParameterSpec
 import org.jetbrains.annotations.NotNull
 import promise.db.Migrate
 import promise.db.MigrationOptions
 import promise.db.Migrations
 import promise.db.ompiler.CodeBlockGenerator
+import promise.db.ompiler.getNameOfColumn
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -47,7 +47,22 @@ class MigrationGenerator(
   }
   }
    */
-  private fun buildMigration(codeBlock: CodeBlock.Builder, column: String, migration: Migrate) {
+  private fun buildIndexMigration(
+      codeBlock: CodeBlock.Builder,
+      column: String,
+      migration: Migrate) {
+    if (migration.action == MigrationOptions.CREATE_INDEX) {
+      codeBlock.add("if (v1 == ${migration.fromVersion} && v2 == ${migration.toVersion}) {\n")
+      codeBlock.indent()
+      codeBlock.addStatement("addIndex(x, \"${column}\")")
+      codeBlock.unindent()
+      codeBlock.add("}\n")
+    }
+  }
+  private fun buildMigration(
+      codeBlock: CodeBlock.Builder,
+      column: String,
+      migration: Migrate) {
     if (migration.action == MigrationOptions.CREATE) {
       codeBlock.add("if (v1 == ${migration.fromVersion} && v2 == ${migration.toVersion}) {\n")
       codeBlock.indent()
@@ -75,7 +90,9 @@ class MigrationGenerator(
     migrateFields.forEach {
       val migration = it.key.getAnnotation(Migrate::class.java)
       if (migration != null) {
-        buildMigration(codeBlock, it.value, migration)
+        if (migration.action == MigrationOptions.CREATE_INDEX)
+          buildIndexMigration(codeBlock, it.key.getNameOfColumn(), migration)
+        else buildMigration(codeBlock, it.value, migration)
         return@forEach
       }
       val migrations = it.key.getAnnotation(Migrations::class.java)
