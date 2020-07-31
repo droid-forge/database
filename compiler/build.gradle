@@ -67,7 +67,7 @@ apply plugin: 'maven'
 //}
 
 dependencies {
-    compileOnly project(path: ':promisedatabase')
+    compileOnly project(path: ':commons')
     //compileOnly files(Jvm.current().getJre().homeDir.getAbsolutePath()+'/lib/rt.jar')
     //compileOnly files("${System.properties['java.home']}/../lib/tools.jar")
     compileOnly files(Jvm.current().getToolsJar())

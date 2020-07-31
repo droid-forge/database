@@ -14,6 +14,8 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+apply plugin: 'com.github.dcendents.android-maven'
+
 android {
     compileSdkVersion 29
 
@@ -44,7 +46,7 @@ android {
 }
 
 dependencies {
-    api project(path: ':promisedatabase')
+    api project(path: ':commons')
     compileOnly 'io.reactivex.rxjava2:rxjava:2.2.17'
     compileOnly 'androidx.appcompat:appcompat:1.1.0'
     compileOnly 'com.github.android-promise:commons:1.1-beta02'
@@ -55,4 +57,29 @@ dependencies {
 }
 repositories {
     mavenCentral()
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
+}
+
+task javadoc(type: Javadoc) {
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task classesJar(type: Jar) {
+    from "$buildDir/intermediates/classes/release"
+}
+
+artifacts {
+    archives classesJar
+    archives javadocJar
+    archives sourcesJar
 }
