@@ -52,25 +52,9 @@ The database expects a list of entities to be registered with it
       Sales::class
     ]
 )
-/**
- *
- */
 abstract class AppDatabase : PromiseDatabase {
-
-
-  /**
-   *
-   */
   private val personsTable: FastTable<Person> by lazy { tableOf(Person::class.java) }
-
-  /**
-   *
-   */
   private val dogsTable: FastTable<Dog> by lazy { tableOf(Dog::class.java) }
-
-  /**
-   *
-   */
   fun listAllPersons() = personsTable.findAll()
 
   fun listAllPersonsWithEmail(): List<Person> {
@@ -83,22 +67,11 @@ abstract class AppDatabase : PromiseDatabase {
 
     return persons
   }
-
-  /**
-   *
-   */
   fun listAllDogs() = dogsTable.findAll()
-
-//  /**
-//   *
-//   */
 //  @OneToMany(parent = Person::class, child = Dog::class)
 //  @FindAll
 //  abstract fun getPersonsWithDogs(array: Array<Column<*>>?): List<Person>
-//
-//  /**
-//   *
-//   */
+
 //  @OneToOne(parent = Dog::class, child = Person::class)
 //  @FindAll
 //  abstract fun getDogsWithPersons(array: Array<Column<*>>?): List<Dog>
@@ -199,7 +172,6 @@ Adding columns to an existing entity, annotate the new field with Migrate, a mig
 ## Setup
 ##### build.gradle
 ```
-
 allprojects {
     repositories {
         ...
