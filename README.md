@@ -47,7 +47,7 @@ The compiler generates a table class for the entity with the below DML functions
 
 | DML FUNCTION                                               | ILLUSTRATION                                                                 |
 |------------------------------------------------------------|------------------------------------------------------------------------------|
-| querySql(sql: String): Cursor                              | Use i executing raw queries                                                  |
+| querySql(sql: String): Cursor                              | Executing raw queries                                                  |
 | save(t: T): Long                                           | Saves one entity to the table                                                |
 | save(list: IdentifiableList<out T>): Boolean               | Saves many entities to the table                                             |
 | update(t: T): Boolean                                      | Update an entity to the table                                                |
