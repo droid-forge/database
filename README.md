@@ -41,6 +41,31 @@ public class Person extends ActiveRecord<Person> {
 
 > if entity is a kt file, DO NOT include any getter and setters, BOOLEAN fields MUST NOT start with `is`
 
+
+The compiler generates a table class for the entity with the below DML functions
+
+
+| DML FUNCTION                                               | ILLUSTRATION                                                                 |
+|------------------------------------------------------------|------------------------------------------------------------------------------|
+| querySql(sql: String): Cursor                              | Use i executing raw queries                                                  |
+| save(t: T): Long                                           | Saves one entity to the table                                                |
+| save(list: IdentifiableList<out T>): Boolean               | Saves many entities to the table                                             |
+| update(t: T): Boolean                                      | Update an entity to the table                                                |
+| update(t: T, column: Column<*>): Boolean                   | Update with condition on a specified column                                  |
+| queryBuilder(): QueryBuilder                               | Returns a queryBuilder for more complex queries                              |
+| query(queryBuilder: QueryBuilder): Cursor                  | Executes the query returned from the query builder                           |
+| find(): TableCrud.Extras<T>                                | ![](images/findoptions.png?raw=true)                                                                          |
+| findById(idLong: Long): T?                                 | Finds one entity with the ID specified                                       |
+| findOne(vararg columns: Column<*>): T?                     | Finds one entity with the condition specified in the columns                 |
+| findAll(): IdentifiableList<out T>                         | Returns all records from the table                                           |
+| findAll(vararg column: Column<*>): IdentifiableList<out T> | Returns all records from the table specified by the condition in the columns |
+| delete(column: Column<*>): Boolean                         | Delete an entity specified by the condition in the columns                   |
+| delete(t: T): Boolean                                      | Delete an entity                                                             |
+| <N> delete(column: Column<N>, list: List<out N>): Boolean  | Delete a list of records whose column values are in the provided list        |
+| clear(): Boolean                                           | Clear all records from the table                                             |
+| lastId: Int                                                | Returns the id of the last record                                            |
+
+
 ## Making your database
 The database expects a list of entities to be registered with it
 ```kotlin
