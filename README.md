@@ -54,7 +54,7 @@ The compiler generates a table class for the entity with the below DML functions
 | update(t: T, column: Column<*>): Boolean                   | Update with condition on a specified column                                  |
 | queryBuilder(): QueryBuilder                               | Returns a queryBuilder for more complex queries                              |
 | query(queryBuilder: QueryBuilder): Cursor                  | Executes the query returned from the query builder                           |
-| find(): TableCrud.Extras<T>                                | ![](images/findoptions.png?raw=true)                                                                          |
+| find(): TableCrud.Extras<T>                                | ![](findoptions.PNG?raw=true)                                                                          |
 | findById(idLong: Long): T?                                 | Finds one entity with the ID specified                                       |
 | findOne(vararg columns: Column<*>): T?                     | Finds one entity with the condition specified in the columns                 |
 | findAll(): IdentifiableList<out T>                         | Returns all records from the table                                           |
