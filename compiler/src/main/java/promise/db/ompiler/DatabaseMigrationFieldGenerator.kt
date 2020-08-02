@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler.migration
+package promise.db.ompiler
 
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
@@ -21,13 +21,11 @@ import org.jetbrains.annotations.NotNull
 import promise.db.Migrate
 import promise.db.MigrationOptions
 import promise.db.Migrations
-import promise.db.ompiler.CodeBlockGenerator
-import promise.db.ompiler.getNameOfColumn
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
-class MigrationGenerator(
-    private val elements: Map<Element, String>) : CodeBlockGenerator<MethodSpec?> {
+class DatabaseMigrationFieldGenerator(
+    private val elements: Map<Element, String>) : CodeGenerator<MethodSpec?> {
   init {
     //fileSpec.addImport("android.content", "ContentValues")
   }

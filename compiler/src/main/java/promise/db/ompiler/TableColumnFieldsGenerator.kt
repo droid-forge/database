@@ -18,7 +18,6 @@ import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
-import com.squareup.javapoet.TypeSpec
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
@@ -30,60 +29,89 @@ import javax.tools.Diagnostic
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
-class TableColumnPropsGenerator(
-                                private val classBuilder: TypeSpec.Builder,
-                                private val processingEnvironment: ProcessingEnvironment
-                                ,
-                                private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, FieldSpec>> {
+/**
+ * generates column fields for the entity
+ */
+class TableColumnFieldsGenerator(
+    private val processingEnvironment: ProcessingEnvironment,
+    private val setElements: List<Element>) : CodeGenerator<Map<Pair<Element, String>, FieldSpec>> {
 
+  /**
+   *
+   */
   var genColValues: ArrayList<Pair<Pair<String, TypeName>, String>> = ArrayList()
-
-  init {
-    //fileSpec.addImport("promise.db", "Column")
-  }
 
   override fun generate(): Map<Pair<Element, String>, FieldSpec> {
     val map = HashMap<Pair<Element, String>, FieldSpec>()
-    filterPrimitiveElements(setElements.filter {
+    setElements.filter {
       it.kind.isField
-    }).forEachIndexed { i, element ->
+    }.forEachIndexed { i, element ->
       if (element.getAnnotation(PrimaryKeyAutoIncrement::class.java) != null ||
           element.getAnnotation(Ignore::class.java) != null) return@forEachIndexed
       val nameOfColumn = element.getNameOfColumn()
       if (nameOfColumn == "id") return@forEachIndexed
-
       val colVariableName = "${element.simpleName}Column"
       var variableClassType = element.toTypeName()
       if (variableClassType.isPrimitive) variableClassType = variableClassType.box()
-      //processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "gen column : ${element.simpleName} type: $variableClassType")
-
-      val parameterizedColumnTypeName = ParameterizedTypeName.get(ClassName.get("promise.db", "Column"), variableClassType)
-
-      val columnInitializer = getColumnInitializer(element, variableClassType)
-
-
-      val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
-          .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
-          .initializer(CodeBlock.of("""
-              new Column<${variableClassType}>("$nameOfColumn", $columnInitializer, ${i + 1})
+      if (!isPersistable(element) && !element.isElementAnnotatedAsRelation()) {
+        val executableElement = element.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
+        if (element.checkIfHasTypeConverter(processingEnvironment)) {
+          val parameterizedColumnTypeName = ParameterizedTypeName.get(
+              ClassName.get("promise.db", "Column"),
+              TypeName.get(String::class.java))
+          val columnInitializer = getColumnInitializer(element, ClassName.get(String::class.java))
+          val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
+              .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+              .initializer(CodeBlock.of("""
+              new Column<String>("$nameOfColumn", $columnInitializer, ${i + 1})
             """.trimIndent())
-          )
-          .build()
-      map[Pair(element, colVariableName)] = spec
-      val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
-      genColValues.add(pair)
+              )
+              .build()
+          map[Pair(element, colVariableName)] = spec
+          val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), TypeName.get(String::class.java)), colVariableName)
+          genColValues.add(pair)
+        }
+      } else if(isPersistable(element)) {
+        val spec = processField(element, nameOfColumn, i)
+        map[Pair(element, colVariableName)] = spec
+        val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
+        genColValues.add(pair)
+      }
     }
 
     return map
   }
 
+  /**
+   * generates field for the column type of this particular field
+   */
+  private fun processField(element: Element, nameOfColumn: String, i: Int): FieldSpec {
+    val colVariableName = "${element.simpleName}Column"
+    var variableClassType = element.toTypeName()
+    if (variableClassType.isPrimitive) variableClassType = variableClassType.box()
+    val parameterizedColumnTypeName = ParameterizedTypeName.get(
+        ClassName.get("promise.db", "Column"),
+        variableClassType)
+    val columnInitializer = getColumnInitializer(element, variableClassType)
+    return FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
+        .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .initializer(CodeBlock.of("""
+              new Column<${variableClassType}>("$nameOfColumn", $columnInitializer, ${i + 1})
+            """.trimIndent())
+        )
+        .build()
+  }
+
+  /**
+   * returns column type initializer for this column type
+   */
   private fun getColumnInitializer(element: Element, classTypeName: TypeName): String {
     var str = "Column.Type"
     if (classTypeName.isSameAs(Integer::class.java) ||
         classTypeName.isSameAs(Integer::class.java) ||
         classTypeName.isSameAs(Float::class.java) ||
         classTypeName.isSameAs(Double::class.java) ||
-       classTypeName.isSameAs(Boolean::class.java)) {
+        classTypeName.isSameAs(Boolean::class.java)) {
       str += ".INTEGER"
       if (element.getAnnotation(PrimaryKey::class.java) != null) {
         str += ".PRIMARY_KEY()"
@@ -101,7 +129,8 @@ class TableColumnPropsGenerator(
       } else {
         str += ".NULLABLE()"
       }
-    } else if (classTypeName.isSameAs(String::class.java)) {
+    }
+    else if (classTypeName.isSameAs(String::class.java)) {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
@@ -114,7 +143,8 @@ class TableColumnPropsGenerator(
         } else {
           throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
         }
-      } else {
+      }
+      else {
         if (element.getAnnotation(promise.db.Text::class.java) != null) {
           str += ".TEXT"
           val annotation = element.getAnnotation(promise.db.Text::class.java)
@@ -125,7 +155,8 @@ class TableColumnPropsGenerator(
           } else {
             throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
           }
-        } else {
+        }
+        else {
           str += ".TEXT.NULLABLE()"
         }
       }
@@ -133,18 +164,17 @@ class TableColumnPropsGenerator(
     return str
   }
 
-  private fun filterPrimitiveElements(elements: List<Element>): List<Element> = elements.filter {
-
-    try {
-      it.toTypeName().isSameAs2(processingEnvironment, Integer::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment, String::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment, Float::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment, Double::class.java) ||
-          it.toTypeName().isSameAs2(processingEnvironment, Boolean::class.java)
-    } catch (e: Throwable) {
-      processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
-          "FilterPrimitiveElement ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")
-      false
-    }
+  private fun isPersistable(it: Element): Boolean = try {
+    it.toTypeName().isSameAs2(processingEnvironment, Integer::class.java) ||
+        it.toTypeName().isSameAs2(processingEnvironment, String::class.java) ||
+        it.toTypeName().isSameAs2(processingEnvironment, Float::class.java) ||
+        it.toTypeName().isSameAs2(processingEnvironment, Double::class.java) ||
+        it.toTypeName().isSameAs2(processingEnvironment, Boolean::class.java)
+  } catch (e: Throwable) {
+    processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
+        "isPersistable ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")
+    false
   }
+
+
 }

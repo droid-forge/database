@@ -11,13 +11,10 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
-apply plugin: 'maven'
+package promise.db.ompiler
 
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+
+interface CodeGenerator<out T> {
+  @Throws(Exception::class)
+  fun generate(): T
 }
-
-sourceCompatibility = "8"
-targetCompatibility = "8"

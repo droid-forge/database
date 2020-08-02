@@ -29,10 +29,9 @@ import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
-
-class DatabaseAbstractFuncsGenerator(
+class DatabaseAbstractMethodsGenerator(
     private val element: TypeElement,
-    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<List<MethodSpec>?> {
+    private val processingEnv: ProcessingEnvironment) : CodeGenerator<List<MethodSpec>?> {
 
 
   override fun generate(): List<MethodSpec>? {

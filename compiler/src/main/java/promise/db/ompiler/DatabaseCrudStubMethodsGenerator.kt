@@ -18,10 +18,10 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 
-class DatabaseCrudStubsGenerator(
+class DatabaseCrudStubMethodsGenerator(
     private val typeSpec: TypeSpec.Builder,
     private val element: Element,
-    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<String> {
+    private val processingEnv: ProcessingEnvironment) : CodeGenerator<String> {
 
   override fun generate(): String {
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()

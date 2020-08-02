@@ -11,13 +11,20 @@
  * limitations under the License.
  */
 
-apply plugin: 'java-library'
-apply plugin: 'kotlin'
-apply plugin: 'maven'
+package promise.db.ompiler
 
-dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+import org.junit.After
+import org.junit.Before
+
+import org.junit.Assert.*
+
+class PersistableEntityUtilsKtTest {
+
+  @Before
+  fun setUp() {
+  }
+
+  @After
+  fun tearDown() {
+  }
 }
-
-sourceCompatibility = "8"
-targetCompatibility = "8"

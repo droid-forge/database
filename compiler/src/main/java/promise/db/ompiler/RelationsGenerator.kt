@@ -11,12 +11,11 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler.relations
+package promise.db.ompiler
 
 import com.squareup.javapoet.MethodSpec
 import promise.db.HasMany
 import promise.db.HasOne
-import promise.db.ompiler.CodeBlockGenerator
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
@@ -27,7 +26,7 @@ class RelationsGenerator(
     private val processingEnvironment: ProcessingEnvironment
     ,
     private val setElements: List<Element>
-) : CodeBlockGenerator<List<MethodSpec>?> {
+) : CodeGenerator<List<MethodSpec>?> {
 
   override fun generate(): List<MethodSpec>? {
     val funSpecs = ArrayList<MethodSpec>()

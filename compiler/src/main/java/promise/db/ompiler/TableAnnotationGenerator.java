@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler.annotation;
+package promise.db.ompiler;
 
 import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.CodeBlock;
@@ -27,10 +27,10 @@ import javax.tools.Diagnostic;
 
 import promise.db.Entity;
 import promise.db.Table;
-import promise.db.ompiler.CodeBlockGenerator;
+import promise.db.ompiler.CodeGenerator;
 import promise.db.ompiler.PersistableEntityUtilsKt;
 
-public class TableAnnotationGenerator implements CodeBlockGenerator<AnnotationSpec> {
+public class TableAnnotationGenerator implements CodeGenerator<AnnotationSpec> {
   private Element element;
   private ProcessingEnvironment processingEnvironment;
 

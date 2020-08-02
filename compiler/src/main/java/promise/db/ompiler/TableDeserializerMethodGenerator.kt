@@ -19,10 +19,10 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
 import javax.lang.model.element.Modifier
 
-class DeserializerGenerator(
+class TableDeserializerMethodGenerator(
     private val typeDataTypePack: String,
     private val typeDataType: String,
-    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<MethodSpec> {
+    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
 
   init {
     //fileSpec.addImport(ClassName("android.database", "Cursor"))

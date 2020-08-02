@@ -15,13 +15,20 @@ package promise.db.ompiler;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 
 public class JavaUtils {
@@ -37,6 +44,17 @@ public class JavaUtils {
     put(short.class, Short.class);
     put(void.class, Void.class);
   }};
+
+  public static void generateAddConverterStatementInDatabaseConstructorMethod(
+      ProcessingEnvironment processingEnvironment,
+      MethodSpec.Builder constructorMethod,
+      TypeElement converter) {
+    String pack = processingEnvironment.getElementUtils().getPackageOf(converter).toString();
+    constructorMethod.addStatement("this.typeConverter = $T.provider($T.create(new $T())).get()",
+        ClassName.get("promise.commons", "SingletonInstanceProvider"),
+        ClassName.get(pack, TypeConverterProcessorKt.getTypeConverterClassName(converter)),
+        UtilsKt.toTypeName(converter));
+  }
 
   public static void generateIfStatementObtainClassString(
       ProcessingEnvironment processingEnv,
@@ -54,27 +72,57 @@ public class JavaUtils {
     return c.isPrimitive() ? (Class<T>) PRIMITIVES_TO_WRAPPERS.get(c) : c;
   }
 
-  public static boolean implementsInterface(
-      ProcessingEnvironment processingEnv,
-      TypeElement myTypeElement,
-      TypeMirror desiredInterface) {
-    boolean found = false;
-    while (myTypeElement.getSuperclass()
-        != processingEnv.getElementUtils().getTypeElement("java.lang.Object").asType()
-        &&   !found) {
-      for (TypeMirror t : myTypeElement.getInterfaces()) {
-        if (processingEnv.getTypeUtils().isAssignable(t, desiredInterface)){
-          found = true;
-          break;
+
+  public static TypeElement getSuperClass(TypeElement typeElement) {
+    TypeMirror type = typeElement.getSuperclass();
+    if (type.getKind() == TypeKind.NONE) {
+      return null;
+    }
+    return (TypeElement) ((DeclaredType) type).asElement();
+  }
+
+  static boolean isTypeEqual(TypeMirror typeMirror, TypeName otherType) {
+    return otherType.toString().equals(TypeName.get(typeMirror).toString());
+  }
+
+  static boolean isSubtypeOfType(TypeMirror typeMirror, TypeName otherType) {
+    if (isTypeEqual(typeMirror, otherType)) {
+      return true;
+    }
+    if (typeMirror.getKind() != TypeKind.DECLARED) {
+      return false;
+    }
+    DeclaredType declaredType = (DeclaredType) typeMirror;
+    List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+    if (typeArguments.size() > 0) {
+      StringBuilder typeString = new StringBuilder(declaredType.asElement().toString());
+      typeString.append('<');
+      for (int i = 0; i < typeArguments.size(); i++) {
+        if (i > 0) {
+          typeString.append(',');
         }
-        else {
-          TypeElement elem = (TypeElement) processingEnv.getTypeUtils().asElement(t);
-          return implementsInterface(processingEnv, elem, desiredInterface);
-        }
+        typeString.append('?');
+      }
+      typeString.append('>');
+      if (typeString.toString().equals(otherType)) {
+        return true;
       }
     }
-
-    return found;
+    Element element = declaredType.asElement();
+    if (!(element instanceof TypeElement)) {
+      return false;
+    }
+    TypeElement typeElement = (TypeElement) element;
+    TypeMirror superType = typeElement.getSuperclass();
+    if (isSubtypeOfType(superType, otherType)) {
+      return true;
+    }
+    for (TypeMirror interfaceType : typeElement.getInterfaces()) {
+      if (isSubtypeOfType(interfaceType, otherType)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static boolean extendsClass(

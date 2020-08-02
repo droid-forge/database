@@ -25,10 +25,10 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
-class DatabaseCompanionPropsGenerator(
+class DatabaseStaticMethodsGenerator(
     private val typeSpec: TypeSpec.Builder,
     private val element: Element,
-    private val processingEnv: ProcessingEnvironment) : CodeBlockGenerator<String> {
+    private val processingEnv: ProcessingEnvironment) : CodeGenerator<String> {
 
   override fun generate(): String {
     val className = element.simpleName.toString()
@@ -43,18 +43,7 @@ class DatabaseCompanionPropsGenerator(
 
     val entities = (element as TypeElement).getTableEntities(processingEnv)
 
-    /**
-     * private static Migration getMigration() {
-            return new Migration() {
-              @Override
-              public void onMigrate(@NotNull FastDatabase database, @NotNull SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-                if (oldVersion == 2 && newVersion == 3) {
-                  database.add(sqLiteDatabase, database.obtain(PersonFastTable.class));
-                }
-              }
-            };
-          }
-     */
+
     var migrationInitialzer = """
       return new Migration() {
               @Override
@@ -91,6 +80,14 @@ class DatabaseCompanionPropsGenerator(
         .initializer("null")
         .addModifiers(Modifier.PRIVATE)
         .build())
+
+    if (TypeConverterProcessor.typeConverter != null) {
+      typeSpec.addField(FieldSpec.builder(
+          TypeConverterProcessor.typeConverter!!.toTypeName(),
+          "typeConverter")
+          .addModifiers(Modifier.PRIVATE)
+          .build())
+    }
 
     typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType,"initialized")
         .initializer("false")

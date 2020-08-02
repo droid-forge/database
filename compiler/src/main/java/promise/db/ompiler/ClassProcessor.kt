@@ -13,8 +13,10 @@
 
 package promise.db.ompiler
 
+import com.squareup.javapoet.JavaFile
+import javax.annotation.processing.ProcessingEnvironment
+import javax.annotation.processing.RoundEnvironment
 
-interface CodeBlockGenerator<out T> {
-  @Throws(Exception::class)
-  fun generate(): T
+abstract class ClassProcessor  {
+  abstract fun process( environment: RoundEnvironment?): List<JavaFile.Builder?>?
 }

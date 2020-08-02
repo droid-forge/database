@@ -11,16 +11,11 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler.annotation
+package promise.db.ompiler
 
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
-import promise.db.ompiler.CodeBlockGenerator
-import promise.db.ompiler.Utils
-import promise.db.ompiler.getClassName
-import promise.db.ompiler.getDatabaseVersion
-import promise.db.ompiler.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
@@ -29,7 +24,7 @@ import javax.tools.Diagnostic
 
 class DatabaseAnnotationGenerator(
     private val processingEnv: ProcessingEnvironment,
-    private val element: Element) : CodeBlockGenerator<AnnotationSpec> {
+    private val element: Element) : CodeGenerator<AnnotationSpec> {
   /*
   @Database(
     tables = [

@@ -14,18 +14,23 @@
 package promise.db.ompiler
 
 import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.TypeName
 import com.sun.tools.javac.code.Attribute
 import org.atteo.evo.inflector.English
 import promise.db.DatabaseEntity
 import promise.db.Entity
 import promise.db.ForeignKey
+import promise.db.HasMany
+import promise.db.HasOne
 import promise.db.Index
 import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
+import javax.tools.Diagnostic
 
 /**
  * gets the className for type element
@@ -149,3 +154,79 @@ fun Element.getNameOfColumn(): String {
 fun String.capitalizeFirst(): String = this.replaceFirst(this.first(), this.first().toUpperCase())
 
 fun String.camelCase(): String = this.replaceFirst(this.first(), this.first().toLowerCase())
+
+fun Element.checkIfHasTypeConverter(): Boolean {
+  //return true
+  if (TypeConverterProcessor.typeConverter != null)
+    return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER) != null &&
+      this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER) != null
+  return false
+}
+
+fun Element.checkIfHasTypeConverter(processingEnv: ProcessingEnvironment): Boolean {
+  //return true
+  if (TypeConverterProcessor.typeConverter != null)
+    return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER, processingEnv) != null &&
+        this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER, processingEnv) != null
+  return false
+}
+
+enum class ConverterTypes {
+  DESERIALIZER,
+  SERIALIZER
+}
+
+fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): ExecutableElement? {
+  if (TypeConverterProcessor.typeConverter != null) {
+    val methods =
+        ElementFilter.methodsIn(TypeConverterProcessor.typeConverter!!.enclosedElements)
+            .filter { it.parameters.size == 1 }
+    return methods.find {
+      when(converterTypes) {
+        ConverterTypes.DESERIALIZER -> {
+          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
+              JavaUtils.isTypeEqual(it.returnType, TypeName.get(this.asType()))
+        }
+        ConverterTypes.SERIALIZER -> {
+          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(this.asType())) &&
+              JavaUtils.isTypeEqual(it.returnType, TypeName.get(String::class.java))
+        }
+      }
+    }
+  }
+    else return null
+}
+
+
+fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, processingEnv: ProcessingEnvironment): ExecutableElement? {
+  if (TypeConverterProcessor.typeConverter != null) {
+    val methods =
+        ElementFilter.methodsIn(TypeConverterProcessor.typeConverter!!.enclosedElements)
+            .filter {
+              it.parameters.size == 1 }
+    return methods.find {
+//      processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Type converter: " +
+//          " method: ${it}, " +
+//          " returnType: ${TypeName.get(it.returnType)}" +
+//          " parameter: ${TypeName.get(it.parameters[0].asType())}" +
+//          " elementType ${TypeName.get(this.asType())}")
+      when(converterTypes) {
+        ConverterTypes.DESERIALIZER -> {
+
+          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
+              JavaUtils.isTypeEqual(it.returnType, TypeName.get(this.asType()))
+        }
+        ConverterTypes.SERIALIZER -> {
+          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(this.asType())) &&
+              JavaUtils.isTypeEqual(it.returnType, TypeName.get(String::class.java))
+        }
+      }
+    }
+  }
+  else return null
+}
+fun Element.isElementAnnotatedAsRelation(): Boolean {
+  //return false
+  return this.getAnnotation(HasMany::class.java) != null ||
+     this.getAnnotation(HasOne::class.java) != null
+}

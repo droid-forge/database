@@ -20,14 +20,11 @@ import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.WildcardTypeName
 import org.jetbrains.annotations.NotNull
-import java.lang.reflect.Type
 import javax.lang.model.element.Modifier
-import javax.lang.model.type.TypeVariable
-import javax.lang.model.type.WildcardType
 
 
-class RegisterColumnsGenerator(
-    private val columns: List<String>) : CodeBlockGenerator<MethodSpec> {
+class TableRegisteredColumnsMethodGenerator(
+    private val columns: List<String>) : CodeGenerator<MethodSpec> {
   init {
     //fileSpec.addImport("promise.commons.model", "List")
   }

@@ -12,6 +12,7 @@
  */
 package promise.db
 
+import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
@@ -64,8 +65,13 @@ annotation class Migrate(val fromVersion: Int,
                          val action: MigrationOptions)
 
 
-
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Migrations(val values: Array<Migrate>)
+
+@Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class TypeConverter
+
+
 

@@ -20,10 +20,10 @@ import com.squareup.javapoet.TypeName
 import javax.lang.model.element.Modifier
 
 
-class SerializerGenerator(
+class TableSerializerMethodGenerator(
     private val typeDataTypePack: String,
     private val typeDataType: String,
-    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<MethodSpec> {
+    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
   init {
    // fileSpec.addImport("android.content", "ContentValues")
   }
