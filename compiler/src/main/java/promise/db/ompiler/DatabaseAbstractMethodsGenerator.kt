@@ -41,8 +41,14 @@ class DatabaseAbstractMethodsGenerator(
     val abstractFunctions = methods.filter {
       it.modifiers.contains(Modifier.ABSTRACT)
     }
+
     //if (abstractFunctions.isNullOrEmpty()) return null
     val funSpecs = ArrayList<MethodSpec>()
+
+    abstractFunctions.forEach {
+      funSpecs.add(MethodSpec.overriding(it)
+          .build())
+    }
 
     abstractFunctions.filter {
       it.parameters.isEmpty() && it.returnType.kind != TypeKind.VOID

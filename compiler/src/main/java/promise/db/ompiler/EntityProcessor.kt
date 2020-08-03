@@ -150,7 +150,7 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     columnSpecs.forEach {
       elemMap[it.key.first] = it.key.second
     }
-    val migrationGenerator = DatabaseMigrationFieldGenerator(elemMap)
+    val migrationGenerator = TableMigrationFieldGenerator(elemMap)
     val migrationFunc = migrationGenerator.generate()
     if (migrationFunc != null) classBuilder.addMethod(migrationFunc)
 

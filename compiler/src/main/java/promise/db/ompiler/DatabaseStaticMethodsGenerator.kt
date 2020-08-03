@@ -43,34 +43,25 @@ class DatabaseStaticMethodsGenerator(
 
     val entities = (element as TypeElement).getTableEntities(processingEnv)
 
+    val migrationCodeBlock = CodeBlock.builder()
 
-    var migrationInitialzer = """
-      return new Migration() {
-              @Override
-              public void onMigrate(FastDatabase database, android.database.sqlite.SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-    """.plus("\n").trimIndent()
+    migrationCodeBlock.beginControlFlow("return new Migration()")
+    JavaUtils.generateDatabaseMigrationOverrideControlBlock(migrationCodeBlock)
     entities.forEach {
       val migrationAnnoTation = it.getAnnotation(AddedEntity::class.java)
       if (migrationAnnoTation != null) {
-        migrationInitialzer += """
-          if (oldVersion == ${migrationAnnoTation.fromVersion} && newVersion == ${migrationAnnoTation.toVersion}) {
-            database.add(sqLiteDatabase, database.obtain(${it.getClassName()}.class));
-          } 
-          
-    """.trimIndent()
+        migrationCodeBlock.beginControlFlow("if (oldVersion == ${migrationAnnoTation.fromVersion} && newVersion == ${migrationAnnoTation.toVersion})")
+        migrationCodeBlock.addStatement("database.add(sqLiteDatabase, database.obtain(${it.getClassName()}.class))")
+        migrationCodeBlock.endControlFlow()
       }
     }
-
-
-    migrationInitialzer += """
-        }
-      };
-    """.trimIndent()
-
+    migrationCodeBlock.endControlFlow()
+    migrationCodeBlock.endControlFlow()
+    migrationCodeBlock.add(";")
     val migrationPropSpec = MethodSpec.methodBuilder("getMigration")
         .returns(ClassName.get("promise.db", "Migration"))
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-        .addCode(CodeBlock.of(migrationInitialzer))
+        .addCode(migrationCodeBlock.build())
         .build()
 
     typeSpec.addMethod(migrationPropSpec)

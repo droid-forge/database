@@ -98,6 +98,9 @@ public class JavaUtils {
     codeBlock.beginControlFlow("if("+variableName+" != null)");
     codeBlock.addStatement("values.put("+colName+".getName(), "+variableName+".getId())");
     codeBlock.endControlFlow();
+    codeBlock.beginControlFlow("else");
+    codeBlock.addStatement("values.put("+colName+".getName(), 0)");
+    codeBlock.endControlFlow();
     return codeBlock.build();
   }
 
@@ -131,6 +134,11 @@ public class JavaUtils {
         ClassName.get("android.database", "CursorIndexOutOfBoundsException"));
     codeBlock.addStatement("LogUtil.e(TAG, \"deserialize\", ex)");
     codeBlock.addStatement("return new "+typeDataType+"()");
+  }
+
+  public static void generateDatabaseMigrationOverrideControlBlock(CodeBlock.Builder codeBlock) {
+    codeBlock.add("@Override \n");
+    codeBlock.beginControlFlow("public void onMigrate(FastDatabase database, $T sqLiteDatabase, int oldVersion, int newVersion)", ClassName.get("android.database.sqlite", "SQLiteDatabase"));
   }
 
   // safe because both Long.class and long.class are of type Class<Long>

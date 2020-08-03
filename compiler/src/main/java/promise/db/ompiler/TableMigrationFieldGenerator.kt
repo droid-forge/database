@@ -24,7 +24,7 @@ import promise.db.Migrations
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
-class DatabaseMigrationFieldGenerator(
+class TableMigrationFieldGenerator(
     private val elements: Map<Element, String>) : CodeGenerator<MethodSpec?> {
   init {
     //fileSpec.addImport("android.content", "ContentValues")
