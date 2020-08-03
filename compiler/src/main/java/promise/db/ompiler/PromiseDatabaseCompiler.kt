@@ -33,7 +33,7 @@ import kotlin.collections.ArrayList
 
 @AutoService(Processor::class) // For registering the service
 @IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.DYNAMIC)
-@SupportedSourceVersion(SourceVersion.RELEASE_7) // to support Java 8
+@SupportedSourceVersion(SourceVersion.RELEASE_8) // to support Java 8
 @SupportedOptions(PromiseDatabaseCompiler.KAPT_JAVA_GENERATED_OPTION_NAME)
 class PromiseDatabaseCompiler : AbstractProcessor() {
 
@@ -78,9 +78,13 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       }
       return true
     } catch (e: Throwable) {
+      val stringBuilder = StringBuilder()
+      //stringBuilder.append(Utils.getStackTraceString(e))
+      //stringBuilder.append("\n")
+      stringBuilder.append("Trace: ").append(Arrays.toString(e.stackTrace))
       processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
-          //"EntityProcessor: ${Utils.getStackTraceString(e)} " +
-          "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
+          "EntityProcessor: $stringBuilder " )
+         // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
       return false
     }
   }

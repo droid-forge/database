@@ -23,11 +23,15 @@ import promise.db.ForeignKey
 import promise.db.HasMany
 import promise.db.HasOne
 import promise.db.Index
+import promise.db.Text
+import promise.db.VarChar
 import java.io.IOException
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
+import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
@@ -143,6 +147,12 @@ fun Element.getNameOfColumn(): String {
       this.getAnnotation(promise.db.VarChar::class.java) != null) {
     name = this.getAnnotation(promise.db.VarChar::class.java).columnName
   }
+  else if (this.getAnnotation(Text::class.java) != null) {
+    name = this.getAnnotation(Text::class.java).columnName
+  }
+  else if (this.getAnnotation(VarChar::class.java) != null) {
+    name = this.getAnnotation(VarChar::class.java).columnName
+  }
   if (name != null && name.isNotEmpty()) return name
   return this.simpleName.toString()
 }
@@ -154,6 +164,10 @@ fun Element.getNameOfColumn(): String {
 fun String.capitalizeFirst(): String = this.replaceFirst(this.first(), this.first().toUpperCase())
 
 fun String.camelCase(): String = this.replaceFirst(this.first(), this.first().toLowerCase())
+
+fun TypeElement.checkIfNeedsTypeConverter(): Boolean = ElementFilter.fieldsIn(this.enclosedElements).any {
+  it.checkIfHasTypeConverter()
+}
 
 fun Element.checkIfHasTypeConverter(): Boolean {
   //return true
@@ -182,8 +196,10 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): Execut
         ElementFilter.methodsIn(TypeConverterProcessor.typeConverter!!.enclosedElements)
             .filter { it.parameters.size == 1 }
     return methods.find {
+      if (this.asType().kind == TypeKind.VOID) return@find false
       when(converterTypes) {
         ConverterTypes.DESERIALIZER -> {
+
           JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
               JavaUtils.isTypeEqual(it.returnType, TypeName.get(this.asType()))
         }
@@ -205,6 +221,7 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, process
             .filter {
               it.parameters.size == 1 }
     return methods.find {
+      if (this.asType().kind == TypeKind.VOID) return@find false
 //      processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Type converter: " +
 //          " method: ${it}, " +
 //          " returnType: ${TypeName.get(it.returnType)}" +
@@ -229,4 +246,15 @@ fun Element.isElementAnnotatedAsRelation(): Boolean {
   //return false
   return this.getAnnotation(HasMany::class.java) != null ||
      this.getAnnotation(HasOne::class.java) != null
+}
+
+ fun Element.isPersistable(): Boolean = try {
+  this.toTypeName().isSameAs(Integer::class.java) ||
+      this.toTypeName().isSameAs(String::class.java) ||
+      this.toTypeName().isSameAs(Float::class.java) ||
+      this.toTypeName().isSameAs(Double::class.java) ||
+      this.toTypeName().isSameAs(Boolean::class.java)
+} catch (e: Throwable) {
+
+  false
 }

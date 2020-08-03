@@ -17,9 +17,12 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
+import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
+import javax.tools.Diagnostic
 
 class TableDeserializerMethodGenerator(
+    private val processingEnvironment: ProcessingEnvironment,
     private val typeDataTypePack: String,
     private val typeDataType: String,
     private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
@@ -70,7 +73,18 @@ class TableDeserializerMethodGenerator(
     if (varType.isSameAs(Boolean::class.java)) {
       return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1);\n"
     }
-    return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
+
+    val typeElement = processingEnvironment.elementUtils.getTypeElement(varType.toString())
+    if (!typeElement.isPersistable()) {
+//      processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
+//          "deserializer Checking element:  $typeElement for typename $varType" )
+      val executableFn = typeElement.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER)
+      if (executableFn != null) {
+        return "  $objectName.set${varName.capitalizeFirst()}(typeConverter.${executableFn.simpleName}(e.${getCursorReturn(TypeName.get(String::class.java))}(${colName}.getIndex(e))));\n"
+      }
+    }
+    else return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
+    throw Exception("Could not generate deserializer method for entity")
   }
 
   private fun getCursorReturn(varType: TypeName): String =//processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")

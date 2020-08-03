@@ -35,7 +35,7 @@ import kotlin.reflect.KClass
 
 
 fun TypeName.isSameAs(javaClass: Class<*>): Boolean {
-  if (this.isPrimitive) this.box()
+  if (this.isPrimitive) return this.box().toString() == JavaUtils.wrap(javaClass).name
   return this.toString() == JavaUtils.wrap(javaClass).name
 }
 
@@ -112,43 +112,6 @@ object Utils {
       }
     }
     return null
-  }
-
-  fun elementExtendsSuperClass(
-      classElement: TypeElement,
-      superClassCanonicalName: String): Boolean {
-    return classElement.superclass.toString() == superClassCanonicalName
-//    if (typeUtils.isSameType(classElement.superclass, superClass.asType())) return true
-//    //if (classElement.superclass == superClass.asType()) return true
-//    val objectType = processingEnv.elementUtils.getTypeElement("java.lang.Object").asType()
-//    var extends = false
-//    while (classElement.superclass != objectType) {
-//      extends = elementExtendsSuperClass(processingEnv, classElement.superclass.asTypeElement(processingEnv), superClass)
-//      if (extends) break
-//    }
-//    return extends
-
-  }
-
-  fun classImplementsInterface(classElement: TypeElement, interfaceElement: TypeElement): Boolean {
-    for (interfaceType in classElement.interfaces) {
-      if ((interfaceType as DeclaredType).asElement() == interfaceElement) return true
-    }
-    val classMethods: List<Element> = classElement.enclosedElements
-    var implementsMethod: Boolean
-    for (interfaceMethod in ElementFilter.methodsIn(interfaceElement.enclosedElements)) {
-      implementsMethod = false
-      for (classMethod in classMethods) {
-        if (interfaceMethod == classMethod) {
-          implementsMethod = true
-          break
-        }
-      }
-      if (!implementsMethod) {
-        return false
-      }
-    }
-    return false
   }
 
   /**

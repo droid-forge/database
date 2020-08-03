@@ -20,6 +20,7 @@ import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.ParameterizedTypeName
+import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
 import org.jetbrains.annotations.NotNull
 import promise.db.Entity
@@ -81,7 +82,10 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
 
     classBuilder.addAnnotation(tableAnnotationSpec)
 
-    if (Utils.elementExtendsSuperClass((element as TypeElement), "promise.db.ActiveRecord"))
+    val activeRecordType = processingEnv.typeUtils.erasure(
+        processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord").asType())
+
+    if (JavaUtils.isSubtypeOfType((element as TypeElement).asType(), TypeName.get(activeRecordType)))
       classBuilder.addMethod(MethodSpec.methodBuilder("createEntityInstance")
           .addAnnotation(Override::class.java)
           .addAnnotation(NotNull::class.java)
@@ -92,6 +96,19 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
 
     // static column block generation
     val tableColumnPropsGenerator = TableColumnFieldsGenerator(processingEnv, element.enclosedElements)
+
+    if (element.checkIfNeedsTypeConverter()) {
+      classBuilder.addField(FieldSpec.builder(TypeName.get(TypeConverterProcessor
+          .typeConverter!!.asType()), "typeConverter")
+          .addModifiers(Modifier.PRIVATE)
+          .build())
+      classBuilder.addMethod(MethodSpec.methodBuilder("setTypeConverter")
+          .addModifiers(Modifier.PUBLIC)
+          .addParameter(TypeName.get(TypeConverterProcessor
+              .typeConverter!!.asType()), "typeConverter")
+          .addStatement("this.typeConverter = typeConverter")
+          .build())
+    }
 
     val idColumnSpec = FieldSpec.builder(
         ParameterizedTypeName.get(
@@ -124,11 +141,11 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     classBuilder.addMethod(columnRegSpecGenerator.generate())
 
     // serializer generator
-    val serializerGenerator = TableSerializerMethodGenerator(pack, className, tableColumnPropsGenerator.genColValues)
+    val serializerGenerator = TableSerializerMethodGenerator(processingEnv, pack, className, tableColumnPropsGenerator.genColValues)
     classBuilder.addMethod(serializerGenerator.generate())
 
     // deserializer generator
-    val deserializerGenerator = TableDeserializerMethodGenerator(pack, className,
+    val deserializerGenerator = TableDeserializerMethodGenerator(processingEnv, pack, className,
         tableColumnPropsGenerator.genColValues)
     classBuilder.addMethod(deserializerGenerator.generate())
 

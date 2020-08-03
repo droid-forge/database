@@ -17,16 +17,17 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
+import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Modifier
+import javax.tools.Diagnostic
 
 
 class TableSerializerMethodGenerator(
+    private val processingEnvironment: ProcessingEnvironment,
     private val typeDataTypePack: String,
     private val typeDataType: String,
     private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
-  init {
-   // fileSpec.addImport("android.content", "ContentValues")
-  }
+
 
   override fun generate(): MethodSpec {
 
@@ -58,7 +59,18 @@ class TableSerializerMethodGenerator(
     if (varTypeName.isSameAs(Boolean::class.java)) {
       return "values.put(${columnName}.getName(), t.is${typeVariable.capitalizeFirst()}() ? 1 : 0); \n"
     }
-    return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
+
+    val typeElement = processingEnvironment.elementUtils.getTypeElement(varTypeName.toString())
+    if (!typeElement.isPersistable()) {
+//      processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
+//          "serializer Checking element: $typeElement for typeName $varTypeName " )
+      val executableFn = typeElement.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
+      if (executableFn != null) {
+        return "values.put(${columnName}.getName(), typeConverter.${executableFn.simpleName}(t.get${typeVariable.capitalizeFirst()}())); \n"
+      }
+    }
+    else return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
+    throw Exception("Could not generate serializer method for entity")
   }
 
 

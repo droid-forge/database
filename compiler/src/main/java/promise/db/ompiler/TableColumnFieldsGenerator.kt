@@ -53,8 +53,7 @@ class TableColumnFieldsGenerator(
       val colVariableName = "${element.simpleName}Column"
       var variableClassType = element.toTypeName()
       if (variableClassType.isPrimitive) variableClassType = variableClassType.box()
-      if (!isPersistable(element) && !element.isElementAnnotatedAsRelation()) {
-        val executableElement = element.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
+      if (!element.isPersistable() && !element.isElementAnnotatedAsRelation()) {
         if (element.checkIfHasTypeConverter(processingEnvironment)) {
           val parameterizedColumnTypeName = ParameterizedTypeName.get(
               ClassName.get("promise.db", "Column"),
@@ -68,10 +67,10 @@ class TableColumnFieldsGenerator(
               )
               .build()
           map[Pair(element, colVariableName)] = spec
-          val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), TypeName.get(String::class.java)), colVariableName)
+          val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
           genColValues.add(pair)
         }
-      } else if(isPersistable(element)) {
+      } else if(element.isPersistable()) {
         val spec = processField(element, nameOfColumn, i)
         map[Pair(element, colVariableName)] = spec
         val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
@@ -161,20 +160,41 @@ class TableColumnFieldsGenerator(
         }
       }
     }
+    else {
+      if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
+        str += ".VARCHAR"
+        val annotation = element.getAnnotation(promise.db.VarChar::class.java)
+        str += if (annotation.unique && annotation.length != 0) {
+          ".UNIQUE(${annotation.length})"
+        } else if (annotation.nullable && annotation.length != 0) {
+          ".NULLABLE(${annotation.length})"
+        } else if (!annotation.nullable && annotation.length != 0) {
+          ".NOT_NULL(${annotation.length})"
+        } else {
+          throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
+        }
+      }
+      else {
+        if (element.getAnnotation(promise.db.Text::class.java) != null) {
+          str += ".TEXT"
+          val annotation = element.getAnnotation(promise.db.Text::class.java)
+          str += if (annotation.nullable) {
+            ".NULLABLE()"
+          } else if (!annotation.nullable) {
+            ".NOT_NULL()"
+          } else {
+            throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
+          }
+        }
+        else {
+          str += ".TEXT.NULLABLE()"
+        }
+      }
+    }
     return str
   }
 
-  private fun isPersistable(it: Element): Boolean = try {
-    it.toTypeName().isSameAs2(processingEnvironment, Integer::class.java) ||
-        it.toTypeName().isSameAs2(processingEnvironment, String::class.java) ||
-        it.toTypeName().isSameAs2(processingEnvironment, Float::class.java) ||
-        it.toTypeName().isSameAs2(processingEnvironment, Double::class.java) ||
-        it.toTypeName().isSameAs2(processingEnvironment, Boolean::class.java)
-  } catch (e: Throwable) {
-    processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
-        "isPersistable ${it.kind.name}: ${Arrays.toString(e.stackTrace)}")
-    false
-  }
+
 
 
 }

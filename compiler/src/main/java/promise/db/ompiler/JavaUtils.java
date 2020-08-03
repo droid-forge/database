@@ -61,7 +61,22 @@ public class JavaUtils {
       CodeBlock.Builder codeBlock,
       TypeElement entity) {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
-    codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
+    if (PersistableEntityUtilsKt.checkIfNeedsTypeConverter(entity)) {
+      String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getClassName(entity));
+      String stmt = "if (entityClass == Exam.class) {\n" +
+          "      ExamsTable examsTable = getDatabaseInstance().obtain(ExamsTable.class);\n" +
+          "      examsTable.setTypeConverter(typeConverter);\n" +
+          "      return (FastTable<T>) examsTable;\n" +
+          "    }";
+      codeBlock.beginControlFlow("if (entityClass == $T.class)", ClassName.get(pack, entity.getSimpleName().toString()));
+      codeBlock.addStatement("$T "+tableVarName+" = getDatabaseInstance().obtain($T.class)",
+          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)),
+          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
+      codeBlock.addStatement(tableVarName + ".setTypeConverter(typeConverter)");
+      codeBlock.addStatement("return (FastTable<T>) "+tableVarName);
+      codeBlock.endControlFlow();
+    }
+    else codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
         ClassName.get(pack, entity.getSimpleName().toString()),
         ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
   }
@@ -82,10 +97,17 @@ public class JavaUtils {
   }
 
   static boolean isTypeEqual(TypeMirror typeMirror, TypeName otherType) {
+    if (typeMirror.getKind() == TypeKind.NONE || otherType == TypeName.VOID ||
+    typeMirror.getKind() == TypeKind.VOID) {
+      return false;
+    }
     return otherType.toString().equals(TypeName.get(typeMirror).toString());
   }
 
   static boolean isSubtypeOfType(TypeMirror typeMirror, TypeName otherType) {
+    if (typeMirror.getKind() == TypeKind.NONE) {
+      return false;
+    }
     if (isTypeEqual(typeMirror, otherType)) {
       return true;
     }
@@ -104,7 +126,7 @@ public class JavaUtils {
         typeString.append('?');
       }
       typeString.append('>');
-      if (typeString.toString().equals(otherType)) {
+      if (typeString.toString().equals(otherType.toString())) {
         return true;
       }
     }
