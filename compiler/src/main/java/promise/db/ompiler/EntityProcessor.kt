@@ -97,7 +97,7 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     // static column block generation
     val tableColumnPropsGenerator = TableColumnFieldsGenerator(processingEnv, element.enclosedElements)
 
-    if (element.checkIfNeedsTypeConverter()) {
+    if (element.checkIfAnyElementNeedsTypeConverter()) {
       classBuilder.addField(FieldSpec.builder(TypeName.get(TypeConverterProcessor
           .typeConverter!!.asType()), "typeConverter")
           .addModifiers(Modifier.PRIVATE)
@@ -122,11 +122,7 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     /**
      * private static final String TAG = LogUtil.makeTag(PersonFastTable.class);
      */
-    val tagSpec = FieldSpec.builder(
-        String::class.java, "TAG")
-        .addModifiers(Modifier.STATIC, Modifier.PRIVATE, Modifier.FINAL)
-        .initializer("promise.commons.data.log.LogUtil.makeTag(${element.getClassName()}.class)")
-        .build()
+    val tagSpec = JavaUtils.generateEntityTableLogField(element)
 
     classBuilder.addField(tagSpec)
 

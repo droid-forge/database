@@ -18,6 +18,7 @@ import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.tools.Diagnostic
 
@@ -25,31 +26,27 @@ class TableDeserializerMethodGenerator(
     private val processingEnvironment: ProcessingEnvironment,
     private val typeDataTypePack: String,
     private val typeDataType: String,
-    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
+    private val columns: List<Pair<Pair<String, Element>, String>>) : CodeGenerator<MethodSpec> {
 
   init {
     //fileSpec.addImport(ClassName("android.database", "Cursor"))
   }
 
   override fun generate(): MethodSpec {
+    val codeBlock = CodeBlock.builder()
     val varName = typeDataType.camelCase()
-    var stmt = """
-      try {
-        $typeDataType $varName = new $typeDataType();   
-
-    """.trimIndent()
+    codeBlock.beginControlFlow("try")
+    codeBlock.addStatement("$typeDataType $varName = new $typeDataType()")
     columns.forEach {
-      stmt += generateSetStatement(
+      generateSetStatement(
+          codeBlock,
           varName,
           it.first.first, it.first.second, it.second)
     }
-    stmt += """
-      return $varName;      
-    } catch(android.database.CursorIndexOutOfBoundsException ex) {
-      promise.commons.data.log.LogUtil.e(TAG, "deserialize", ex);
-      return new $typeDataType();
-    }
-    """.trimIndent()
+    codeBlock.addStatement("return $varName")
+    codeBlock.endControlFlow()
+    JavaUtils.generateCatchSQliteExceptionBlockForDeserializer(codeBlock, typeDataType)
+    codeBlock.endControlFlow()
 
     //fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
 
@@ -58,7 +55,7 @@ class TableDeserializerMethodGenerator(
         .addAnnotation(Override::class.java)
         .addModifiers(Modifier.PUBLIC)
         .returns(ClassName.get(typeDataTypePack, typeDataType))
-        .addCode(CodeBlock.of(stmt))
+        .addCode(codeBlock.build())
         .build()
   }
 
@@ -66,25 +63,38 @@ class TableDeserializerMethodGenerator(
    * person.setAge(cursor.getInt(ageColumn.getIndex(cursor)));
    */
   private fun generateSetStatement(
+      codeBlock: CodeBlock.Builder,
       objectName: String,
       varName: String,
-      varType: TypeName,
-      colName: String): String {
-    if (varType.isSameAs(Boolean::class.java)) {
-      return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)) == 1);\n"
+      varType: Element,
+      colName: String) {
+    if (varType.toTypeName().isSameAs(Boolean::class.java)) {
+      codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)) == 1)")
+      return
     }
 
-    val typeElement = processingEnvironment.elementUtils.getTypeElement(varType.toString())
-    if (!typeElement.isPersistable()) {
-//      processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
-//          "deserializer Checking element:  $typeElement for typename $varType" )
-      val executableFn = typeElement.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER)
+//    processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
+//         "deserializer Checking element:  $varType for typename $varType" )
+    if (varType.checkIfHasTypeConverter()) {
+
+      val executableFn = varType.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER)
       if (executableFn != null) {
-        return "  $objectName.set${varName.capitalizeFirst()}(typeConverter.${executableFn.simpleName}(e.${getCursorReturn(TypeName.get(String::class.java))}(${colName}.getIndex(e))));\n"
+        codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(typeConverter.${executableFn.simpleName}(e.${getCursorReturn(TypeName.get(String::class.java))}(${colName}.getIndex(e))))")
       }
     }
-    else return "  $objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType)}(${colName}.getIndex(e)));\n"
-    throw Exception("Could not generate deserializer method for entity")
+    else if (varType.isElementAnnotatedAsRelation()) {
+      val gen = """
+        int personId = e.getInt(personColumn.getIndex(e));
+      if (personId != 0) {
+        Person person = new Person();
+        person.setId(personId);
+        dog.setPerson(person);
+      }
+      """.trimIndent()
+      codeBlock.add(JavaUtils.generateDeserializerRelationSetStatement(objectName, varType, colName))
+    }
+    else codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)))")
+    //throw Exception("Could not generate deserializer method for entity")
   }
 
   private fun getCursorReturn(varType: TypeName): String =//processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "type ${varType.toString()}")

@@ -16,9 +16,10 @@ package promise.db.ompiler
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
-import com.squareup.javapoet.TypeName
 import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
+import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
 
@@ -26,28 +27,26 @@ class TableSerializerMethodGenerator(
     private val processingEnvironment: ProcessingEnvironment,
     private val typeDataTypePack: String,
     private val typeDataType: String,
-    private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeGenerator<MethodSpec> {
+    private val columns: List<Pair<Pair<String, Element>, String>>) : CodeGenerator<MethodSpec> {
 
 
   override fun generate(): MethodSpec {
 
-    var stmt =
-        "ContentValues values = new ContentValues();\n"
-    columns.forEach {
-      stmt += generatePutStatement(it.first.first, it.second, it.first.second)
-    }
+    val codeBlock = CodeBlock.builder()
 
-    stmt += """
-      return values;
-  
-    """.trimIndent()
+    codeBlock.addStatement("ContentValues values = new ContentValues()")
+
+    columns.forEach {
+      generatePutStatement(codeBlock, it.first.first, it.second, it.first.second)
+    }
+    codeBlock.addStatement("return values")
 
     return MethodSpec.methodBuilder("serialize")
         .addModifiers(Modifier.PUBLIC)
         .addParameter(ClassName.get(typeDataTypePack, typeDataType),"t")
         .addAnnotation(Override::class.java)
         .returns(ClassName.get("android.content", "ContentValues"))
-        .addCode(CodeBlock.of(stmt))
+        .addCode(codeBlock.build())
         .build()
   }
 
@@ -55,22 +54,35 @@ class TableSerializerMethodGenerator(
    * values.put(nameColumn.getName(), t.getName());
    * values.put(isAdultColumn.getName(), person.isAdult() ? 1 : 0);
    */
-  private fun generatePutStatement(typeVariable: String, columnName: String, varTypeName: TypeName): String {
-    if (varTypeName.isSameAs(Boolean::class.java)) {
-      return "values.put(${columnName}.getName(), t.is${typeVariable.capitalizeFirst()}() ? 1 : 0); \n"
+  private fun generatePutStatement(
+      codeBlock: CodeBlock.Builder,
+      typeVariable: String, columnName: String, varTypeName: Element) {
+    if (varTypeName.toTypeName().isSameAs(Boolean::class.java)) {
+      codeBlock.addStatement("values.put(${columnName}.getName(), t.is${typeVariable.capitalizeFirst()}() ? 1 : 0)")
+      return
     }
 
-    val typeElement = processingEnvironment.elementUtils.getTypeElement(varTypeName.toString())
-    if (!typeElement.isPersistable()) {
-//      processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
-//          "serializer Checking element: $typeElement for typeName $varTypeName " )
-      val executableFn = typeElement.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
+    if (varTypeName.checkIfHasTypeConverter()) {
+
+      val executableFn = varTypeName.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
       if (executableFn != null) {
-        return "values.put(${columnName}.getName(), typeConverter.${executableFn.simpleName}(t.get${typeVariable.capitalizeFirst()}())); \n"
+        codeBlock.addStatement("values.put(${columnName}.getName(), typeConverter.${executableFn.simpleName}(t.get${typeVariable.capitalizeFirst()}()))")
       }
     }
-    else return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
-    throw Exception("Could not generate serializer method for entity")
+    else if (varTypeName.isElementAnnotatedAsRelation()) {
+//            processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
+//         "serializer Checking element: $varTypeName for typeName $varTypeName " )
+      val gen = """
+         Person person = t.getPerson();
+          if (person != null) {
+            values.put(personColumn.getName(), person.getId());
+          }    
+      """.trimIndent()
+      codeBlock.add(JavaUtils.generateSerializerRelationPutStatement(varTypeName, columnName))
+      //return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
+    }
+    else codeBlock.addStatement("values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}())")
+    //throw Exception("Could not generate serializer method for entity")
   }
 
 

@@ -64,11 +64,11 @@ annotation class ForeignKey(
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class HasOne(val entity: KClass<*>)
+annotation class HasOne
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class HasMany(val entity: KClass<*>)
+annotation class HasMany
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)

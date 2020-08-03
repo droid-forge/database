@@ -30,7 +30,7 @@ import javax.tools.Diagnostic
 
 fun TypeElement.getTypeConverterClassName(): String {
   val className = this.simpleName.toString()
-  return "${className}Holder"
+  return "${className}InstanceProvider"
 }
 
 fun TypeElement.getVariableName(): String {

@@ -165,7 +165,7 @@ fun String.capitalizeFirst(): String = this.replaceFirst(this.first(), this.firs
 
 fun String.camelCase(): String = this.replaceFirst(this.first(), this.first().toLowerCase())
 
-fun TypeElement.checkIfNeedsTypeConverter(): Boolean = ElementFilter.fieldsIn(this.enclosedElements).any {
+fun TypeElement.checkIfAnyElementNeedsTypeConverter(): Boolean = ElementFilter.fieldsIn(this.enclosedElements).any {
   it.checkIfHasTypeConverter()
 }
 

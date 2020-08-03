@@ -85,7 +85,8 @@ open class FastDatabase internal constructor(
   final override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
     LogUtil.d(TAG, "onUpgrade", oldVersion, newVersion)
     if (newVersion - oldVersion == 1)
-      onUpgradeDatabase(database, oldVersion, newVersion) else {
+      onUpgradeDatabase(database, oldVersion, newVersion)
+    else {
       var i = oldVersion
       while (i < newVersion) {
         onUpgradeDatabase(database, i, i + 1)

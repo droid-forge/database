@@ -18,6 +18,7 @@ import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import promise.db.HasOne
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
@@ -39,7 +40,7 @@ class TableColumnFieldsGenerator(
   /**
    *
    */
-  var genColValues: ArrayList<Pair<Pair<String, TypeName>, String>> = ArrayList()
+  var genColValues: ArrayList<Pair<Pair<String, Element>, String>> = ArrayList()
 
   override fun generate(): Map<Pair<Element, String>, FieldSpec> {
     val map = HashMap<Pair<Element, String>, FieldSpec>()
@@ -48,11 +49,14 @@ class TableColumnFieldsGenerator(
     }.forEachIndexed { i, element ->
       if (element.getAnnotation(PrimaryKeyAutoIncrement::class.java) != null ||
           element.getAnnotation(Ignore::class.java) != null) return@forEachIndexed
-      val nameOfColumn = element.getNameOfColumn()
+      var nameOfColumn = element.getNameOfColumn()
       if (nameOfColumn == "id") return@forEachIndexed
       val colVariableName = "${element.simpleName}Column"
       var variableClassType = element.toTypeName()
       if (variableClassType.isPrimitive) variableClassType = variableClassType.box()
+      /**
+       * For fields that need type converter
+       */
       if (!element.isPersistable() && !element.isElementAnnotatedAsRelation()) {
         if (element.checkIfHasTypeConverter(processingEnvironment)) {
           val parameterizedColumnTypeName = ParameterizedTypeName.get(
@@ -67,13 +71,40 @@ class TableColumnFieldsGenerator(
               )
               .build()
           map[Pair(element, colVariableName)] = spec
-          val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
+          val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
           genColValues.add(pair)
         }
-      } else if(element.isPersistable()) {
+       }
+      /**
+       * for fields marked as relation, additional column needs to be added
+       */
+      else if (element.isElementAnnotatedAsRelation()) {
+        val hasOneAnnotation = element.getAnnotation(HasOne::class.java)
+        if (hasOneAnnotation != null) {
+          nameOfColumn = "${element.simpleName}Id"
+          val parameterizedColumnTypeName = ParameterizedTypeName.get(
+              ClassName.get("promise.db", "Column"),
+              TypeName.get(Integer::class.java))
+          val columnInitializer = getColumnInitializer(element, ClassName.get(Integer::class.java))
+          val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
+              .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+              .initializer(CodeBlock.of("""
+              new Column<Integer>("$nameOfColumn", $columnInitializer, ${i + 1})
+            """.trimIndent())
+              )
+              .build()
+          map[Pair(element, colVariableName)] = spec
+          val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
+          genColValues.add(pair)
+        }
+      }
+      /**
+       * for normal persistable fields
+       */
+      else if(element.isPersistable()) {
         val spec = processField(element, nameOfColumn, i)
         map[Pair(element, colVariableName)] = spec
-        val pair: Pair<Pair<String, TypeName>, String> = Pair(Pair(element.simpleName.toString(), variableClassType), colVariableName)
+        val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
         genColValues.add(pair)
       }
     }

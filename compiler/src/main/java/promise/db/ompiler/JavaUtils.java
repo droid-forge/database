@@ -15,10 +15,10 @@ package promise.db.ompiler;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
-
-import org.jetbrains.annotations.Nullable;
+import com.sun.tools.javac.jvm.Code;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
@@ -45,6 +46,15 @@ public class JavaUtils {
     put(void.class, Void.class);
   }};
 
+  public static FieldSpec generateEntityTableLogField(Element element) {
+    return FieldSpec.builder(
+        String.class, "TAG")
+        .addModifiers(Modifier.STATIC, Modifier.PRIVATE, Modifier.FINAL)
+        .initializer("$T.makeTag(" +element.getSimpleName() +".class)",
+            ClassName.get("promise.commons.data.log","LogUtil" ))
+        .build();
+  }
+
   public static void generateAddConverterStatementInDatabaseConstructorMethod(
       ProcessingEnvironment processingEnvironment,
       MethodSpec.Builder constructorMethod,
@@ -61,7 +71,7 @@ public class JavaUtils {
       CodeBlock.Builder codeBlock,
       TypeElement entity) {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
-    if (PersistableEntityUtilsKt.checkIfNeedsTypeConverter(entity)) {
+    if (PersistableEntityUtilsKt.checkIfAnyElementNeedsTypeConverter(entity)) {
       String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getClassName(entity));
       String stmt = "if (entityClass == Exam.class) {\n" +
           "      ExamsTable examsTable = getDatabaseInstance().obtain(ExamsTable.class);\n" +
@@ -79,6 +89,48 @@ public class JavaUtils {
     else codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
         ClassName.get(pack, entity.getSimpleName().toString()),
         ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
+  }
+
+  public static CodeBlock generateSerializerRelationPutStatement(Element element, String colName) {
+    CodeBlock.Builder codeBlock =  CodeBlock.builder();
+    String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
+    codeBlock.addStatement("$T "+ variableName+ " = t.get"+PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString())+"()", TypeName.get(element.asType()));
+    codeBlock.beginControlFlow("if("+variableName+" != null)");
+    codeBlock.addStatement("values.put("+colName+".getName(), "+variableName+".getId())");
+    codeBlock.endControlFlow();
+    return codeBlock.build();
+  }
+
+  public static CodeBlock generateDeserializerRelationSetStatement(
+      String entitySetName,
+      Element element,
+      String colName) {
+    String gen = "" +
+        " int personId = e.getInt(personColumn.getIndex(e));\n" +
+        "      if (personId != 0) {\n" +
+        "        Person person = new Person();\n" +
+        "        person.setId(personId);\n" +
+        "        dog.setPerson(person);\n" +
+        "      }";
+    CodeBlock.Builder codeBlock =  CodeBlock.builder();
+    String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
+    String variableNameId = variableName + "Id";
+    codeBlock.addStatement("int "+ variableNameId+ " = e.getInt("+colName+".getIndex(e))");
+    codeBlock.beginControlFlow("if("+variableNameId+" != 0)");
+    codeBlock.addStatement("$T "+variableName+ " = new $T()",
+        TypeName.get(element.asType()),
+        TypeName.get(element.asType()));
+    codeBlock.addStatement(variableName + ".setId("+variableNameId+")");
+    codeBlock.addStatement(entitySetName+".set"+PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString())+"("+variableName+")");
+    codeBlock.endControlFlow();
+    return codeBlock.build();
+  }
+
+  public static void generateCatchSQliteExceptionBlockForDeserializer(CodeBlock.Builder codeBlock, String typeDataType) {
+    codeBlock.beginControlFlow("catch($T ex)",
+        ClassName.get("android.database", "CursorIndexOutOfBoundsException"));
+    codeBlock.addStatement("LogUtil.e(TAG, \"deserialize\", ex)");
+    codeBlock.addStatement("return new "+typeDataType+"()");
   }
 
   // safe because both Long.class and long.class are of type Class<Long>
