@@ -148,7 +148,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
     classBuilder.addMethod(columnRegSpecGenerator.generate())
 
     // serializer generator
-    val serializerGenerator = TableSerializerMethodGenerator(processingEnv, pack, className, tableColumnPropsGenerator.genColValues)
+    val serializerGenerator = TableSerializerMethodGenerator(pack, className, tableColumnPropsGenerator.genColValues)
     classBuilder.addMethod(serializerGenerator.generate())
 
     // deserializer generator

@@ -60,7 +60,7 @@ class TableColumnFieldsGenerator(
        * For fields that need type converter
        */
       if (!element.isPersistable() && !element.isElementAnnotatedAsRelation()) {
-        if (element.checkIfHasTypeConverter(processingEnvironment)) {
+        if (element.checkIfHasTypeConverter()) {
           val parameterizedColumnTypeName = ParameterizedTypeName.get(
               ClassName.get("promise.db", "Column"),
               TypeName.get(String::class.java))

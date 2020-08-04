@@ -25,18 +25,10 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
-
 class DatabaseAnnotationGenerator(
     private val processingEnv: ProcessingEnvironment,
     private val element: Element) : CodeGenerator<AnnotationSpec> {
-  /*
-  @Database(
-    tables = [
-      PersonFastTable::class
-    ],
-    version = 2
-)
-   */
+
   override fun generate(): AnnotationSpec {
     if (element is TypeElement) {
       var stmt = " {\n"

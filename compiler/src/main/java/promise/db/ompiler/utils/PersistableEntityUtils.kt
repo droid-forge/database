@@ -133,8 +133,6 @@ fun TypeElement.getDatabaseVersion(): Int {
  * gets name of column for a field in entity class
  */
 fun Element.getNameOfColumn(): String {
-  //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "elemtype: "+element.toTypeName().toString()+"\n")
-  //processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR, "class type: "+Int::class.java.name+"\n")
   var name: String? = null
   if ((this.toTypeName().isSameAs(Integer::class.java) ||
           this.toTypeName().isSameAs(Float::class.java) ||
@@ -143,8 +141,8 @@ fun Element.getNameOfColumn(): String {
       this.getAnnotation(promise.db.Number::class.java) != null) {
     name = this.getAnnotation(promise.db.Number::class.java).columnName
   } else if (this.toTypeName().isSameAs(String::class.java) &&
-      this.getAnnotation(promise.db.VarChar::class.java) != null) {
-    name = this.getAnnotation(promise.db.VarChar::class.java).columnName
+      this.getAnnotation(VarChar::class.java) != null) {
+    name = this.getAnnotation(VarChar::class.java).columnName
   } else if (this.getAnnotation(Text::class.java) != null) {
     name = this.getAnnotation(Text::class.java).columnName
   } else if (this.getAnnotation(VarChar::class.java) != null) {
@@ -167,18 +165,9 @@ fun TypeElement.checkIfAnyElementNeedsTypeConverter(): Boolean = ElementFilter.f
 }
 
 fun Element.checkIfHasTypeConverter(): Boolean {
-  //return true
   if (TypeConverterAnnotatedProcessor.typeConverter != null)
     return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER) != null &&
         this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER) != null
-  return false
-}
-
-fun Element.checkIfHasTypeConverter(processingEnv: ProcessingEnvironment): Boolean {
-  //return true
-  if (TypeConverterAnnotatedProcessor.typeConverter != null)
-    return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER, processingEnv) != null &&
-        this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER, processingEnv) != null
   return false
 }
 
@@ -210,37 +199,8 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): Execut
 }
 
 
-fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, processingEnv: ProcessingEnvironment): ExecutableElement? {
-  if (TypeConverterAnnotatedProcessor.typeConverter != null) {
-    val methods =
-        ElementFilter.methodsIn(TypeConverterAnnotatedProcessor.typeConverter!!.enclosedElements)
-            .filter {
-              it.parameters.size == 1
-            }
-    return methods.find {
-      if (this.asType().kind == TypeKind.VOID) return@find false
-//      processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Type converter: " +
-//          " method: ${it}, " +
-//          " returnType: ${TypeName.get(it.returnType)}" +
-//          " parameter: ${TypeName.get(it.parameters[0].asType())}" +
-//          " elementType ${TypeName.get(this.asType())}")
-      when (converterTypes) {
-        ConverterTypes.DESERIALIZER -> {
-
-          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
-              JavaUtils.isTypeEqual(it.returnType, TypeName.get(this.asType()))
-        }
-        ConverterTypes.SERIALIZER -> {
-          JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(this.asType())) &&
-              JavaUtils.isTypeEqual(it.returnType, TypeName.get(String::class.java))
-        }
-      }
-    }
-  } else return null
-}
-
 fun Element.isElementAnnotatedAsRelation(): Boolean {
-  //return false
+
   return this.getAnnotation(HasMany::class.java) != null ||
       this.getAnnotation(HasOne::class.java) != null
 }

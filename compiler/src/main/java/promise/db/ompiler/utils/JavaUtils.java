@@ -85,7 +85,6 @@ public class JavaUtils {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
     if (PersistableEntityUtilsKt.checkIfAnyElementNeedsTypeConverter(entity)) {
       String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getClassName(entity));
-
       codeBlock.beginControlFlow("if (entityClass == $T.class)", ClassName.get(pack, entity.getSimpleName().toString()));
       codeBlock.addStatement("$T " + tableVarName + " = getDatabaseInstance().obtain($T.class)",
           ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)),
@@ -116,13 +115,6 @@ public class JavaUtils {
       String entitySetName,
       Element element,
       String colName) {
-    String gen = "" +
-        " int personId = e.getInt(personColumn.getIndex(e));\n" +
-        "      if (personId != 0) {\n" +
-        "        Person person = new Person();\n" +
-        "        person.setId(personId);\n" +
-        "        dog.setPerson(person);\n" +
-        "      }";
     CodeBlock.Builder codeBlock = CodeBlock.builder();
     String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
     String variableNameId = variableName + "Id";
@@ -156,21 +148,6 @@ public class JavaUtils {
   }
 
   /**
-   * gets the super class for type element
-   *
-   * @param typeElement to be checked for super class
-   * @return superclass or null
-   */
-  @Nullable
-  public static TypeElement getSuperClass(TypeElement typeElement) {
-    TypeMirror type = typeElement.getSuperclass();
-    if (type.getKind() == TypeKind.NONE) {
-      return null;
-    }
-    return (TypeElement) ((DeclaredType) type).asElement();
-  }
-
-  /**
    * checks if typemirror is equal to a typename
    *
    * @param typeMirror
@@ -183,39 +160,6 @@ public class JavaUtils {
       return false;
     }
     return otherType.toString().equals(TypeName.get(typeMirror).toString());
-  }
-
-  /**
-   * checks if type mirror is a sub type of other type
-   *
-   * @param typeMirror
-   * @param otherType
-   * @return
-   */
-  public static boolean isSubTypeOfType(TypeMirror typeMirror, TypeName otherType) {
-    if (typeMirror.getKind() == TypeKind.NONE) return false;
-    if (isTypeEqual(typeMirror, otherType)) return true;
-    if (typeMirror.getKind() != TypeKind.DECLARED) return false;
-    DeclaredType declaredType = (DeclaredType) typeMirror;
-    List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-    if (typeArguments.size() > 0) {
-      StringBuilder typeString = new StringBuilder(declaredType.asElement().toString());
-      typeString.append('<');
-      for (int i = 0; i < typeArguments.size(); i++) {
-        if (i > 0) typeString.append(',');
-        typeString.append('?');
-      }
-      typeString.append('>');
-      if (typeString.toString().equals(otherType.toString())) return true;
-    }
-    Element element = declaredType.asElement();
-    if (!(element instanceof TypeElement)) return false;
-    TypeElement typeElement = (TypeElement) element;
-    TypeMirror superType = typeElement.getSuperclass();
-    if (isSubTypeOfType(superType, otherType)) return true;
-    for (TypeMirror interfaceType : typeElement.getInterfaces())
-      if (isSubTypeOfType(interfaceType, otherType)) return true;
-    return false;
   }
 
   public static DeclaredType getDeclaredType(ProcessingEnvironment processingEnvironment, TypeElement typeElement) {

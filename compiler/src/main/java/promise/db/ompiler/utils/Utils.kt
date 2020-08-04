@@ -73,13 +73,6 @@ fun VariableElement.getClass(): KClass<*> {
   }
 }
 
-fun getAnnotationMirror(element: Element, annotationClass: Class<out Annotation?>): Optional<out AnnotationMirror?>? {
-  val annotationClassName = annotationClass.name
-  return element.annotationMirrors.stream()
-      .filter { m: AnnotationMirror? -> m!!.annotationType.toString() == annotationClassName }
-      .findFirst()
-}
-
 fun TypeMirror.asTypeElement(processingEnv: ProcessingEnvironment): TypeElement {
   val typeUtils: Types = processingEnv.typeUtils
   return (try {
@@ -132,34 +125,6 @@ object Utils {
       }
     }
     return null
-  }
-
-  /**
-   * Returns true if a and b are equal, including if they are both null.
-   *
-   * *Note: In platform versions 1.1 and earlier, this method only worked well if
-   * both the arguments were instances of String.*
-   *
-   * @param a first CharSequence to check
-   * @param b second CharSequence to check
-   * @return true if a and b are equal
-   *
-   *
-   * NOTE: Logic slightly change due to strict policy on CI -
-   * "Inner assignments should be avoided"
-   */
-
-
-  fun notEquals(a: CharSequence?, b: CharSequence?): Boolean {
-    if (a === b) return false
-    if (a != null && b != null) {
-      val length = a.length
-      if (length == b.length) return if (a is String && b is String) a != b else {
-        for (i in 0 until length) if (a[i] != b[i]) return true
-        false
-      }
-    }
-    return true
   }
 
   /**

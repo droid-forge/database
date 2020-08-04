@@ -33,7 +33,6 @@ import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
-
 class DatabaseAbstractMethodsGenerator(
     private val element: TypeElement,
     private val processingEnv: ProcessingEnvironment) : CodeGenerator<List<MethodSpec>?> {
@@ -100,10 +99,6 @@ class DatabaseAbstractMethodsGenerator(
             TypeVariableName.get("T")))
         .addCode(codeBlock.build())
         .build())
-
-    val retutnType = """
-      TableCrud<T, ? super SQLiteDatabase> 
-    """.trimIndent()
 
     return funSpecs
   }

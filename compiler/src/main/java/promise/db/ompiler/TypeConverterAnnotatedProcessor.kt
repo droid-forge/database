@@ -23,7 +23,6 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
-
 class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
 
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
@@ -34,7 +33,6 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
         typeConverter = typeConverters.firstOrNull() as TypeElement
         return Collections.singletonList(processElement(typeConverter!!))
       } catch (e: Throwable) {
-
       }
     }
     return null
@@ -44,67 +42,9 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
     val className = element.simpleName.toString()
    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
     return Utils.generateInstanceProviderHolder(ClassName.get(pack, className))
-//    val className = element.simpleName.toString()
-//    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
-//
-//    val fileName = element.getTypeConverterClassName()
-//
-//    val varName = element.getVariableName()
-//
-//    val classBuilder = TypeSpec.classBuilder(fileName)
-//        .addJavadoc("""
-//          Class holder for instantiation of TypeConverter
-//        """.trimIndent())
-//        .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
-//        .addSuperinterface(ParameterizedTypeName.get(
-//            ClassName.get("promise.commons", "InstanceProvider"),
-//            ClassName.get(pack, className)
-//        ))
-//        // field instance for the holder
-//        .addField(FieldSpec.builder(
-//            ClassName.get(pack, fileName),
-//            "instance"
-//        ).addModifiers(Modifier.PRIVATE, Modifier.STATIC)
-//            .build())
-//        // holder for type converter
-//        .addField(FieldSpec.builder(element.toTypeName(), varName,
-//            Modifier.FINAL, Modifier.PRIVATE)
-//            .addJavadoc("""
-//              holder instance for the TypeConverter
-//            """.trimIndent())
-//            .build())
-//        // constructor for the holder
-//        .addMethod(MethodSpec.constructorBuilder()
-//            .addModifiers(Modifier.PRIVATE)
-//            .addParameter(ClassName.get(pack, className), varName)
-//            .addStatement("this.$varName = $varName")
-//            .build())
-//        .addMethod(MethodSpec.methodBuilder("create")
-//            .returns(ClassName.get(pack, fileName))
-//            .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-//            .addJavadoc("""
-//              Creates an instance of the holder with the converter
-//            """.trimIndent())
-//            .addParameter(
-//                ClassName.get(pack, className),
-//                varName)
-//            .addCode(CodeBlock.builder()
-//                .addStatement("if (instance == null) instance = new $fileName($varName)")
-//                .addStatement("return instance")
-//                .build())
-//            .build())
-//        .addMethod(MethodSpec.methodBuilder("get")
-//            .addAnnotation(Override::class.java)
-//            .returns(ClassName.get(pack, className))
-//            .addModifiers(Modifier.PUBLIC)
-//            .addCode("return $varName;")
-//            .build())
-//
-//    return JavaFile.builder(pack, classBuilder.build())
   }
 
   companion object {
     var typeConverter: TypeElement? = null
-
   }
 }
