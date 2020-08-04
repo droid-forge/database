@@ -16,6 +16,10 @@ package promise.db.ompiler
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
+import promise.db.ompiler.utils.Utils
+import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getDatabaseVersion
+import promise.db.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement

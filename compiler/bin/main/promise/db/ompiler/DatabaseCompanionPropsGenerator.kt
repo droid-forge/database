@@ -45,15 +45,15 @@ class DatabaseCompanionPropsGenerator(
 
     /**
      * private static Migration getMigration() {
-            return new Migration() {
-              @Override
-              public void onMigrate(@NotNull FastDatabase database, @NotNull SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
-                if (oldVersion == 2 && newVersion == 3) {
-                  database.add(sqLiteDatabase, database.obtain(PersonFastTable.class));
-                }
-              }
-            };
-          }
+    return new Migration() {
+    @Override
+    public void onMigrate(@NotNull FastDatabase database, @NotNull SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+    if (oldVersion == 2 && newVersion == 3) {
+    database.add(sqLiteDatabase, database.obtain(PersonFastTable.class));
+    }
+    }
+    };
+    }
      */
     var migrationInitialzer = """
       return new Migration() {
@@ -87,12 +87,12 @@ class DatabaseCompanionPropsGenerator(
     typeSpec.addMethod(migrationPropSpec)
     // adding db instance var
     // private static volatile FastDatabase instance = null;
-    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"),"instance")
+    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"), "instance")
         .initializer("null")
         .addModifiers(Modifier.PRIVATE)
         .build())
 
-    typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType,"initialized")
+    typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType, "initialized")
         .initializer("false")
         .addModifiers(Modifier.PRIVATE, Modifier.VOLATILE, Modifier.STATIC)
         .build())
@@ -107,7 +107,7 @@ class DatabaseCompanionPropsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get(String::class.java), "name")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
@@ -119,8 +119,8 @@ class DatabaseCompanionPropsGenerator(
     // add with creation callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get(String::class.java), "name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
@@ -147,7 +147,7 @@ class DatabaseCompanionPropsGenerator(
     // with in memory database
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
@@ -174,7 +174,7 @@ class DatabaseCompanionPropsGenerator(
     // with callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
@@ -192,7 +192,7 @@ class DatabaseCompanionPropsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get(String::class.java), "name")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
@@ -204,8 +204,8 @@ class DatabaseCompanionPropsGenerator(
     // with creation callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get(String::class.java), "name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");

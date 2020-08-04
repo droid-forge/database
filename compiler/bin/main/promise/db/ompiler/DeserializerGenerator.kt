@@ -48,7 +48,7 @@ class DeserializerGenerator(
     //fileSpec.addImport("android.database", "CursorIndexOutOfBoundsException")
 
     return MethodSpec.methodBuilder("deserialize")
-        .addParameter(ClassName.get("android.database", "Cursor"),"e")
+        .addParameter(ClassName.get("android.database", "Cursor"), "e")
         .addAnnotation(Override::class.java)
         .addModifiers(Modifier.PUBLIC)
         .returns(ClassName.get(typeDataTypePack, typeDataType))

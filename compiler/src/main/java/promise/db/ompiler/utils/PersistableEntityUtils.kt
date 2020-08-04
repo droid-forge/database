@@ -11,7 +11,7 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler
+package promise.db.ompiler.utils
 
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
@@ -25,8 +25,8 @@ import promise.db.HasOne
 import promise.db.Index
 import promise.db.Text
 import promise.db.VarChar
+import promise.db.ompiler.TypeConverterAnnotatedProcessor
 import java.io.IOException
-import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
@@ -34,7 +34,6 @@ import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.ElementFilter
-import javax.tools.Diagnostic
 
 /**
  * gets the className for type element
@@ -101,7 +100,7 @@ fun TypeElement.getTableForeignKeys(processingEnv: ProcessingEnvironment): Array
         val entityClass = ((annotationValue as Attribute.Class).classType as TypeMirror).asTypeElement(processingEnv)
         val refColName = Utils.getAnnotationValue(foreignKeyAnnotationMirror, "referencedEntityColumnName")
         mapOf(Pair("columnName", it.getNameOfColumn()),
-            Pair("referencedColumnName", if (refColName != null ) refColName.value as String else "id"),
+            Pair("referencedColumnName", if (refColName != null) refColName.value as String else "id"),
             Pair("referencedTableName", entityClass.getTableName()))
       }
   if (fields.isNullOrEmpty()) return null
@@ -146,11 +145,9 @@ fun Element.getNameOfColumn(): String {
   } else if (this.toTypeName().isSameAs(String::class.java) &&
       this.getAnnotation(promise.db.VarChar::class.java) != null) {
     name = this.getAnnotation(promise.db.VarChar::class.java).columnName
-  }
-  else if (this.getAnnotation(Text::class.java) != null) {
+  } else if (this.getAnnotation(Text::class.java) != null) {
     name = this.getAnnotation(Text::class.java).columnName
-  }
-  else if (this.getAnnotation(VarChar::class.java) != null) {
+  } else if (this.getAnnotation(VarChar::class.java) != null) {
     name = this.getAnnotation(VarChar::class.java).columnName
   }
   if (name != null && name.isNotEmpty()) return name
@@ -171,15 +168,15 @@ fun TypeElement.checkIfAnyElementNeedsTypeConverter(): Boolean = ElementFilter.f
 
 fun Element.checkIfHasTypeConverter(): Boolean {
   //return true
-  if (TypeConverterProcessor.typeConverter != null)
+  if (TypeConverterAnnotatedProcessor.typeConverter != null)
     return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER) != null &&
-      this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER) != null
+        this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER) != null
   return false
 }
 
 fun Element.checkIfHasTypeConverter(processingEnv: ProcessingEnvironment): Boolean {
   //return true
-  if (TypeConverterProcessor.typeConverter != null)
+  if (TypeConverterAnnotatedProcessor.typeConverter != null)
     return this.getConverterCompatibleMethod(ConverterTypes.SERIALIZER, processingEnv) != null &&
         this.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER, processingEnv) != null
   return false
@@ -191,13 +188,13 @@ enum class ConverterTypes {
 }
 
 fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): ExecutableElement? {
-  if (TypeConverterProcessor.typeConverter != null) {
+  if (TypeConverterAnnotatedProcessor.typeConverter != null) {
     val methods =
-        ElementFilter.methodsIn(TypeConverterProcessor.typeConverter!!.enclosedElements)
+        ElementFilter.methodsIn(TypeConverterAnnotatedProcessor.typeConverter!!.enclosedElements)
             .filter { it.parameters.size == 1 }
     return methods.find {
       if (this.asType().kind == TypeKind.VOID) return@find false
-      when(converterTypes) {
+      when (converterTypes) {
         ConverterTypes.DESERIALIZER -> {
 
           JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
@@ -209,17 +206,17 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): Execut
         }
       }
     }
-  }
-    else return null
+  } else return null
 }
 
 
 fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, processingEnv: ProcessingEnvironment): ExecutableElement? {
-  if (TypeConverterProcessor.typeConverter != null) {
+  if (TypeConverterAnnotatedProcessor.typeConverter != null) {
     val methods =
-        ElementFilter.methodsIn(TypeConverterProcessor.typeConverter!!.enclosedElements)
+        ElementFilter.methodsIn(TypeConverterAnnotatedProcessor.typeConverter!!.enclosedElements)
             .filter {
-              it.parameters.size == 1 }
+              it.parameters.size == 1
+            }
     return methods.find {
       if (this.asType().kind == TypeKind.VOID) return@find false
 //      processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Type converter: " +
@@ -227,7 +224,7 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, process
 //          " returnType: ${TypeName.get(it.returnType)}" +
 //          " parameter: ${TypeName.get(it.parameters[0].asType())}" +
 //          " elementType ${TypeName.get(this.asType())}")
-      when(converterTypes) {
+      when (converterTypes) {
         ConverterTypes.DESERIALIZER -> {
 
           JavaUtils.isTypeEqual(it.parameters[0].asType(), TypeName.get(String::class.java)) &&
@@ -239,16 +236,16 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes, process
         }
       }
     }
-  }
-  else return null
+  } else return null
 }
+
 fun Element.isElementAnnotatedAsRelation(): Boolean {
   //return false
   return this.getAnnotation(HasMany::class.java) != null ||
-     this.getAnnotation(HasOne::class.java) != null
+      this.getAnnotation(HasOne::class.java) != null
 }
 
- fun Element.isPersistable(): Boolean = try {
+fun Element.isPersistable(): Boolean = try {
   this.toTypeName().isSameAs(Integer::class.java) ||
       this.toTypeName().isSameAs(String::class.java) ||
       this.toTypeName().isSameAs(Float::class.java) ||

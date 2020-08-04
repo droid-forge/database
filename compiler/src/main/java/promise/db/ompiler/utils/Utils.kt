@@ -11,9 +11,16 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler
+package promise.db.ompiler.utils
 
+import com.squareup.javapoet.ClassName
+import com.squareup.javapoet.CodeBlock
+import com.squareup.javapoet.FieldSpec
+import com.squareup.javapoet.JavaFile
+import com.squareup.javapoet.MethodSpec
+import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeName
+import com.squareup.javapoet.TypeSpec
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.UnknownHostException
@@ -22,13 +29,13 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.AnnotationMirror
 import javax.lang.model.element.AnnotationValue
 import javax.lang.model.element.Element
+import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
-import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
 import kotlin.reflect.KClass
@@ -82,8 +89,21 @@ fun TypeMirror.asTypeElement(processingEnv: ProcessingEnvironment): TypeElement 
   }) as TypeElement
 }
 
+fun String.getInstanceProviderClassName(): String {
+  return "${this}InstanceProvider"
+}
 
 object Utils {
+
+  fun getAnnotationMirror(typeElement: ExecutableElement, clazz: Class<*>): AnnotationMirror? {
+    val clazzName = clazz.name
+    for (m in typeElement.annotationMirrors) {
+      if (m.annotationType.toString() == clazzName) {
+        return m
+      }
+    }
+    return null
+  }
 
   fun getAnnotationMirror(typeElement: TypeElement, clazz: Class<*>): AnnotationMirror? {
     val clazzName = clazz.name
@@ -177,5 +197,75 @@ object Utils {
     if (`object` is FloatArray) return Arrays.toString(`object` as FloatArray?)
     if (`object` is DoubleArray) return Arrays.toString(`object` as DoubleArray?)
     return if (`object` is Array<*>) Arrays.deepToString(`object` as Array<Any?>?) else "Couldn't find a correct type for the object"
+  }
+
+  /**
+   * generates provider for element Typename
+   */
+  fun generateInstanceProviderHolder(
+      /**
+       * Typename for this provider
+       */
+      element: ClassName
+      ): JavaFile.Builder {
+
+    val className = element.simpleName()
+
+    val pack = element.packageName()
+
+    val varName = className.camelCase()
+
+    val fileName = className.getInstanceProviderClassName()
+
+    val classBuilder = TypeSpec.classBuilder(fileName)
+        .addJavadoc("""
+          Class holder for instantiation of TypeConverter
+        """.trimIndent())
+        .addModifiers(Modifier.FINAL, Modifier.PUBLIC)
+        .addSuperinterface(ParameterizedTypeName.get(
+            ClassName.get("promise.commons", "InstanceProvider"),
+            element
+        ))
+        // field instance for the holder
+        .addField(FieldSpec.builder(
+            ClassName.get(pack, fileName),
+            "instance"
+        ).addModifiers(Modifier.PRIVATE, Modifier.STATIC)
+            .build())
+        // holder for type converter
+        .addField(FieldSpec.builder(element, varName,
+            Modifier.FINAL, Modifier.PRIVATE)
+            .addJavadoc("""
+              holder instance for the TypeConverter
+            """.trimIndent())
+            .build())
+        // constructor for the holder
+        .addMethod(MethodSpec.constructorBuilder()
+            .addModifiers(Modifier.PRIVATE)
+            .addParameter(ClassName.get(pack, className), varName)
+            .addStatement("this.$varName = $varName")
+            .build())
+        .addMethod(MethodSpec.methodBuilder("create")
+            .returns(ClassName.get(pack, fileName))
+            .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
+            .addJavadoc("""
+              Creates an instance of the holder with the converter
+            """.trimIndent())
+            .addParameter(
+                ClassName.get(pack, className),
+                varName)
+            .addCode(CodeBlock.builder()
+                .addStatement("if (instance == null) instance = new $fileName($varName)")
+                .addStatement("return instance")
+                .build())
+            .build())
+        .addMethod(MethodSpec.methodBuilder("get")
+            .addAnnotation(Override::class.java)
+            .returns(ClassName.get(pack, className))
+            .addModifiers(Modifier.PUBLIC)
+            .addCode("return $varName;")
+            .build())
+
+    return JavaFile.builder(pack, classBuilder.build())
   }
 }

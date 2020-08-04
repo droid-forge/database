@@ -14,11 +14,11 @@
 package promise.db.ompiler
 
 import com.squareup.javapoet.ClassName
-import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import promise.db.DatabaseEntity
+import promise.db.ompiler.utils.JavaUtils
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
@@ -27,21 +27,23 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
-class DatabaseEntityProcessor(private val processingEnv: ProcessingEnvironment): ClassProcessor() {
+class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
 
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
-        return environment?.getElementsAnnotatedWith(DatabaseEntity::class.java)
+    return environment?.getElementsAnnotatedWith(DatabaseEntity::class.java)
         ?.map { element ->
           if (element.kind != ElementKind.CLASS) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
             return null
           }
-//          if (JavaUtils.isSubtypeOfType(element.asType(), "promise.db.PromiseDatabase")) {
-//             processElement(element)
-//          }
-//          processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Database class must extend from promise.db.PromiseDatabase")
-//           null
-
+          if (element.kind == ElementKind.CLASS && !(element as TypeElement).modifiers.contains(Modifier.ABSTRACT)) {
+            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Database class must be abstract")
+          }
+          val promiseDatabaseType = JavaUtils.getDeclaredType(processingEnv,
+              processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase"))
+          if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element, promiseDatabaseType)) {
+            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Database class must extend from promise.db.PromiseDatabase")
+          }
           processElement(element)
         }
   }
@@ -64,14 +66,16 @@ class DatabaseEntityProcessor(private val processingEnv: ProcessingEnvironment):
         .addModifiers(Modifier.PRIVATE)
         .addStatement("super()")
         .addStatement("this.instance = fastDatabase")
-    if (TypeConverterProcessor.typeConverter != null) {
-      JavaUtils.generateAddConverterStatementInDatabaseConstructorMethod(processingEnv, constructorMethod, TypeConverterProcessor.typeConverter!!)
+    if (TypeConverterAnnotatedProcessor.typeConverter != null) {
+      constructorMethod.addJavadoc("""
+        Initializes the TypeConverter as singleton
+      """.trimIndent())
+      JavaUtils.generateAddConverterStatementInDatabaseConstructorMethod(processingEnv, constructorMethod, TypeConverterAnnotatedProcessor.typeConverter!!)
     }
     classBuilder.superclass(ClassName.get(pack, className))
         .addAnnotation(tableAnnotationSpec)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addMethod(constructorMethod
-            .build())
+        .addMethod(constructorMethod.build())
 
     DatabaseStaticMethodsGenerator(classBuilder, element, processingEnv).generate()
 
@@ -83,7 +87,7 @@ class DatabaseEntityProcessor(private val processingEnv: ProcessingEnvironment):
 
     DatabaseCrudStubMethodsGenerator(classBuilder, element, processingEnv).generate()
 
-   return JavaFile.builder(pack, classBuilder.build())
+    return JavaFile.builder(pack, classBuilder.build())
 
   }
 }

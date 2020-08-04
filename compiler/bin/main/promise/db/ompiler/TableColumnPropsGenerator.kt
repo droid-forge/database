@@ -31,10 +31,10 @@ import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 class TableColumnPropsGenerator(
-                                private val classBuilder: TypeSpec.Builder,
-                                private val processingEnvironment: ProcessingEnvironment
-                                ,
-                                private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, FieldSpec>> {
+    private val classBuilder: TypeSpec.Builder,
+    private val processingEnvironment: ProcessingEnvironment
+    ,
+    private val setElements: List<Element>) : CodeBlockGenerator<Map<Pair<Element, String>, FieldSpec>> {
 
   var genColValues: ArrayList<Pair<Pair<String, TypeName>, String>> = ArrayList()
 
@@ -83,7 +83,7 @@ class TableColumnPropsGenerator(
         classTypeName.isSameAs(Integer::class.java) ||
         classTypeName.isSameAs(Float::class.java) ||
         classTypeName.isSameAs(Double::class.java) ||
-       classTypeName.isSameAs(Boolean::class.java)) {
+        classTypeName.isSameAs(Boolean::class.java)) {
       str += ".INTEGER"
       if (element.getAnnotation(PrimaryKey::class.java) != null) {
         str += ".PRIMARY_KEY()"

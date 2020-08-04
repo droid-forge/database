@@ -12,7 +12,6 @@
  */
 package promise.db
 
-import android.database.Cursor
 import promise.commons.model.Identifiable
 import promise.commons.model.List
 import promise.model.IdentifiableList
@@ -20,9 +19,8 @@ import promise.model.IdentifiableList
 /**
  *
  */
-internal interface Crud<X> {
+interface Crud<X> {
 
-  fun querySql(sql: String): Cursor
 
   /**
    *

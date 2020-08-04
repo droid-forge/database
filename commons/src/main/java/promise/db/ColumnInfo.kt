@@ -12,8 +12,6 @@
  */
 package promise.db
 
-import kotlin.reflect.KClass
-
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class VarChar(val columnName: String = "",

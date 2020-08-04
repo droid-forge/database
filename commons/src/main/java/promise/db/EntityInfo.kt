@@ -24,9 +24,9 @@ annotation class AddedEntity(val fromVersion: Int,
 @Retention(AnnotationRetention.SOURCE)
 annotation class Entity(val tableName: String = "",
                         /**
-                              * @return
-                              */
-                             val compoundIndices: Array<CompoundIndex> = []
+                         * @return
+                         */
+                        val compoundIndices: Array<CompoundIndex> = []
 ) {
   /**
    *
@@ -45,6 +45,7 @@ annotation class Entity(val tableName: String = "",
    */
 
 }
+
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Index
@@ -70,16 +71,5 @@ annotation class HasOne
 @Retention(AnnotationRetention.SOURCE)
 annotation class HasMany
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
-annotation class OneToMany(val parent: KClass<*>, val child: KClass<*>)
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
-annotation class OneToOne(val parent: KClass<*>, val child: KClass<*>)
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
-annotation class FindAll
 
 

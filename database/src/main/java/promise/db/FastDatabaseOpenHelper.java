@@ -13,7 +13,6 @@
 
 package promise.db;
 
-import android.content.Context;
 import android.database.DatabaseErrorHandler;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -23,17 +22,13 @@ import androidx.annotation.Nullable;
 
 import promise.commons.AndroidPromise;
 
-
 public abstract class FastDatabaseOpenHelper extends SQLiteOpenHelper {
-
-  private Context context;
 
   public FastDatabaseOpenHelper(@Nullable String name,
                                 @Nullable SQLiteDatabase.CursorFactory factory,
                                 int version,
                                 @Nullable DatabaseErrorHandler errorHandler) {
     super(AndroidPromise.instance().context(), name, factory, version, errorHandler);
-    this.context = AndroidPromise.instance().context();
   }
 
   @Override

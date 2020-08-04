@@ -52,6 +52,9 @@ class TableRegisteredColumnsMethodGenerator(
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addAnnotation(Override::class.java)
         .addAnnotation(NotNull::class.java)
+        .addJavadoc("""
+          Registered columns for this table
+        """.trimIndent())
         .addCode(CodeBlock.of(stmt))
         .build()
 

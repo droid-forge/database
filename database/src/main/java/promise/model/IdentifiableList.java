@@ -73,7 +73,8 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
     if (t instanceof ActiveRecord<?>) {
       try {
         ((ActiveRecord) t).delete();
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+      }
     }
     super.remove(getIndex(t));
     return true;
@@ -83,7 +84,8 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
     if (t instanceof ActiveRecord<?>) {
       try {
         ((ActiveRecord) t).delete();
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+      }
     }
     removeWithID(t.getId());
   }
@@ -92,7 +94,8 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
     if (t instanceof ActiveRecord<?>) {
       try {
         ((ActiveRecord) t).update();
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+      }
     }
     super.set(getIndex(t), t);
   }
@@ -109,4 +112,5 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
             o1.getId() > o2.getId() ? -1 : 0);
     return this;
   }
+
 }

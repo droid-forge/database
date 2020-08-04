@@ -27,8 +27,7 @@ import javax.tools.Diagnostic;
 
 import promise.db.Entity;
 import promise.db.Table;
-import promise.db.ompiler.CodeGenerator;
-import promise.db.ompiler.PersistableEntityUtilsKt;
+import promise.db.ompiler.utils.PersistableEntityUtilsKt;
 
 public class TableAnnotationGenerator implements CodeGenerator<AnnotationSpec> {
   private Element element;

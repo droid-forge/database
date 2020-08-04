@@ -17,12 +17,11 @@ import android.os.Parcel
 import promise.commons.model.Identifiable
 import promise.commons.util.Conditions
 import promise.model.TimeStamped
-import java.lang.Exception
 
 /**
  *
  */
-abstract class ActiveRecord<T: Identifiable<Int>>() : TimeStamped() {
+abstract class ActiveRecord<T : Identifiable<Int>>() : TimeStamped() {
   /**
    *
    */
@@ -31,7 +30,7 @@ abstract class ActiveRecord<T: Identifiable<Int>>() : TimeStamped() {
   /**
    *
    */
-  constructor(parcel: Parcel?): this() {
+  constructor(parcel: Parcel?) : this() {
     super.readFromParcel(parcel)
   }
 

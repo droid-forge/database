@@ -35,7 +35,7 @@ class ReactiveFastDatabase private constructor(
     factory: SQLiteDatabase.CursorFactory?,
     version: Int,
     errorHandler: DatabaseErrorHandler) :
-    FastDatabase(name, factory, version, errorHandler),
+    FastDatabaseImpl(name, factory, version, errorHandler),
     ReactiveCrud<SQLiteDatabase> {
   private val TAG: String = LogUtil.makeTag(ReactiveFastDatabase::class.java)
 
@@ -74,10 +74,10 @@ class ReactiveFastDatabase private constructor(
       Single.fromCallable { tableCrud.onDrop(database) }
 
   /**
-   * @param builder
+   * @param queryBuilder
    * @return
    */
-  fun queryAsync(builder: QueryBuilder): Single<Cursor> = Single.fromCallable { query(builder) }
+  override fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> = Single.fromCallable { query(queryBuilder) }
 
   /**
    * @param tableCrud
@@ -190,7 +190,7 @@ class ReactiveFastDatabase private constructor(
       Maybe.zip(tables().map { tableCrud: TableCrud<*, in SQLiteDatabase> -> this.deleteAsync(tableCrud) }
       ) { objects: Array<Any> ->
         List.fromArray<Any>(*objects).allMatch { aBoolean: Any ->
-          aBoolean is Boolean &&  aBoolean
+          aBoolean is Boolean && aBoolean
         }
       }
 
@@ -269,7 +269,7 @@ class ReactiveFastDatabase private constructor(
      * @return
      */
     @SafeVarargs
-    override fun  notIn(column: Column<Number>, vararg bounds: Number): Maybe<IdentifiableList<out T>> =
+    override fun notIn(column: Column<Number>, vararg bounds: Number): Maybe<IdentifiableList<out T>> =
         Maybe.fromCallable { tableCrud.onFind(database).notIn(column, *bounds) }
 
     /**

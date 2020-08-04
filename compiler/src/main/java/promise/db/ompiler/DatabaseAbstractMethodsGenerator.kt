@@ -20,6 +20,10 @@ import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeVariableName
 import com.squareup.javapoet.WildcardTypeName
 import org.jetbrains.annotations.NotNull
+import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.asTypeElement
+import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
@@ -29,10 +33,10 @@ import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
+
 class DatabaseAbstractMethodsGenerator(
     private val element: TypeElement,
     private val processingEnv: ProcessingEnvironment) : CodeGenerator<List<MethodSpec>?> {
-
 
   override fun generate(): List<MethodSpec>? {
     val enclosedElements: List<Element?> = element.enclosedElements
@@ -42,13 +46,7 @@ class DatabaseAbstractMethodsGenerator(
       it.modifiers.contains(Modifier.ABSTRACT)
     }
 
-    //if (abstractFunctions.isNullOrEmpty()) return null
     val funSpecs = ArrayList<MethodSpec>()
-
-    abstractFunctions.forEach {
-      funSpecs.add(MethodSpec.overriding(it)
-          .build())
-    }
 
     abstractFunctions.filter {
       it.parameters.isEmpty() && it.returnType.kind != TypeKind.VOID
@@ -79,15 +77,6 @@ class DatabaseAbstractMethodsGenerator(
     }
     codeBlock.addStatement("throw new IllegalArgumentException(entityClass.getCanonicalName() + \"not registered with this database\")")
 
-    /**
-     * @Override
-    @NotNull
-    public <T extends Identifiable<Integer>> FastTable<T> getTable(Class<? extends T> entityClass) throws IllegalArgumentException {
-    if (entityClass == Person.class) return getDatabaseInstance().obtain(PersonFastTable.class);
-    if (entityClass == Exam.class) return getDatabaseInstance().obtain(ExamFastTable.class);
-    throw new IllegalArgumentException(entityClass.getCanonicalName() + "not registered with this database");
-    }
-     */
     val typeVariable: TypeVariableName? = TypeVariableName.get("T").withBounds(
         ParameterizedTypeName.get(
             ClassName.get("promise.commons.model", "Identifiable"),
@@ -99,11 +88,22 @@ class DatabaseAbstractMethodsGenerator(
         ), "entityClass")
         .addAnnotation(Override::class.java)
         .addAnnotation(NotNull::class.java)
+        .addJavadoc("""
+          Returns the table for the specified entity
+          @Param entityClass Class of the entity persisted
+          @Returns the table instance
+        """.trimIndent())
         .addException(IllegalArgumentException::class.java)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .returns(ParameterizedTypeName.get(ClassName.get("promise.db", "FastTable"), TypeVariableName.get("T")))
+        .returns(ParameterizedTypeName.get(
+            ClassName.get("promise.db", "FastTable"),
+            TypeVariableName.get("T")))
         .addCode(codeBlock.build())
         .build())
+
+    val retutnType = """
+      TableCrud<T, ? super SQLiteDatabase> 
+    """.trimIndent()
 
     return funSpecs
   }

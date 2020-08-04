@@ -68,7 +68,7 @@ class EntityProcessor : AbstractProcessor() {
 //            if (JavaUtils.implementsInterface(processingEnv, element as TypeElement, identifiableInterface.asType())) {
 //              processAnnotation(element)
 //            }
-             processAnnotation(element)
+            processAnnotation(element)
 //            else {
 //              processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
 //              return false
@@ -180,7 +180,7 @@ class EntityProcessor : AbstractProcessor() {
             See the License for the specific language governing permissions and
             limitations under the License
             """.trimIndent()
-            )
+        )
         .build()
         .writeTo(processingEnv.filer)
   }

@@ -11,15 +11,17 @@
  * limitations under the License.
  */
 
-package promise.db.ompiler;
+package promise.db.ompiler.utils;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
-import com.sun.tools.javac.jvm.Code;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,11 +30,17 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
 
 public class JavaUtils {
+
+  // code generation participants
+
+  // end of code generation participants
   private static final Map<Class<?>, Class<?>> PRIMITIVES_TO_WRAPPERS
       = new HashMap<Class<?>, Class<?>>() {{
     put(boolean.class, Boolean.class);
@@ -46,12 +54,16 @@ public class JavaUtils {
     put(void.class, Void.class);
   }};
 
+  /**
+   * @param element
+   * @return
+   */
   public static FieldSpec generateEntityTableLogField(Element element) {
     return FieldSpec.builder(
         String.class, "TAG")
         .addModifiers(Modifier.STATIC, Modifier.PRIVATE, Modifier.FINAL)
-        .initializer("$T.makeTag(" +element.getSimpleName() +".class)",
-            ClassName.get("promise.commons.data.log","LogUtil" ))
+        .initializer("$T.makeTag(" + element.getSimpleName() + ".class)",
+            ClassName.get("promise.commons.data.log", "LogUtil"))
         .build();
   }
 
@@ -62,7 +74,7 @@ public class JavaUtils {
     String pack = processingEnvironment.getElementUtils().getPackageOf(converter).toString();
     constructorMethod.addStatement("this.typeConverter = $T.provider($T.create(new $T())).get()",
         ClassName.get("promise.commons", "SingletonInstanceProvider"),
-        ClassName.get(pack, TypeConverterProcessorKt.getTypeConverterClassName(converter)),
+        ClassName.get(pack, UtilsKt.getInstanceProviderClassName(converter.getSimpleName().toString())),
         UtilsKt.toTypeName(converter));
   }
 
@@ -73,33 +85,29 @@ public class JavaUtils {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
     if (PersistableEntityUtilsKt.checkIfAnyElementNeedsTypeConverter(entity)) {
       String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getClassName(entity));
-      String stmt = "if (entityClass == Exam.class) {\n" +
-          "      ExamsTable examsTable = getDatabaseInstance().obtain(ExamsTable.class);\n" +
-          "      examsTable.setTypeConverter(typeConverter);\n" +
-          "      return (FastTable<T>) examsTable;\n" +
-          "    }";
+
       codeBlock.beginControlFlow("if (entityClass == $T.class)", ClassName.get(pack, entity.getSimpleName().toString()));
-      codeBlock.addStatement("$T "+tableVarName+" = getDatabaseInstance().obtain($T.class)",
+      codeBlock.addStatement("$T " + tableVarName + " = getDatabaseInstance().obtain($T.class)",
           ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)),
           ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
       codeBlock.addStatement(tableVarName + ".setTypeConverter(typeConverter)");
-      codeBlock.addStatement("return (FastTable<T>) "+tableVarName);
+      codeBlock.addStatement("return (FastTable<T>) " + tableVarName);
       codeBlock.endControlFlow();
-    }
-    else codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
-        ClassName.get(pack, entity.getSimpleName().toString()),
-        ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
+    } else
+      codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
+          ClassName.get(pack, entity.getSimpleName().toString()),
+          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
   }
 
   public static CodeBlock generateSerializerRelationPutStatement(Element element, String colName) {
-    CodeBlock.Builder codeBlock =  CodeBlock.builder();
+    CodeBlock.Builder codeBlock = CodeBlock.builder();
     String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
-    codeBlock.addStatement("$T "+ variableName+ " = t.get"+PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString())+"()", TypeName.get(element.asType()));
-    codeBlock.beginControlFlow("if("+variableName+" != null)");
-    codeBlock.addStatement("values.put("+colName+".getName(), "+variableName+".getId())");
+    codeBlock.addStatement("$T " + variableName + " = t.get" + PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString()) + "()", TypeName.get(element.asType()));
+    codeBlock.beginControlFlow("if(" + variableName + " != null)");
+    codeBlock.addStatement("values.put(" + colName + ".getName(), " + variableName + ".getId())");
     codeBlock.endControlFlow();
     codeBlock.beginControlFlow("else");
-    codeBlock.addStatement("values.put("+colName+".getName(), 0)");
+    codeBlock.addStatement("values.put(" + colName + ".getName(), 0)");
     codeBlock.endControlFlow();
     return codeBlock.build();
   }
@@ -115,16 +123,16 @@ public class JavaUtils {
         "        person.setId(personId);\n" +
         "        dog.setPerson(person);\n" +
         "      }";
-    CodeBlock.Builder codeBlock =  CodeBlock.builder();
+    CodeBlock.Builder codeBlock = CodeBlock.builder();
     String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
     String variableNameId = variableName + "Id";
-    codeBlock.addStatement("int "+ variableNameId+ " = e.getInt("+colName+".getIndex(e))");
-    codeBlock.beginControlFlow("if("+variableNameId+" != 0)");
-    codeBlock.addStatement("$T "+variableName+ " = new $T()",
+    codeBlock.addStatement("int " + variableNameId + " = e.getInt(" + colName + ".getIndex(e))");
+    codeBlock.beginControlFlow("if(" + variableNameId + " != 0)");
+    codeBlock.addStatement("$T " + variableName + " = new $T()",
         TypeName.get(element.asType()),
         TypeName.get(element.asType()));
-    codeBlock.addStatement(variableName + ".setId("+variableNameId+")");
-    codeBlock.addStatement(entitySetName+".set"+PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString())+"("+variableName+")");
+    codeBlock.addStatement(variableName + ".setId(" + variableNameId + ")");
+    codeBlock.addStatement(entitySetName + ".set" + PersistableEntityUtilsKt.capitalizeFirst(element.getSimpleName().toString()) + "(" + variableName + ")");
     codeBlock.endControlFlow();
     return codeBlock.build();
   }
@@ -133,7 +141,7 @@ public class JavaUtils {
     codeBlock.beginControlFlow("catch($T ex)",
         ClassName.get("android.database", "CursorIndexOutOfBoundsException"));
     codeBlock.addStatement("LogUtil.e(TAG, \"deserialize\", ex)");
-    codeBlock.addStatement("return new "+typeDataType+"()");
+    codeBlock.addStatement("return new " + typeDataType + "()");
   }
 
   public static void generateDatabaseMigrationOverrideControlBlock(CodeBlock.Builder codeBlock) {
@@ -147,7 +155,13 @@ public class JavaUtils {
     return c.isPrimitive() ? (Class<T>) PRIMITIVES_TO_WRAPPERS.get(c) : c;
   }
 
-
+  /**
+   * gets the super class for type element
+   *
+   * @param typeElement to be checked for super class
+   * @return superclass or null
+   */
+  @Nullable
   public static TypeElement getSuperClass(TypeElement typeElement) {
     TypeMirror type = typeElement.getSuperclass();
     if (type.getKind() == TypeKind.NONE) {
@@ -156,61 +170,81 @@ public class JavaUtils {
     return (TypeElement) ((DeclaredType) type).asElement();
   }
 
-  static boolean isTypeEqual(TypeMirror typeMirror, TypeName otherType) {
+  /**
+   * checks if typemirror is equal to a typename
+   *
+   * @param typeMirror
+   * @param otherType
+   * @return
+   */
+  public static boolean isTypeEqual(TypeMirror typeMirror, TypeName otherType) {
     if (typeMirror.getKind() == TypeKind.NONE || otherType == TypeName.VOID ||
-    typeMirror.getKind() == TypeKind.VOID) {
+        typeMirror.getKind() == TypeKind.VOID) {
       return false;
     }
     return otherType.toString().equals(TypeName.get(typeMirror).toString());
   }
 
-  static boolean isSubtypeOfType(TypeMirror typeMirror, TypeName otherType) {
-    if (typeMirror.getKind() == TypeKind.NONE) {
-      return false;
-    }
-    if (isTypeEqual(typeMirror, otherType)) {
-      return true;
-    }
-    if (typeMirror.getKind() != TypeKind.DECLARED) {
-      return false;
-    }
+  /**
+   * checks if type mirror is a sub type of other type
+   *
+   * @param typeMirror
+   * @param otherType
+   * @return
+   */
+  public static boolean isSubTypeOfType(TypeMirror typeMirror, TypeName otherType) {
+    if (typeMirror.getKind() == TypeKind.NONE) return false;
+    if (isTypeEqual(typeMirror, otherType)) return true;
+    if (typeMirror.getKind() != TypeKind.DECLARED) return false;
     DeclaredType declaredType = (DeclaredType) typeMirror;
     List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
     if (typeArguments.size() > 0) {
       StringBuilder typeString = new StringBuilder(declaredType.asElement().toString());
       typeString.append('<');
       for (int i = 0; i < typeArguments.size(); i++) {
-        if (i > 0) {
-          typeString.append(',');
-        }
+        if (i > 0) typeString.append(',');
         typeString.append('?');
       }
       typeString.append('>');
-      if (typeString.toString().equals(otherType.toString())) {
-        return true;
-      }
+      if (typeString.toString().equals(otherType.toString())) return true;
     }
     Element element = declaredType.asElement();
-    if (!(element instanceof TypeElement)) {
-      return false;
-    }
+    if (!(element instanceof TypeElement)) return false;
     TypeElement typeElement = (TypeElement) element;
     TypeMirror superType = typeElement.getSuperclass();
-    if (isSubtypeOfType(superType, otherType)) {
-      return true;
-    }
-    for (TypeMirror interfaceType : typeElement.getInterfaces()) {
-      if (isSubtypeOfType(interfaceType, otherType)) {
-        return true;
-      }
-    }
+    if (isSubTypeOfType(superType, otherType)) return true;
+    for (TypeMirror interfaceType : typeElement.getInterfaces())
+      if (isSubTypeOfType(interfaceType, otherType)) return true;
     return false;
   }
 
-  public static boolean extendsClass(
-      TypeElement myTypeElement,
-      TypeMirror desiredInterface) {
-    return myTypeElement.getSuperclass().toString().equals(desiredInterface.toString());
+  public static DeclaredType getDeclaredType(ProcessingEnvironment processingEnvironment, TypeElement typeElement) {
+    return processingEnvironment.getTypeUtils().getDeclaredType(typeElement);
+  }
 
+  public static boolean isSubTypeOfDeclaredType(ProcessingEnvironment processingEnvironment, Element typeElement, DeclaredType declaredType) {
+    return processingEnvironment.getTypeUtils().isAssignable(typeElement.asType(), declaredType);
+  }
+
+  public static DeclaredType toWildCardType(ProcessingEnvironment processingEnvironment, TypeElement typeElement, int wildTimes) {
+    WildcardType WILDCARD_TYPE_NULL = processingEnvironment.getTypeUtils().getWildcardType(null, null);
+    TypeMirror[] mirrors = new TypeMirror[wildTimes];
+    for (int i = 0; i < wildTimes; i++) mirrors[i] = WILDCARD_TYPE_NULL;
+    return processingEnvironment.getTypeUtils().getDeclaredType(typeElement, mirrors);
+  }
+
+  public static boolean isCollectionType(ProcessingEnvironment processingEnvironment, VariableElement variableElement) {
+    DeclaredType collectionType = toWildCardType(processingEnvironment,
+        processingEnvironment.getElementUtils().getTypeElement(Collection.class.getName()),
+        1);
+    return isSubTypeOfDeclaredType(processingEnvironment, variableElement, collectionType);
+  }
+
+  public static List<? extends TypeMirror> getParameterizedTypeMirrors(VariableElement variableElement) {
+    if (variableElement.asType() instanceof DeclaredType) {
+      DeclaredType declaredType = (DeclaredType) variableElement.asType();
+      return declaredType.getTypeArguments();
+    }
+    return null;
   }
 }

@@ -24,9 +24,9 @@ annotation class AddedEntity(val fromVersion: Int,
 @Retention(AnnotationRetention.SOURCE)
 annotation class Entity(val tableName: String = "",
                         /**
-                              * @return
-                              */
-                             val compoundIndices: Array<CompoundIndex> = []
+                         * @return
+                         */
+                        val compoundIndices: Array<CompoundIndex> = []
 ) {
   /**
    *
@@ -45,6 +45,7 @@ annotation class Entity(val tableName: String = "",
    */
 
 }
+
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Index

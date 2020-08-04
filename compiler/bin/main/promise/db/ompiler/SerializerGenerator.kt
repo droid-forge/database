@@ -25,7 +25,7 @@ class SerializerGenerator(
     private val typeDataType: String,
     private val columns: List<Pair<Pair<String, TypeName>, String>>) : CodeBlockGenerator<MethodSpec> {
   init {
-   // fileSpec.addImport("android.content", "ContentValues")
+    // fileSpec.addImport("android.content", "ContentValues")
   }
 
   override fun generate(): MethodSpec {
@@ -43,7 +43,7 @@ class SerializerGenerator(
 
     return MethodSpec.methodBuilder("serialize")
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(ClassName.get(typeDataTypePack, typeDataType),"t")
+        .addParameter(ClassName.get(typeDataTypePack, typeDataType), "t")
         .addAnnotation(Override::class.java)
         .returns(ClassName.get("android.content", "ContentValues"))
         .addCode(CodeBlock.of(stmt))

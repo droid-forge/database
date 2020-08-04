@@ -24,39 +24,41 @@ import com.squareup.javapoet.TypeName
 import com.squareup.javapoet.TypeSpec
 import org.jetbrains.annotations.NotNull
 import promise.db.Entity
+import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.checkIfAnyElementNeedsTypeConverter
+import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.isElementAnnotatedAsRelation
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
-class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassProcessor() {
+class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
-    return environment?.getElementsAnnotatedWith(Entity::class.java)
-        ?.map { element ->
+    val javaFiles = ArrayList<JavaFile.Builder?>()
+    environment?.getElementsAnnotatedWith(Entity::class.java)
+        ?.forEach { element ->
           if (element.kind != ElementKind.CLASS) {
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
-            return null
           }
-
-//            val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
-//            processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Entity class ${element.simpleName}, interfaceType ${identifiableInterface.toString()}")
-//            if (JavaUtils.implementsInterface(processingEnv, element as TypeElement, identifiableInterface.asType())) {
-//              processAnnotation(element)
-//            }
-          processAnnotation(element)
-//            else {
-//              processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
-//              return false
-//            }
+          val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
+          val declaredInterface = JavaUtils.toWildCardType(processingEnv, identifiableInterface, 1)
+          if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element as TypeElement, declaredInterface)) {
+            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
+          } else {
+            javaFiles.add(processAnnotation(element))
+            javaFiles.addAll(processElementDaos(element))
+          }
+          //processAnnotation(element)
         }
+    return javaFiles
   }
 
-
   private fun processAnnotation(element: Element): JavaFile.Builder {
-    processingEnv.messager.printMessage(Diagnostic.Kind.OTHER, "Entity Processing: ${element.simpleName}")
 
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
@@ -67,6 +69,9 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
 
     val classBuilder = TypeSpec.classBuilder(fileName)
         .addModifiers(Modifier.PUBLIC)
+        .addJavadoc("""
+          Table for ${element.simpleName}
+        """.trimIndent())
         .superclass(ParameterizedTypeName.get(
             ClassName.get("promise.db", "FastTable"),
             ClassName.get(pack, className))
@@ -82,10 +87,10 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
 
     classBuilder.addAnnotation(tableAnnotationSpec)
 
-    val activeRecordType = processingEnv.typeUtils.erasure(
-        processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord").asType())
+    val activeRecordType = processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord")
+    val declaredActiveRecordType = JavaUtils.toWildCardType(processingEnv, activeRecordType, 1)
 
-    if (JavaUtils.isSubtypeOfType((element as TypeElement).asType(), TypeName.get(activeRecordType)))
+    if (JavaUtils.isSubTypeOfDeclaredType(processingEnv, (element as TypeElement), declaredActiveRecordType))
       classBuilder.addMethod(MethodSpec.methodBuilder("createEntityInstance")
           .addAnnotation(Override::class.java)
           .addAnnotation(NotNull::class.java)
@@ -98,13 +103,16 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     val tableColumnPropsGenerator = TableColumnFieldsGenerator(processingEnv, element.enclosedElements)
 
     if (element.checkIfAnyElementNeedsTypeConverter()) {
-      classBuilder.addField(FieldSpec.builder(TypeName.get(TypeConverterProcessor
+      classBuilder.addField(FieldSpec.builder(TypeName.get(TypeConverterAnnotatedProcessor
           .typeConverter!!.asType()), "typeConverter")
           .addModifiers(Modifier.PRIVATE)
+          .addJavadoc("""
+            TypeConverter for fields not directly persistable
+          """.trimIndent())
           .build())
       classBuilder.addMethod(MethodSpec.methodBuilder("setTypeConverter")
           .addModifiers(Modifier.PUBLIC)
-          .addParameter(TypeName.get(TypeConverterProcessor
+          .addParameter(TypeName.get(TypeConverterAnnotatedProcessor
               .typeConverter!!.asType()), "typeConverter")
           .addStatement("this.typeConverter = typeConverter")
           .build())
@@ -116,6 +124,9 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
             ClassName.get(Integer::class.java)
         ), "idColumn")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC, Modifier.FINAL)
+        .addJavadoc("""
+          Column for primary key
+        """.trimIndent())
         .initializer(CodeBlock.of("FastTable.getId()")).build()
 
     classBuilder.addField(idColumnSpec)
@@ -157,5 +168,13 @@ class EntityProcessor(private val processingEnv: ProcessingEnvironment) : ClassP
     return JavaFile.builder(pack, classBuilder.build())
   }
 
+  private fun processElementDaos(element: Element): List<JavaFile.Builder?> {
+    val javaFiles = ArrayList<JavaFile.Builder?>()
+    val fields = ElementFilter.fieldsIn(element.enclosedElements).filter {
+      it.isElementAnnotatedAsRelation()
+    }
+    if (fields.isNotEmpty()) javaFiles.addAll(TableRelationsGenerator(processingEnv, element as TypeElement, fields).generate())
 
+    return javaFiles
+  }
 }

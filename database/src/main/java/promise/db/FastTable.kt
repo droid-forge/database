@@ -28,8 +28,8 @@ import promise.commons.model.List.fromArray
 import promise.commons.util.Conditions
 import promise.commons.util.DoubleConverter
 import promise.db.criteria.Criteria
-import promise.db.projection.Projection
 import promise.db.model.ITimeStamped
+import promise.db.projection.Projection
 import promise.model.IdentifiableList
 import java.util.*
 
@@ -174,8 +174,7 @@ abstract class FastTable<T : Identifiable<Int>>
     indexSql = "$indexSql);"
     return if (compoundIndex.unique) {
       "CREATE UNIQUE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
-    }
-    else "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
+    } else "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
   }
 
   private fun generateIndexQuery(index: Table.Index): String {
@@ -393,12 +392,12 @@ abstract class FastTable<T : Identifiable<Int>>
   /**
    *
    */
-  override  fun query(queryBuilder: QueryBuilder): Cursor = database.query(queryBuilder)
+  override fun query(queryBuilder: QueryBuilder): Cursor = database.query(queryBuilder)
 
   /**
    *
    */
-  override  fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> =
+  override fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> =
       reactiveDatabase.queryAsync(queryBuilder)
 
   /**
@@ -409,41 +408,41 @@ abstract class FastTable<T : Identifiable<Int>>
   /**
    * @return
    */
-  override  fun findById(idLong: Long): T? = database.find(this).where(id.with(idLong.toInt())).first()
+  override fun findById(idLong: Long): T? = database.find(this).where(id.with(idLong.toInt())).first()
 
   /**
    * @return
    */
-  override  fun findOne(vararg columns: Column<*>): T? = database.find(this).where(*columns).first()
+  override fun findOne(vararg columns: Column<*>): T? = database.find(this).where(*columns).first()
 
   /**
    * @return
    * @throws TableError
    */
   @Throws(TableError::class)
-  override  fun findAsync(): ReactiveTable.Extras<T> = reactiveDatabase.readAsync(this)
+  override fun findAsync(): ReactiveTable.Extras<T> = reactiveDatabase.readAsync(this)
 
   /**
    * @return
    */
-  override  fun findAll(): IdentifiableList<out T> = database.findAll(this)
+  override fun findAll(): IdentifiableList<out T> = database.findAll(this)
 
   /**
    * @return
    */
-  override  fun findAllAsync(): Maybe<IdentifiableList<out T>> = reactiveDatabase.readAllAsync(this)
-
-  /**
-   * @param column
-   * @return
-   */
-  override  fun findAll(vararg column: Column<*>): IdentifiableList<out T> = database.findAll(this, *column)
+  override fun findAllAsync(): Maybe<IdentifiableList<out T>> = reactiveDatabase.readAllAsync(this)
 
   /**
    * @param column
    * @return
    */
-  override  fun findAllAsync(vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
+  override fun findAll(vararg column: Column<*>): IdentifiableList<out T> = database.findAll(this, *column)
+
+  /**
+   * @param column
+   * @return
+   */
+  override fun findAllAsync(vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
       reactiveDatabase.readAllAsync(this, *column)
 
   /**
@@ -456,19 +455,19 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param column
    * @return
    */
-  override  fun deleteAsync(column: Column<*>): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, column)
+  override fun deleteAsync(column: Column<*>): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, column)
 
   /**
    * @param t
    * @return
    */
-  override  fun delete(t: T): Boolean = database.delete(this, t)
+  override fun delete(t: T): Boolean = database.delete(this, t)
 
   /**
    * @param t
    * @return
    */
-  override  fun deleteAsync(t: T): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, t)
+  override fun deleteAsync(t: T): Maybe<Boolean> = reactiveDatabase.deleteAsync(this, t)
 
   /**
    * @param column
@@ -485,23 +484,23 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param <C>
    * @return
   </C> */
-  override  fun <C> deleteAsync(column: Column<C>, list: List<out C>): Maybe<Boolean> =
+  override fun <C> deleteAsync(column: Column<C>, list: List<out C>): Maybe<Boolean> =
       reactiveDatabase.deleteAsync(this, column, list)
 
   /**
    * @return
    */
-  override  fun clear(): Boolean = database.delete(this)
+  override fun clear(): Boolean = database.delete(this)
 
   /**
    * @return
    */
-  override  fun clearAsync(): Maybe<Boolean> = reactiveDatabase.deleteAsync(this)
+  override fun clearAsync(): Maybe<Boolean> = reactiveDatabase.deleteAsync(this)
 
   /**
    * @return
    */
-  override  val lastId: Int
+  override val lastId: Int
     get() = database.getLastId(this)
 
   /**
@@ -530,7 +529,7 @@ abstract class FastTable<T : Identifiable<Int>>
    * @param x readable sql database
    * @return an extras instance for more concise reads
    */
-   override fun onFind(x: SQLiteDatabase): TableCrud.Extras<T> =
+  override fun onFind(x: SQLiteDatabase): TableCrud.Extras<T> =
       object : QueryExtras<T>(x) {
         /**
          *

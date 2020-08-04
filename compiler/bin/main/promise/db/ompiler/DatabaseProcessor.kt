@@ -66,7 +66,7 @@ class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
         .addAnnotation(tableAnnotationSpec)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addMethod(MethodSpec.constructorBuilder()
-            .addParameter(ClassName.get("promise.db", "FastDatabase"),"instance")
+            .addParameter(ClassName.get("promise.db", "FastDatabase"), "instance")
             .addModifiers(Modifier.PRIVATE)
             .addStatement("super()")
             .addStatement("this.instance = instance")
@@ -140,7 +140,7 @@ class DatabaseProcessor(private val processingEnv: ProcessingEnvironment) {
             See the License for the specific language governing permissions and
             limitations under the License
             """.trimIndent()
-            )
+        )
         .build()
     //val kaptKotlinGeneratedDir = processingEnv.options[EntityProcessor.KAPT_JAVA_GENERATED_OPTION_NAME]!!
     file.writeTo(processingEnv.filer)

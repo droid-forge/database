@@ -33,6 +33,7 @@ public @interface Table {
    * @return
    */
   Index[] indices() default {};
+
   CompoundIndex[] compoundIndexes() default {};
 
   /**
@@ -50,6 +51,7 @@ public @interface Table {
      * @return
      */
     String columnName();
+
     ;
   }
 
@@ -60,6 +62,7 @@ public @interface Table {
   @Retention(RetentionPolicy.RUNTIME)
   @interface CompoundIndex {
     boolean unique() default false;
+
     Index[] indexes() default {};
   }
 

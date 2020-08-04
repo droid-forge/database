@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull
 import promise.db.Migrate
 import promise.db.MigrationOptions
 import promise.db.Migrations
+import promise.db.ompiler.utils.getNameOfColumn
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -57,6 +58,7 @@ class TableMigrationFieldGenerator(
       codeBlock.add("}\n")
     }
   }
+
   private fun buildMigration(
       codeBlock: CodeBlock.Builder,
       column: String,
@@ -83,7 +85,6 @@ class TableMigrationFieldGenerator(
     }
     if (migrateFields.isEmpty()) return null
     val codeBlock = CodeBlock.builder()
-        .addStatement("super.onUpgrade(x, v1, v2)")
 
     migrateFields.forEach {
       val migration = it.key.getAnnotation(Migrate::class.java)
@@ -107,6 +108,10 @@ class TableMigrationFieldGenerator(
         .addParameter(Integer::class.javaPrimitiveType, "v1")
         .addParameter(Integer::class.javaPrimitiveType, "v2")
         .addAnnotation(Override::class.java)
+        .addJavadoc("""
+          Migration callback, adds, deletes columns in this table
+          May also create indices
+        """.trimIndent())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addException(ClassName.get("promise.db", "TableError"))
         .addCode(codeBlock.build())

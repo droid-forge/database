@@ -150,6 +150,7 @@ interface TableCrud<T : Identifiable<Int>, X> : DoubleConverter<T, Cursor, Conte
   fun onDrop(x: X): Boolean
 
   fun onGetLastId(x: X): Int
+
   /**
    * @return tableName of this table
    */

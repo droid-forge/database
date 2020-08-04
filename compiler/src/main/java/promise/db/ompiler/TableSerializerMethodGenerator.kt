@@ -16,11 +16,17 @@ package promise.db.ompiler
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
+import promise.db.ompiler.utils.ConverterTypes
+import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.capitalizeFirst
+import promise.db.ompiler.utils.checkIfHasTypeConverter
+import promise.db.ompiler.utils.getConverterCompatibleMethod
+import promise.db.ompiler.utils.isElementAnnotatedAsRelation
+import promise.db.ompiler.utils.isSameAs
+import promise.db.ompiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
-import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
 
 
 class TableSerializerMethodGenerator(
@@ -43,8 +49,9 @@ class TableSerializerMethodGenerator(
 
     return MethodSpec.methodBuilder("serialize")
         .addModifiers(Modifier.PUBLIC)
-        .addParameter(ClassName.get(typeDataTypePack, typeDataType),"t")
+        .addParameter(ClassName.get(typeDataTypePack, typeDataType), "t")
         .addAnnotation(Override::class.java)
+        .addJavadoc("Serializer converts from the entity to ContentValues")
         .returns(ClassName.get("android.content", "ContentValues"))
         .addCode(codeBlock.build())
         .build()
@@ -68,8 +75,7 @@ class TableSerializerMethodGenerator(
       if (executableFn != null) {
         codeBlock.addStatement("values.put(${columnName}.getName(), typeConverter.${executableFn.simpleName}(t.get${typeVariable.capitalizeFirst()}()))")
       }
-    }
-    else if (varTypeName.isElementAnnotatedAsRelation()) {
+    } else if (varTypeName.isElementAnnotatedAsRelation()) {
 //            processingEnvironment.messager.printMessage(Diagnostic.Kind.ERROR,
 //         "serializer Checking element: $varTypeName for typeName $varTypeName " )
       val gen = """
@@ -80,8 +86,7 @@ class TableSerializerMethodGenerator(
       """.trimIndent()
       codeBlock.add(JavaUtils.generateSerializerRelationPutStatement(varTypeName, columnName))
       //return "values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}()); \n"
-    }
-    else codeBlock.addStatement("values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}())")
+    } else codeBlock.addStatement("values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}())")
     //throw Exception("Could not generate serializer method for entity")
   }
 

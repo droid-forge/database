@@ -28,9 +28,11 @@ public final class Column<T> {
   private String operand = Op.EQUALS().s;
   private T value;
   private int index;
+
   public Column(String name, Type type) {
     this(name, type, 0);
   }
+
   public Column(String name, Type type, int index) {
     this(name, type.s, index);
   }

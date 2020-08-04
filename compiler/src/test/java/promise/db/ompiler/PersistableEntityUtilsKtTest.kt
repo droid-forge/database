@@ -16,8 +16,6 @@ package promise.db.ompiler
 import org.junit.After
 import org.junit.Before
 
-import org.junit.Assert.*
-
 class PersistableEntityUtilsKtTest {
 
   @Before

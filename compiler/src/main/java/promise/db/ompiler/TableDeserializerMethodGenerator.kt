@@ -17,10 +17,18 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
+import promise.db.ompiler.utils.ConverterTypes
+import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.camelCase
+import promise.db.ompiler.utils.capitalizeFirst
+import promise.db.ompiler.utils.checkIfHasTypeConverter
+import promise.db.ompiler.utils.getConverterCompatibleMethod
+import promise.db.ompiler.utils.isElementAnnotatedAsRelation
+import promise.db.ompiler.utils.isSameAs
+import promise.db.ompiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
-import javax.tools.Diagnostic
 
 class TableDeserializerMethodGenerator(
     private val processingEnvironment: ProcessingEnvironment,
@@ -54,6 +62,7 @@ class TableDeserializerMethodGenerator(
         .addParameter(ClassName.get("android.database", "Cursor"), "e")
         .addAnnotation(Override::class.java)
         .addModifiers(Modifier.PUBLIC)
+        .addJavadoc("Deserializer converts from cursor to the entity")
         .returns(ClassName.get(typeDataTypePack, typeDataType))
         .addCode(codeBlock.build())
         .build()
@@ -81,8 +90,7 @@ class TableDeserializerMethodGenerator(
       if (executableFn != null) {
         codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(typeConverter.${executableFn.simpleName}(e.${getCursorReturn(TypeName.get(String::class.java))}(${colName}.getIndex(e))))")
       }
-    }
-    else if (varType.isElementAnnotatedAsRelation()) {
+    } else if (varType.isElementAnnotatedAsRelation()) {
       val gen = """
         int personId = e.getInt(personColumn.getIndex(e));
       if (personId != 0) {
@@ -92,8 +100,7 @@ class TableDeserializerMethodGenerator(
       }
       """.trimIndent()
       codeBlock.add(JavaUtils.generateDeserializerRelationSetStatement(objectName, varType, colName))
-    }
-    else codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)))")
+    } else codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)))")
     //throw Exception("Could not generate deserializer method for entity")
   }
 

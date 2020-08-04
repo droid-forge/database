@@ -60,6 +60,7 @@ class MigrationGenerator(
       codeBlock.add("}\n")
     }
   }
+
   private fun buildMigration(
       codeBlock: CodeBlock.Builder,
       column: String,

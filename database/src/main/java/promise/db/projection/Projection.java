@@ -15,8 +15,8 @@ package promise.db.projection;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.TableCrud;
 import promise.db.QueryBuilder;
+import promise.db.TableCrud;
 
 public abstract class Projection {
   // Simple column

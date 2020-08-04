@@ -85,7 +85,6 @@ annotation class Migrate(val fromVersion: Int,
                          val action: MigrationOptions)
 
 
-
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Migrations(val values: Array<Migrate>)

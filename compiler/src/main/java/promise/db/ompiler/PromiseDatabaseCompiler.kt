@@ -20,6 +20,7 @@ import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType
 import promise.db.DatabaseEntity
 import promise.db.Entity
 import promise.db.TypeConverter
+import promise.db.ompiler.utils.Utils
 import java.util.*
 import javax.annotation.processing.AbstractProcessor
 import javax.annotation.processing.Processor
@@ -40,20 +41,18 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
   override fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
     try {
       val javaFiles: ArrayList<JavaFile.Builder> = ArrayList()
-      val processors: ArrayList<ClassProcessor> = ArrayList()
+      val processors: ArrayList<AnnotatedClassProcessor> = ArrayList()
 
-      processors.add(TypeConverterProcessor(processingEnv))
-      processors.add(EntityProcessor(processingEnv))
-      processors.add(DatabaseEntityProcessor(processingEnv))
+      processors.add(TypeConverterAnnotatedProcessor(processingEnv))
+      processors.add(EntityAnnotatedProcessor(processingEnv))
+      processors.add(DatabaseEntityAnnotatedProcessor(processingEnv))
 
       processors.forEach {
-        val builder = it.process(environment)
-        if (builder != null) {
-          javaFiles.addAll(builder.filterNotNull())
-        }
+        val builders = it.process(environment)
+        if (builders != null) javaFiles.addAll(builders.filterNotNull())
       }
       javaFiles.forEach {
-        val file = it
+        it
             .indent("  ")
             .skipJavaLangImports(true)
             .addFileComment(
@@ -76,17 +75,17 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
             """.trimIndent()
             )
             .build()
-        file.writeTo(processingEnv.filer)
+            .writeTo(processingEnv.filer)
       }
       return true
     } catch (e: Throwable) {
       val stringBuilder = StringBuilder()
-      //stringBuilder.append(Utils.getStackTraceString(e))
-      //stringBuilder.append("\n")
+      stringBuilder.append(Utils.getStackTraceString(e))
+      stringBuilder.append("\n")
       stringBuilder.append("Trace: ").append(Arrays.toString(e.stackTrace))
       processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
-          "EntityProcessor: $stringBuilder " )
-         // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
+          "EntityProcessor: $stringBuilder ")
+      // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
       return false
     }
   }

@@ -22,6 +22,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.SOURCE)
 public @interface DatabaseEntity {
   int version() default 1;
+
   boolean generateCrudStubs() default false;
+
   Class<?>[] persistableEntities();
 }

@@ -12,6 +12,7 @@
  */
 package promise.db
 
+import android.database.Cursor
 import io.reactivex.Maybe
 import io.reactivex.Single
 import promise.commons.model.Identifiable
@@ -21,7 +22,10 @@ import promise.model.IdentifiableList
 /**
  *
  */
-internal interface ReactiveCrud<X> {
+interface ReactiveCrud<X> : Crud<X> {
+
+  fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor>
+
   /**
    *
    */

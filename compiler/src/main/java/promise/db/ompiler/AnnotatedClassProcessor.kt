@@ -14,9 +14,8 @@
 package promise.db.ompiler
 
 import com.squareup.javapoet.JavaFile
-import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 
-abstract class ClassProcessor  {
-  abstract fun process( environment: RoundEnvironment?): List<JavaFile.Builder?>?
+abstract class AnnotatedClassProcessor {
+  abstract fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>?
 }

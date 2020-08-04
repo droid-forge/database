@@ -22,13 +22,15 @@ import promise.db.HasOne
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
-import java.util.*
+import promise.db.ompiler.utils.checkIfHasTypeConverter
+import promise.db.ompiler.utils.getNameOfColumn
+import promise.db.ompiler.utils.isElementAnnotatedAsRelation
+import promise.db.ompiler.utils.isPersistable
+import promise.db.ompiler.utils.isSameAs
+import promise.db.ompiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
-import javax.tools.Diagnostic
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 
 /**
  * generates column fields for the entity
@@ -65,6 +67,9 @@ class TableColumnFieldsGenerator(
           val columnInitializer = getColumnInitializer(element, ClassName.get(String::class.java))
           val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+              .addJavadoc("""
+                Column field for ${element.simpleName}
+              """.trimIndent())
               .initializer(CodeBlock.of("""
               new Column<String>("$nameOfColumn", $columnInitializer, ${i + 1})
             """.trimIndent())
@@ -74,7 +79,7 @@ class TableColumnFieldsGenerator(
           val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
           genColValues.add(pair)
         }
-       }
+      }
       /**
        * for fields marked as relation, additional column needs to be added
        */
@@ -88,6 +93,9 @@ class TableColumnFieldsGenerator(
           val columnInitializer = getColumnInitializer(element, ClassName.get(Integer::class.java))
           val spec = FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
               .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+              .addJavadoc("""
+                Column field for ${element.simpleName}
+              """.trimIndent())
               .initializer(CodeBlock.of("""
               new Column<Integer>("$nameOfColumn", $columnInitializer, ${i + 1})
             """.trimIndent())
@@ -101,7 +109,7 @@ class TableColumnFieldsGenerator(
       /**
        * for normal persistable fields
        */
-      else if(element.isPersistable()) {
+      else if (element.isPersistable()) {
         val spec = processField(element, nameOfColumn, i)
         map[Pair(element, colVariableName)] = spec
         val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
@@ -125,6 +133,9 @@ class TableColumnFieldsGenerator(
     val columnInitializer = getColumnInitializer(element, variableClassType)
     return FieldSpec.builder(parameterizedColumnTypeName, colVariableName)
         .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+        .addJavadoc("""
+                Column field for ${element.simpleName}
+              """.trimIndent())
         .initializer(CodeBlock.of("""
               new Column<${variableClassType}>("$nameOfColumn", $columnInitializer, ${i + 1})
             """.trimIndent())
@@ -159,8 +170,7 @@ class TableColumnFieldsGenerator(
       } else {
         str += ".NULLABLE()"
       }
-    }
-    else if (classTypeName.isSameAs(String::class.java)) {
+    } else if (classTypeName.isSameAs(String::class.java)) {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
@@ -173,8 +183,7 @@ class TableColumnFieldsGenerator(
         } else {
           throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
         }
-      }
-      else {
+      } else {
         if (element.getAnnotation(promise.db.Text::class.java) != null) {
           str += ".TEXT"
           val annotation = element.getAnnotation(promise.db.Text::class.java)
@@ -185,13 +194,11 @@ class TableColumnFieldsGenerator(
           } else {
             throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
           }
-        }
-        else {
+        } else {
           str += ".TEXT.NULLABLE()"
         }
       }
-    }
-    else {
+    } else {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
@@ -204,8 +211,7 @@ class TableColumnFieldsGenerator(
         } else {
           throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
         }
-      }
-      else {
+      } else {
         if (element.getAnnotation(promise.db.Text::class.java) != null) {
           str += ".TEXT"
           val annotation = element.getAnnotation(promise.db.Text::class.java)
@@ -216,16 +222,13 @@ class TableColumnFieldsGenerator(
           } else {
             throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
           }
-        }
-        else {
+        } else {
           str += ".TEXT.NULLABLE()"
         }
       }
     }
     return str
   }
-
-
 
 
 }

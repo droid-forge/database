@@ -15,8 +15,8 @@ package promise.db.from;
 
 import promise.commons.model.List;
 import promise.db.Column;
-import promise.db.TableCrud;
 import promise.db.QueryBuilder;
+import promise.db.TableCrud;
 import promise.db.criteria.Criteria;
 import promise.db.projection.Projection;
 

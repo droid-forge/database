@@ -19,6 +19,11 @@ import com.squareup.javapoet.FieldSpec
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import promise.db.AddedEntity
+import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.Utils
+import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getTableEntities
+import promise.db.ompiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
@@ -42,46 +47,60 @@ class DatabaseStaticMethodsGenerator(
     }
 
     val entities = (element as TypeElement).getTableEntities(processingEnv)
-
+        .filter {
+          it.getAnnotation(AddedEntity::class.java) != null
+        }
     val migrationCodeBlock = CodeBlock.builder()
-
-    migrationCodeBlock.beginControlFlow("return new Migration()")
-    JavaUtils.generateDatabaseMigrationOverrideControlBlock(migrationCodeBlock)
-    entities.forEach {
-      val migrationAnnoTation = it.getAnnotation(AddedEntity::class.java)
-      if (migrationAnnoTation != null) {
-        migrationCodeBlock.beginControlFlow("if (oldVersion == ${migrationAnnoTation.fromVersion} && newVersion == ${migrationAnnoTation.toVersion})")
+    if (entities.isEmpty()) migrationCodeBlock.addStatement("return null")
+    else {
+      migrationCodeBlock.beginControlFlow("return new Migration()")
+      JavaUtils.generateDatabaseMigrationOverrideControlBlock(migrationCodeBlock)
+      entities.forEach {
+        val migrationAnnotation = it.getAnnotation(AddedEntity::class.java)
+        migrationCodeBlock.beginControlFlow("if (oldVersion == ${migrationAnnotation.fromVersion} && newVersion == ${migrationAnnotation.toVersion})")
         migrationCodeBlock.addStatement("database.add(sqLiteDatabase, database.obtain(${it.getClassName()}.class))")
         migrationCodeBlock.endControlFlow()
       }
+      migrationCodeBlock.endControlFlow()
+      migrationCodeBlock.add("};")
     }
-    migrationCodeBlock.endControlFlow()
-    migrationCodeBlock.endControlFlow()
-    migrationCodeBlock.add(";")
+
     val migrationPropSpec = MethodSpec.methodBuilder("getMigration")
         .returns(ClassName.get("promise.db", "Migration"))
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
         .addCode(migrationCodeBlock.build())
+        .addJavadoc("""
+          Migration callback for adding tables into existing database
+        """.trimIndent())
         .build()
 
     typeSpec.addMethod(migrationPropSpec)
     // adding db instance var
     // private static volatile FastDatabase instance = null;
-    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"),"instance")
+    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"), "instance")
         .initializer("null")
         .addModifiers(Modifier.PRIVATE)
+        .addJavadoc("""
+          Database instance
+        """.trimIndent())
         .build())
 
-    if (TypeConverterProcessor.typeConverter != null) {
+    if (TypeConverterAnnotatedProcessor.typeConverter != null) {
       typeSpec.addField(FieldSpec.builder(
-          TypeConverterProcessor.typeConverter!!.toTypeName(),
+          TypeConverterAnnotatedProcessor.typeConverter!!.toTypeName(),
           "typeConverter")
           .addModifiers(Modifier.PRIVATE)
+          .addJavadoc("""
+            TypeConverter instance
+          """.trimIndent())
           .build())
     }
 
-    typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType,"initialized")
+    typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType, "initialized")
         .initializer("false")
+        .addJavadoc("""
+          Check to ensure database instance is not instantiated more than once
+        """.trimIndent())
         .addModifiers(Modifier.PRIVATE, Modifier.VOLATILE, Modifier.STATIC)
         .build())
 
@@ -95,8 +114,12 @@ class DatabaseStaticMethodsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get(String::class.java), "name")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates the simplest database with name specified
+          @Param name the name of the database
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
@@ -107,13 +130,20 @@ class DatabaseStaticMethodsGenerator(
     // add with creation callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get(String::class.java), "name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates the simplest database with name specified with callback
+          Callback can be used to pre populate database with records or
+          set flags like foreign keys
+          @Param name the name of the database
+          @Param databaseCreationCallback callback
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
-          return new $classnameImpl(FastDatabase.createDatabase($classnameImpl.class, name, getMigration()).setDatabaseCreationCallback(databaseCreationCallback));
+          return new $classnameImpl(FastDatabase.createDatabase($classnameImpl.class, name, getMigration(), databaseCreationCallback));
         """.trimIndent()))
         .build())
 
@@ -126,6 +156,9 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates an in memory database, useful for tests
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
@@ -135,12 +168,18 @@ class DatabaseStaticMethodsGenerator(
     // with in memory database
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates an in memory database, useful for tests
+          Callback can be used to pre populate database with records or
+          set flags like foreign keys
+          @Param databaseCreationCallback callback
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
-          return new $classnameImpl(FastDatabase.createInMemoryDatabase($classnameImpl.class).setDatabaseCreationCallback(databaseCreationCallback));
+          return new $classnameImpl(FastDatabase.createInMemoryDatabase($classnameImpl.class, databaseCreationCallback));
         """.trimIndent()))
         .build())
 
@@ -153,6 +192,9 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates an in memory database, enables calling rx DML functions in the tables
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
@@ -162,8 +204,14 @@ class DatabaseStaticMethodsGenerator(
     // with callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates an in memory database, enables calling rx DML functions in the tables
+          Callback can be used to pre populate database with records or
+          set flags like foreign keys
+          @Param databaseCreationCallback callback
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
           initialized = true;
@@ -180,8 +228,12 @@ class DatabaseStaticMethodsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
+        .addParameter(ClassName.get(String::class.java), "name")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates database, that enables calling rx DML functions in the tables
+          @Param name name of the database 
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
            initialized = true;
@@ -192,9 +244,16 @@ class DatabaseStaticMethodsGenerator(
     // with creation callback
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .addParameter(ClassName.get(String::class.java),"name")
-        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"),"databaseCreationCallback")
+        .addParameter(ClassName.get(String::class.java), "name")
+        .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
         .returns(ClassName.get(pack, className))
+        .addJavadoc("""
+          Creates database, that enables calling rx DML functions in the tables
+          Callback can be used to pre populate database with records or
+          set flags like foreign keys
+          @Param name name of the database 
+          @Param databaseCreationCallback callback
+        """.trimIndent())
         .addCode(CodeBlock.of("""
           if (initialized) throw new IllegalStateException("Database already created");
            initialized = true;
