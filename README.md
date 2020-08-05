@@ -1,141 +1,380 @@
 # Android Promise Database [![](https://jitpack.io/v/android-promise/database.svg)](https://jitpack.io/#android-promise/database)
  Manage SqLite databases in android with ease
 
+# Table of Contents
 
-## Making your Record Class
-Annotate the entity class with Entity, the class can either implement Identifiable<Integer> or extend from ActiveRecord and override parcelable functionality.
-A sample:
-### Person Class
+**[Sample Application](##SampleApplication)**<br>
+***[Entity Classes](***EntityClasses)***<br>
+***[Database Class](###DatabaseClass)***<br>
+***[TypeConverter Class](###DatabaseClass)***<br>
+***[Entity Relations](###EntityRelations)***<br>
+***[Database Initialization](###DatabaseInitialization)***<br>
+***[Migrations](###Migrations)***<br>
+**[Setup](##Setup)**<br>
+**[Initialization](##Initialization)**<br>
+**[Next Steps, Credits, Feedback, License](#next-steps)**<br>
+
+## Sample Application
+### Entity Classes
+Pojo classes to be persisted are annotated with @Entity
+The classes can either implement Identifiable<Integer> or extend from ActiveRecord
+This classes must hava a no args constructor or no constructors at all
+
 > Optionally add the table name in the annotation
 
+#### Photo Class
+```kotlin
+
+@SuppressLint("ParcelCreator")
+@Entity
+class Photo: ActiveRecord<Photo>() {
+	var albumId: Int? = null
+	var title: String? = null
+	var url: String? = null
+	var thumbnailUrl: String? = null
+
+  // denotes a photo has one post
+	@HasOne var post: Post? = null
+
+	override fun getEntity(): Photo {
+		return this
+	}
+
+}
+  
+}
+```
+#### Todo Class
+```java
+
+@SuppressLint("ParcelCreator")
+@Entity
+public class Todo extends ActiveRecord<Todo> {
+	private int uid;
+	private boolean completed;
+	private String title;
+  private int userId;
+  
+  // denotes a todo item has one photo record
+	@HasOne
+  private Photo photo;
+  // include parcelable implementation if extending from ActiveRecord
+  
+}
+```
+#### Post Class
+```java
+
+@SuppressLint("ParcelCreator")
+@Entity
+public class Post extends ActiveRecord<Post> {
+	private ID uId;
+	private String title;
+	private String body;
+	private int userId;
+
+  // denotes a post has many post comments
+	@HasMany
+	private List<PostComment> comments;
+
+  // denotes a post has many photos
+	@HasMany
+	private List<Photo> photos;
+}
+```
+
+> Include correct getter and setter signatures for Java file or generated code will not compile, including fields convertable via type converter and fields marked as relation
+
+> BOOLEAN fields MUST NOT start with `is`
+
+### Database Class
+Database classe is annotated with @DatabaseEntity and contain a list
+of persistable entity classes
+The class must be abstract and extend from PromiseDatabase
+> **There can only be one database class in a module**
+```kotlin
+@DatabaseEntity(
+    persistableEntities = [
+      PostComment::class,
+      Photo::class,
+      Post::class,
+      Todo::class
+    ]
+)
+abstract class AppDatabase(fastDatabase: FastDatabase)
+  : PromiseDatabase(fastDatabase)
+```
+
+Rebuild your project to generate database implementation
+
+### TypeConverter Class
+A type converter is a utility that helps to convert fields not directly persistable to persistable,
+For instance the Post entity has named uId with a type
+```kotlin
+data class ID(val id: String)
+```
+To make the uId field persistable, we provide a type converter
+```kotlin
+@TypeConverter
+class AppTypeConverter {
+
+  fun toUniqueId(data: String): ID = ID(data)
+
+  fun toString(data: ID?): String = data?.id ?: ""
+
+}
+```
+A type converter must be annotated with @TypeConverter and contain non static methods that converts between the non persistable type to a string and vice verser
+Conversion methods in a type converter should have only one parameter and must return
+` Type converter is not for fields that are relations`
+**There can only be one type converter in one module**
+
+> Without a type converter provision, the compiler will not generate columns for non persistable fields
+
+### Entity Relations
+
+#### HasOne Relation
+Denotes one entity has one other entity, a sample
+```java
+@Entity
+public class Todo extends ActiveRecord<Todo> {
+  // other fields
+	...
+
+  // denotes this todo has one photo
+  @HasOne
+  private Photo photo;
+}
+```
+To utilize the relation, the compiler will generate a class called TodoRelationsDao with convenient methods, a snippet of generated code below
+```java
+
+public final class TodoRelationsDao {
+  private TodoesTable todoesTable;
+
+  private PhotosTable photosTable;
+
+  private TodoRelationsDao(TodoesTable todoesTable, PhotosTable photosTable) {
+    this.todoesTable = todoesTable;
+    this.photosTable = photosTable;
+  }
+
+  public IdentifiableList<? extends Todo> paginateWithPhotos(int skip, int limit) {
+    IdentifiableList<? extends Todo> todoes = todoesTable.find().paginateDescending(skip, limit);
+    return populateWithPhotos(todoes);
+  }
+
+  ...
+  // other convenient methods
+  ...
+  
+  public Photo getPhoto(Todo todo) {
+    return photosTable.findById(todo.getPhoto().getId());
+  }
+
+}
+```
+Instances of RelationDaos are retrieved from the generated database class,
+Sampled from AppDatabaseImpl file
+```java
+public final class AppDatabaseImpl extends AppDatabase {
+  ...
+  public TodoRelationsDao getTodoRelationsDao() {
+    return SingletonInstanceProvider.provider(TodoRelationsDaoInstanceProvider.create(new TodoRelationsDao.Builder()
+    .setTodoesTable(getTodoesTable())
+    .setPhotosTable(getPhotosTable())
+    .build())).get();
+  }
+  ...
+}
+```
+
+#### HasMany Relation
+Denotes one entity has many entities of same type and the other entity has one entity of this type, a sample a post has many post comments and a post comment has one post
+
+Post Entity
 ```java
 
 @Entity
-public class Person extends ActiveRecord<Person> {
-  // Indexed column
-  @Index
-  private String name;
-  private int age;
-  private boolean aged;
-  private float height;
-  private double marks;
-  private String email;
-  private String phoneNumber;
-  // denote a person has many dogs
-  @HasMany(entity = Dog.class)
-  private List<Dog> dogs;
+public class Post extends ActiveRecord<Post> {
+  // other fields
+	...
+	@HasMany
+  private List<PostComment> comments;
+}
 
-  public Person() {
-  }
+```
+PostComment Entity
+```java
+@SuppressLint("ParcelCreator")
+@Entity
+public class PostComment extends ActiveRecord<PostComment> {
+  // other fields
+	...
 
-  @NotNull
-  @Override
-  public Person getEntity() {
-    return this;
-  }
-  // include parcelable implementation if extending from ActiveRecord
-  // include getters and setters for persistable fields
+	@HasOne
+  private Post post;
 }
 ```
-> A MUST include correct getter and setter signatures for Java file or generated code will not compile,
-> if entity is a kt file, DO NOT include any getter and setters, BOOLEAN fields MUST NOT start with `is`
+**Both relations must exist at the same time**
+To utilize the relation, the compiler will generate a class called PostRelationsDao with convenient methods, a snippet of generated code below
+```java
 
-## Making your database
-The database expects a list of entities to be registered with it
-```kotlin
+public final class PostRelationsDao {
+  private PostsTable postsTable;
 
-@DatabaseEntity(
-    persistableEntities = [
-      Person::class,
-      Dog::class,
-      Sales::class
-    ]
-)
-/**
- *
- */
-abstract class AppDatabase : PromiseDatabase {
+  private PostCommentsTable postCommentsTable;
 
+  private PhotosTable photosTable;
 
-  /**
-   *
-   */
-  private val personsTable: FastTable<Person> by lazy { tableOf(Person::class.java) }
-
-  /**
-   *
-   */
-  private val dogsTable: FastTable<Dog> by lazy { tableOf(Dog::class.java) }
-
-  /**
-   *
-   */
-  fun listAllPersons() = personsTable.findAll()
-
-  fun listAllPersonsWithEmail(): List<Person> {
-    val cursor = personsTable.query(personsTable.queryBuilder().whereAnd(Criteria.notIsNull(PersonsTable.emailColumn)))
-    val persons = ArrayList<Person>()
-    while (cursor.moveToNext()) {
-      persons.add(personsTable.deserialize(cursor))
-    }
-    cursor.close()
-
-    return persons
+  private PostRelationsDao(PostsTable postsTable, PostCommentsTable postCommentsTable,
+      PhotosTable photosTable) {
+    this.postsTable = postsTable;
+    this.postCommentsTable = postCommentsTable;
+    this.photosTable = photosTable;
   }
 
-  /**
-   *
-   */
-  fun listAllDogs() = dogsTable.findAll()
-
-//  /**
-//   *
-//   */
-//  @OneToMany(parent = Person::class, child = Dog::class)
-//  @FindAll
-//  abstract fun getPersonsWithDogs(array: Array<Column<*>>?): List<Person>
-//
-//  /**
-//   *
-//   */
-//  @OneToOne(parent = Dog::class, child = Person::class)
-//  @FindAll
-//  abstract fun getDogsWithPersons(array: Array<Column<*>>?): List<Dog>
-
-}
-```
-> Database class MUST be abstract even if it has no abstract methods to override
-> Database class MUST implement PromiseDatabase
-
-
-## Consuming your database
-The compiler generates a database class for creating your database implementation and accesing tables.
-If using Dagger, initialize it from a module
-```kotlin
- ...
- 
-@Module
-object DatabaseDependencies {
-
-  @Provides
-  @Singleton
-  @JvmStatic
-  fun providesAppDatabase(): AppDatabase {
-    return AppDatabase_Impl.createDatabase("name")
+  public IdentifiableList<? extends Post> paginateWithComments(int skip, int limit) {
+    IdentifiableList<? extends Post> posts = postsTable.find().paginateDescending(skip, limit);
+    posts.forEach(new Consumer<Post>() {
+      @Override
+      public void accept(Post post) {
+        post.setComments(new IdentifiableList<>(getComments(post)));
+      }
+    } );
+    return posts;
   }
 
-  // tables obtained are Singleton, no need to annotate with Singleton
-  @Provides
-  @JvmStatic
-  fun providesPersonsTable(appDatabase: AppDatabase): PersonsTable {
-    return appDatabase.databaseInstance.obtain<PersonsTable>(PersonsTable::class.java)
+  public IdentifiableList<? extends Post> listWithComments() {
+    IdentifiableList<? extends Post> posts = postsTable.findAll();
+    posts.forEach(new Consumer<Post>() {
+      @Override
+      public void accept(Post post) {
+        post.setComments(new IdentifiableList<>(getComments(post)));
+      }
+    } );
+    return posts;
   }
 }
-...
 ```
-> All the crud functionality exist on the table
+Instances of RelationDaos are retrieved from the generated database class,
+Sampled from AppDatabaseImpl file
+```java
+public final class AppDatabaseImpl extends AppDatabase {
+  ...
+  public PostRelationsDao getPostRelationsDao() {
+    return SingletonInstanceProvider.provider(PostRelationsDaoInstanceProvider.create(new PostRelationsDao.Builder()
+    .setPostCommentsTable(getPostCommentsTable())
+    .setPostsTable(getPostsTable())
+    .setPhotosTable(getPhotosTable())
+    .build())).get();
+  }
+  ...
+}
+```
 
-## Migrations
+### Database Initialization
+The compiler generates a database class for creating your database implementation and accesing tables
+and relation daos, sampled code from generated database file below
+
+```java
+ /**
+   * Creates the simplest database with name specified
+   * @Param name the name of the database
+   */
+  public static AppDatabaseImpl createDatabase(String name) {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createDatabase(AppDatabaseImpl.class, name, getMigration()));
+  }
+
+  /**
+   * Creates the simplest database with name specified with callback
+   * Callback can be used to pre populate database with records or
+   * set flags like foreign keys
+   * @Param name the name of the database
+   * @Param databaseCreationCallback callback
+   */
+  public static AppDatabaseImpl createDatabase(String name,
+      DatabaseCreationCallback databaseCreationCallback) {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createDatabase(AppDatabaseImpl.class, name, getMigration(), databaseCreationCallback));
+  }
+
+  /**
+   * Creates an in memory database, useful for tests
+   */
+  public static AppDatabaseImpl createInMemoryDatabase() {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createInMemoryDatabase(AppDatabaseImpl.class));
+  }
+
+  /**
+   * Creates an in memory database, useful for tests
+   * Callback can be used to pre populate database with records or
+   * set flags like foreign keys
+   * @Param databaseCreationCallback callback
+   */
+  public static AppDatabaseImpl createInMemoryDatabase(
+      DatabaseCreationCallback databaseCreationCallback) {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createInMemoryDatabase(AppDatabaseImpl.class, databaseCreationCallback));
+  }
+
+  /**
+   * Creates an in memory database, enables calling rx DML functions in the tables
+   */
+  public static AppDatabaseImpl createReactiveInMemoryDatabase() {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createInMemoryReactiveDatabase(AppDatabaseImpl.class));
+  }
+
+  /**
+   * Creates an in memory database, enables calling rx DML functions in the tables
+   * Callback can be used to pre populate database with records or
+   * set flags like foreign keys
+   * @Param databaseCreationCallback callback
+   */
+  public static AppDatabaseImpl createReactiveInMemoryDatabase(
+      DatabaseCreationCallback databaseCreationCallback) {
+    if (initialized) throw new IllegalStateException("Database already created");
+    initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createInMemoryReactiveDatabase(AppDatabaseImpl.class, databaseCreationCallback));
+  }
+
+  /**
+   * Creates database, that enables calling rx DML functions in the tables
+   * @Param name name of the database 
+   */
+  public static AppDatabaseImpl createReactiveDatabase(String name) {
+    if (initialized) throw new IllegalStateException("Database already created");
+     initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createReactiveDatabase(AppDatabaseImpl.class, name, getMigration()));
+  }
+
+  /**
+   * Creates database, that enables calling rx DML functions in the tables
+   * Callback can be used to pre populate database with records or
+   * set flags like foreign keys
+   * @Param name name of the database 
+   * @Param databaseCreationCallback callback
+   */
+  public static AppDatabaseImpl createReactiveDatabase(String name,
+      DatabaseCreationCallback databaseCreationCallback) {
+    if (initialized) throw new IllegalStateException("Database already created");
+     initialized = true;
+    return new AppDatabaseImpl(FastDatabase.createReactiveDatabase(AppDatabaseImpl.class, name, getMigration(), databaseCreationCallback));
+  }
+```
+
+
+### Migrations
+
+#### Migrations For Entities
 Adding an entity to be persisted to the database from version 1 to version 2 of the database
 Annotate it with AddedEntity
 ##### Sales Entity
@@ -161,34 +400,28 @@ public class Sales extends ActiveRecord<Sales> {
 }
   // getters and setters and parcelable implementation
 ```
-And then add the new entity to the database 
+And then add the new entity to the database and upgrade database version to 2
 
 ```kotlin
-...
 
 @DatabaseEntity(
-    /**
-     *
-     */
+   
     persistableEntities = [
-      Person::class,
+      /// other entities
       Sales::class
     ],
     version = 2
 )
-/**
- *
- */
-abstract class AppDatabase : PromiseDatabase {
-  ...
-  // 
-  ...
-}
 
-...
+abstract class AppDatabase(fastDatabase: FastDatabase) : PromiseDatabase(fastDatabas) 
 ```
-> Finally upgrade the version of the database to 2
+
 Adding columns to an existing entity, annotate the new field with Migrate, a migration will be generated by the compiler >
+
+#### Migrations For Columns
+Annotate the added field with @Migrate and include fromVersion and toVersion
+If a field is to pass multiple migrations, annotate it with @Migrations and add the migrate annotations in the 
+migrations annotation
 ##### Sales Entity
 ```java
 ...
@@ -199,9 +432,9 @@ Adding columns to an existing entity, annotate the new field with Migrate, a mig
 ```
 
 ## Setup
-##### build.gradle
+##### Project level build.gradle
+Add jitpack repository
 ```
-
 allprojects {
     repositories {
         ...
@@ -209,6 +442,10 @@ allprojects {
     }
 }
 
+```
+##### Module level build.gradle
+Compile with java 8, add rxJava dependency of using rx DML functions in the tables
+```
 android {
     ...
     compileOptions {
@@ -224,8 +461,8 @@ dependencies {
      implementation 'com.github.android-promise:commons:1.1-alpha03'
 }
 ```
-### Initialization
-Initialize Promise in your main application file, entry point
+##### Initialization
+Initialize Promise in your main application class
 
 ##### App.java
 ```java
@@ -233,8 +470,7 @@ public class App extends Application {
   @Override
   public void onCreate() {
     super.onCreate();
-    // 10 is the number of threads allowed to run in the background
-    AndroidPromise.init(this, 10, BuildConfig.DEBUG);
+    AndroidPromise.init(this, BuildConfig.DEBUG);
   }
 
   @Override
@@ -249,19 +485,18 @@ public class App extends Application {
 watch this repo to stay updated 
 
 # Developed By
-* Peter Vincent - <dev4vin@gmail.com>
+* Peter Vincent - [Portfolio](https://dev4vin.github.io/info)
+
 # Donations
 If you'd like to support this library development, you could buy me coffee here:
 * [![Become a Patreon]("https://c6.patreon.com/becomePatronButton.bundle.js")](https://www.patreon.com/bePatron?u=31932751)
-
-Thank you very much in advance!
 
 #### Pull requests / Issues / Improvement requests
 Feel free to contribute and ask!<br/>
 
 # License
 
-    Copyright 2018 Peter Vincent
+    Copyright 2018 Android Promise Database
 
     Licensed under the Apache License, Version 2.0 Android Promise;
     you may not use this file except in compliance with the License.
