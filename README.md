@@ -247,7 +247,42 @@ public final class PostRelationsDao {
   // more convenience methods
 }
 ```
-Instances of RelationDaos are retrieved from the generated database class,
+Instances of RelationDaos are retrieved from the generated database class
+
+Snippet of RelationDao usage in main activity
+```kotlin
+...
+// generate 5 posts and each post 4 comments
+val posts = IdentifiableList(List.generate(5) {
+      Post().apply {
+        uId = ID(it.toString())
+        title = "post".plus(it)
+        body = "body".plus(it)
+        userId = it
+        comments = List.generate(4) {
+          PostComment().apply {
+            name = "nm".repeat(it)
+            uId = ID((it + 1).toString())
+            body = "hbytcvbcrxgfvbtrxt"
+            email = "ejmail;jgfccghcfcvhbhcgvb"
+          }
+        }
+      }
+    })
+
+  // save the posts
+   postRelationsDao.saveWithComments(posts)
+  // reading the posts
+   val posts1 = postRelationsDao.listWithComments()
+  // display the posts
+   complex_values_textview.text = posts1.toString()
+  // delete comments for each post and then delete the post
+   posts1.forEach {
+     postRelationsDao.deleteComments(it)
+     it.delete()
+   }
+ ...
+```
 
 
 ### Database Initialization
