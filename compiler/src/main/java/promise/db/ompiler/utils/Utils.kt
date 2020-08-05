@@ -46,16 +46,9 @@ fun TypeName.isSameAs(javaClass: Class<*>): Boolean {
   return this.toString() == JavaUtils.wrap(javaClass).name
 }
 
-fun TypeName.isSameAs2(processingEnvironment: ProcessingEnvironment, javaClass: Class<*>): Boolean {
-  processingEnvironment.messager.printMessage(Diagnostic.Kind.OTHER, "comparing \n: elem typeName ${this}, javaClass: ${JavaUtils.wrap(javaClass).name}")
-  if (this.isPrimitive) return this.box().toString() == JavaUtils.wrap(javaClass).name
-  return this.toString() == JavaUtils.wrap(javaClass).name
-}
-
 fun Element.toTypeName(): TypeName {
   return TypeName.get(this.asType())
 }
-
 
 fun VariableElement.getClass(): KClass<*> {
   val type = this.asType()

@@ -22,21 +22,13 @@ import com.squareup.javapoet.WildcardTypeName
 import org.jetbrains.annotations.NotNull
 import javax.lang.model.element.Modifier
 
-
 class TableRegisteredColumnsMethodGenerator(
     private val columns: List<String>) : CodeGenerator<MethodSpec> {
-  init {
-    //fileSpec.addImport("promise.commons.model", "List")
-  }
-
   override fun generate(): MethodSpec {
-
     var stmt = "return List.fromArray("
     columns.forEachIndexed { index, s ->
       stmt += s
-      if (index != columns.size - 1) {
-        stmt += ", "
-      }
+      if (index != columns.size - 1) stmt += ", "
     }
     stmt += ");"
     return MethodSpec.methodBuilder("getColumns")
@@ -57,6 +49,5 @@ class TableRegisteredColumnsMethodGenerator(
         """.trimIndent())
         .addCode(CodeBlock.of(stmt))
         .build()
-
   }
 }

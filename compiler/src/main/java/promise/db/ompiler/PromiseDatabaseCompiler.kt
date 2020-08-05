@@ -18,22 +18,25 @@ import com.squareup.javapoet.JavaFile
 import promise.db.DatabaseEntity
 import promise.db.Entity
 import promise.db.TypeConverter
-import promise.db.ompiler.utils.Utils
-import java.util.*
+import promise.db.ompiler.utils.LogUtil
 import javax.annotation.processing.AbstractProcessor
+import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.Processor
 import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedOptions
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
-import kotlin.collections.ArrayList
 
 @AutoService(Processor::class) // For registering the service
 @SupportedSourceVersion(SourceVersion.RELEASE_8) // to support Java 8
 @SupportedOptions(PromiseDatabaseCompiler.KAPT_JAVA_GENERATED_OPTION_NAME)
 class PromiseDatabaseCompiler : AbstractProcessor() {
+
+  override fun init(processingEnv: ProcessingEnvironment?) {
+    super.init(processingEnv)
+    LogUtil.initLogger(processingEnv)
+  }
 
   override fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
     try {
@@ -76,14 +79,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       }
       return true
     } catch (e: Throwable) {
-      e.printStackTrace()
-//      val stringBuilder = StringBuilder()
-//      stringBuilder.append(Utils.getStackTraceString(e))
-//      stringBuilder.append("\n")
-//      stringBuilder.append("Trace: ").append(Arrays.toString(e.stackTrace))
-//      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
-//          "EntityProcessor: $stringBuilder ")
-//      // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
+      LogUtil.e(e)
       return false
     }
   }

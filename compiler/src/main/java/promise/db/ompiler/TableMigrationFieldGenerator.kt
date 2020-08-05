@@ -27,25 +27,7 @@ import javax.lang.model.element.Modifier
 
 class TableMigrationFieldGenerator(
     private val elements: Map<Element, String>) : CodeGenerator<MethodSpec?> {
-  init {
-    //fileSpec.addImport("android.content", "ContentValues")
-  }
 
-  /**
-   * @Override
-  public void onUpgrade(@NotNull SQLiteDatabase x, int v1, int v2) throws TableError {
-  super.onUpgrade(x, v1, v2);
-  if (v1 == 3 && v2 == 4) {
-  dropColumns(x, ageColumn);
-  }
-  if (v1 == 4 && v2 == 5) {
-  addColumns(x, marksColumn);
-  }
-  if (v1 == 7 && v2 == 8) {
-  dropColumns(x, marksColumn);
-  }
-  }
-   */
   private fun buildIndexMigration(
       codeBlock: CodeBlock.Builder,
       column: String,
@@ -85,7 +67,6 @@ class TableMigrationFieldGenerator(
     }
     if (migrateFields.isEmpty()) return null
     val codeBlock = CodeBlock.builder()
-
     migrateFields.forEach {
       val migration = it.key.getAnnotation(Migrate::class.java)
       if (migration != null) {

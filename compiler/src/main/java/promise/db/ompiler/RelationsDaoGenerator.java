@@ -43,6 +43,7 @@ import promise.db.Entity;
 import promise.db.HasMany;
 import promise.db.HasOne;
 import promise.db.ompiler.utils.JavaUtils;
+import promise.db.ompiler.utils.LogUtil;
 import promise.db.ompiler.utils.PersistableEntityUtilsKt;
 import promise.db.ompiler.utils.Utils;
 import promise.db.ompiler.utils.UtilsKt;
@@ -104,13 +105,13 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
         Pair<ClassName, Element> pair = generateForHasManyRelation(relationElement, constructorParameters);
         if (pair != null) tableAndRelationElements.put(pair.getFirst(), pair.getSecond());
       } catch (Exception e) {
-        e.printStackTrace();
+        LogUtil.e(e, relationElement);
       }
       else if (relationElement.getAnnotation(HasOne.class) != null) try {
         Pair<ClassName, Element> pair = generateForHasOneRelation(relationElement, constructorParameters);
         if (pair != null) tableAndRelationElements.put(pair.getFirst(), pair.getSecond());
       } catch (Exception e) {
-        e.printStackTrace();
+        LogUtil.e(e, relationElement);
       }
     });
     CodeBlock.Builder constructorBlock = CodeBlock.builder();
@@ -129,13 +130,6 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
     return javaFiles;
   }
 
-
-  /**
-   * generates fields and methods for HasMany relation of the given element
-   *
-   * @param hasManyRelationFieldElement element with HasMany relation
-   * @param constructorParameters
-   */
   private Pair<ClassName, Element> generateForHasManyRelation(Element hasManyRelationFieldElement, ArrayList<ParameterSpec> constructorParameters) throws Exception {
     if (JavaUtils.isCollectionType(processingEnvironment, (VariableElement) hasManyRelationFieldElement)) {
       List<? extends TypeMirror> typeMirrors = JavaUtils.getParameterizedTypeMirrors((VariableElement) hasManyRelationFieldElement);
@@ -347,12 +341,6 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
          * Element that this element is related to by HasOne relation
          */
         TypeElement relationElement = UtilsKt.asTypeElement(typeMirror, processingEnvironment);
-//        Element bx = processingEnvironment.getTypeUtils().asElement(hasOneRelationFieldElement.asType());
-//        if (!(bx instanceof TypeElement) ||
-//            !(bx instanceof DeclaredType)) {
-//          throw new Exception("Element related to " + element.getSimpleName() + " as HasOne in " + hasOneRelationFieldName+ " field is not a declared type");
-//        }
-//        TypeElement relationElement = (TypeElement) bx;
 
         if (relationElement.getAnnotation(Entity.class) == null)
           throw new Exception("Element related to " + element.getSimpleName() + " as HasOne in " + hasOneRelationFieldName + " field is not marked as an Entity");

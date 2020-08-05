@@ -25,9 +25,9 @@ class DatabaseCrudStubMethodsGenerator(
     private val processingEnv: ProcessingEnvironment) : CodeGenerator<String> {
 
   override fun generate(): String {
-    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
-
-    val entities = (element as TypeElement).getTableEntities(processingEnv)
+//    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
+//
+//    val entities = (element as TypeElement).getTableEntities(processingEnv)
 
     return "created"
   }

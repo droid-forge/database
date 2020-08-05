@@ -200,7 +200,6 @@ fun Element.getConverterCompatibleMethod(converterTypes: ConverterTypes): Execut
 
 
 fun Element.isElementAnnotatedAsRelation(): Boolean {
-
   return this.getAnnotation(HasMany::class.java) != null ||
       this.getAnnotation(HasOne::class.java) != null
 }

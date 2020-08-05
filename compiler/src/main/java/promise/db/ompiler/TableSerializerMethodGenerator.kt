@@ -27,7 +27,6 @@ import promise.db.ompiler.utils.toTypeName
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
-
 class TableSerializerMethodGenerator(
     private val typeDataTypePack: String,
     private val typeDataType: String,
@@ -65,8 +64,7 @@ class TableSerializerMethodGenerator(
       val executableFn = varTypeName.getConverterCompatibleMethod(ConverterTypes.SERIALIZER)
       if (executableFn != null)
         codeBlock.addStatement("values.put(${columnName}.getName(), typeConverter.${executableFn.simpleName}(t.get${typeVariable.capitalizeFirst()}()))")
-    } else if (varTypeName.isElementAnnotatedAsRelation()) {
-      codeBlock.add(JavaUtils.generateSerializerRelationPutStatement(varTypeName, columnName))
-    } else codeBlock.addStatement("values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}())")
+    } else if (varTypeName.isElementAnnotatedAsRelation())
+      codeBlock.add(JavaUtils.generateSerializerRelationPutStatement(varTypeName, columnName)) else codeBlock.addStatement("values.put(${columnName}.getName(), t.get${typeVariable.capitalizeFirst()}())")
   }
 }

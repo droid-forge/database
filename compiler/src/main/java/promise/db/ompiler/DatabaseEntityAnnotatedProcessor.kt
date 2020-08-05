@@ -19,9 +19,11 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import promise.db.DatabaseEntity
 import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.LogUtil
 import promise.db.ompiler.utils.asTableClassName
 import promise.db.ompiler.utils.getTableClassNameString
 import promise.db.ompiler.utils.getTableEntities
+import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
@@ -33,22 +35,24 @@ import javax.tools.Diagnostic
 class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
 
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
-    return environment?.getElementsAnnotatedWith(DatabaseEntity::class.java)
-        ?.map { element ->
-          if (element.kind != ElementKind.CLASS) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
-            return null
-          }
-          if (element.kind == ElementKind.CLASS && !(element as TypeElement).modifiers.contains(Modifier.ABSTRACT)) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Database class must be abstract")
-          }
-          val promiseDatabaseType = JavaUtils.getDeclaredType(processingEnv,
-              processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase"))
-          if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element, promiseDatabaseType)) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Database class must extend from promise.db.PromiseDatabase")
-          }
-          processElement(element)
-        }
+    val databases = environment?.getElementsAnnotatedWith(DatabaseEntity::class.java) ?: emptySet()
+    if (databases.size > 1)
+      LogUtil.e(Exception("There can only be one database in the module"))
+    else if (databases.size == 1) {
+      val element = databases.first()
+      if (element.kind != ElementKind.CLASS) {
+        LogUtil.e(Exception("Only classes can be annotated"), element)
+        return null
+      }
+      if (element.kind == ElementKind.CLASS && !(element as TypeElement).modifiers.contains(Modifier.ABSTRACT))
+        LogUtil.e(Exception("Database class must be abstract"), element)
+      val promiseDatabaseType = JavaUtils.getDeclaredType(processingEnv,
+          processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase"))
+      if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element, promiseDatabaseType))
+        LogUtil.e(Exception("Database class must extend from promise.db.PromiseDatabase"), element)
+      return Collections.singletonList(processElement(element))
+    }
+    return null
   }
 
   private fun processElement(element: Element): JavaFile.Builder {
@@ -68,22 +72,17 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
             "fastDatabase")
         .addModifiers(Modifier.PRIVATE)
         .addStatement("super(fastDatabase)")
-    if (TypeConverterAnnotatedProcessor.typeConverter != null) {
-      constructorMethod.addJavadoc("""
-        Initializes the TypeConverter as singleton
-      """.trimIndent())
+    if (TypeConverterAnnotatedProcessor.typeConverter != null)
       JavaUtils.generateAddConverterStatementInDatabaseConstructorMethod(processingEnv, constructorMethod, TypeConverterAnnotatedProcessor.typeConverter!!)
-    }
 
-    if (RelationsDaoGenerator.relationsMap.isNotEmpty()) {
+    if (RelationsDaoGenerator.relationsMap.isNotEmpty())
       classBuilder.addMethods(RelationsDaoGenerator.relationsMap.map {
-        MethodSpec.methodBuilder("get"+ it.key.simpleName())
-            .addModifiers(Modifier.PUBLIC)
-            .returns(it.key)
-            .addCode(JavaUtils.generateGetRelationDaoCodeBlock(it).build())
-            .build()
-      })
-    }
+      MethodSpec.methodBuilder("get"+ it.key.simpleName())
+          .addModifiers(Modifier.PUBLIC)
+          .returns(it.key)
+          .addCode(JavaUtils.generateGetRelationDaoCodeBlock(it).build())
+          .build()
+    })
 
     classBuilder.superclass(ClassName.get(pack, className))
         .addAnnotation(databaseAnnotationSpec)

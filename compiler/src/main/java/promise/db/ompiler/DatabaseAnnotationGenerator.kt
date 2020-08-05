@@ -16,6 +16,7 @@ package promise.db.ompiler
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
+import promise.db.ompiler.utils.LogUtil
 import promise.db.ompiler.utils.Utils
 import promise.db.ompiler.utils.getTableClassNameString
 import promise.db.ompiler.utils.getDatabaseVersion
@@ -36,13 +37,12 @@ class DatabaseAnnotationGenerator(
       try {
         entities = element.getTableEntities(processingEnv)
       } catch (e: Throwable) {
-        processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "getTableEntities: ${Utils.getStackTraceString(e)}")
+        LogUtil.e(e)
       }
       val version = element.getDatabaseVersion()
       try {
         entities?.forEachIndexed { index, entityClass ->
           val className = entityClass.getTableClassNameString()
-          //fileBuilder.addImport(pack, className)
           stmt += "$className.class"
           if (index != entities.size - 1) {
             stmt += ", \n"
@@ -50,7 +50,7 @@ class DatabaseAnnotationGenerator(
         }
         stmt += "\n}"
       } catch (e: Throwable) {
-        processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "DatabaseAnnotationGenerator: ${Utils.getStackTraceString(e)}")
+        LogUtil.e(e)
       }
       return AnnotationSpec.builder(ClassName.get("promise.db", "Database"))
           .addMember("tables", CodeBlock.of(stmt))

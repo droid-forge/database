@@ -131,10 +131,6 @@ public class JavaUtils {
           .build();
   }
 
-  public static CodeBlock generateGetRelationsDao() {
-    return CodeBlock.builder().build();
-  }
-
   public static CodeBlock generateSerializerRelationPutStatement(Element element, String colName) {
     CodeBlock.Builder codeBlock = CodeBlock.builder();
     String variableName = PersistableEntityUtilsKt.camelCase(element.getSimpleName().toString());
@@ -235,4 +231,6 @@ public class JavaUtils {
     }
     return null;
   }
+
+
 }

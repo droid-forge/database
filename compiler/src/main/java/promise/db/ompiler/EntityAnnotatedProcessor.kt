@@ -25,6 +25,7 @@ import com.squareup.javapoet.TypeSpec
 import org.jetbrains.annotations.NotNull
 import promise.db.Entity
 import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.LogUtil
 import promise.db.ompiler.utils.checkIfAnyElementNeedsTypeConverter
 import promise.db.ompiler.utils.getTableClassNameString
 import javax.annotation.processing.ProcessingEnvironment
@@ -33,24 +34,18 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
 
 class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
     val javaFiles = ArrayList<JavaFile.Builder?>()
     environment?.getElementsAnnotatedWith(Entity::class.java)
         ?.forEach { element ->
-          if (element.kind != ElementKind.CLASS) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Only classes can be annotated")
-          }
+          if (element.kind != ElementKind.CLASS) LogUtil.e(Exception("Only classes can be annotated"), element)
           val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
           val declaredInterface = JavaUtils.toWildCardType(processingEnv, identifiableInterface, 1)
-          if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element as TypeElement, declaredInterface)) {
-            processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
-          } else {
-            javaFiles.add(processAnnotation(element))
-          }
-          //processAnnotation(element)
+          if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element as TypeElement, declaredInterface))
+            LogUtil.e(Exception("The Entity class ${element.simpleName} must implement Identifiable"), element)
+          else javaFiles.add(processAnnotation(element))
         }
     return javaFiles
   }
@@ -127,9 +122,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
         .initializer(CodeBlock.of("FastTable.getId()")).build()
 
     classBuilder.addField(idColumnSpec)
-    /**
-     * private static final String TAG = LogUtil.makeTag(PersonFastTable.class);
-     */
+
     val tagSpec = JavaUtils.generateEntityTableLogField(element)
 
     classBuilder.addField(tagSpec)
@@ -149,8 +142,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
     classBuilder.addMethod(serializerGenerator.generate())
 
     // deserializer generator
-    val deserializerGenerator = TableDeserializerMethodGenerator(processingEnv, pack, className,
-        tableColumnPropsGenerator.genColValues)
+    val deserializerGenerator = TableDeserializerMethodGenerator(pack, className, tableColumnPropsGenerator.genColValues)
     classBuilder.addMethod(deserializerGenerator.generate())
 
     // migrations

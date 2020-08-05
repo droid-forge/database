@@ -22,6 +22,7 @@ import promise.db.HasOne
 import promise.db.Ignore
 import promise.db.PrimaryKey
 import promise.db.PrimaryKeyAutoIncrement
+import promise.db.ompiler.utils.LogUtil
 import promise.db.ompiler.utils.checkIfHasTypeConverter
 import promise.db.ompiler.utils.getNameOfColumn
 import promise.db.ompiler.utils.isElementAnnotatedAsRelation
@@ -32,16 +33,11 @@ import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
-/**
- * generates column fields for the entity
- */
 class TableColumnFieldsGenerator(
     private val processingEnvironment: ProcessingEnvironment,
     private val setElements: List<Element>) : CodeGenerator<Map<Pair<Element, String>, FieldSpec>> {
 
-  /**
-   *
-   */
+
   var genColValues: ArrayList<Pair<Pair<String, Element>, String>> = ArrayList()
 
   override fun generate(): Map<Pair<Element, String>, FieldSpec> {
@@ -56,9 +52,6 @@ class TableColumnFieldsGenerator(
       val colVariableName = "${element.simpleName}Column"
       var variableClassType = element.toTypeName()
       if (variableClassType.isPrimitive) variableClassType = variableClassType.box()
-      /**
-       * For fields that need type converter
-       */
       if (!element.isPersistable() && !element.isElementAnnotatedAsRelation()) {
         if (element.checkIfHasTypeConverter()) {
           val parameterizedColumnTypeName = ParameterizedTypeName.get(
@@ -80,9 +73,6 @@ class TableColumnFieldsGenerator(
           genColValues.add(pair)
         }
       }
-      /**
-       * for fields marked as relation, additional column needs to be added
-       */
       else if (element.isElementAnnotatedAsRelation()) {
         val hasOneAnnotation = element.getAnnotation(HasOne::class.java)
         if (hasOneAnnotation != null) {
@@ -106,9 +96,6 @@ class TableColumnFieldsGenerator(
           genColValues.add(pair)
         }
       }
-      /**
-       * for normal persistable fields
-       */
       else if (element.isPersistable()) {
         val spec = processField(element, nameOfColumn, i)
         map[Pair(element, colVariableName)] = spec
@@ -116,13 +103,9 @@ class TableColumnFieldsGenerator(
         genColValues.add(pair)
       }
     }
-
     return map
   }
 
-  /**
-   * generates field for the column type of this particular field
-   */
   private fun processField(element: Element, nameOfColumn: String, i: Int): FieldSpec {
     val colVariableName = "${element.simpleName}Column"
     var variableClassType = element.toTypeName()
@@ -143,9 +126,7 @@ class TableColumnFieldsGenerator(
         .build()
   }
 
-  /**
-   * returns column type initializer for this column type
-   */
+
   private fun getColumnInitializer(element: Element, classTypeName: TypeName): String {
     var str = "Column.Type"
     if (classTypeName.isSameAs(Integer::class.java) ||
@@ -154,77 +135,61 @@ class TableColumnFieldsGenerator(
         classTypeName.isSameAs(Double::class.java) ||
         classTypeName.isSameAs(Boolean::class.java)) {
       str += ".INTEGER"
-      if (element.getAnnotation(PrimaryKey::class.java) != null) {
-        str += ".PRIMARY_KEY()"
-      } else if (element.getAnnotation(promise.db.Number::class.java) != null) {
+      if (element.getAnnotation(PrimaryKey::class.java) != null) str += ".PRIMARY_KEY()"
+      else if (element.getAnnotation(promise.db.Number::class.java) != null) {
         val annotation = element.getAnnotation(promise.db.Number::class.java)
         if (annotation.default != 0) {
           str += ".DEFAULT(${annotation.default})"
         } else {
-          if (annotation.nullable) {
-            str += ".NULLABLE()"
-          } else if (!annotation.nullable) {
-            str += ".NON_NULL()"
-          }
+          if (annotation.nullable) str += ".NULLABLE()"
+          else if (!annotation.nullable) str += ".NON_NULL()"
         }
-      } else {
-        str += ".NULLABLE()"
-      }
+      } else str += ".NULLABLE()"
     } else if (classTypeName.isSameAs(String::class.java)) {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
-        str += if (annotation.unique && annotation.length != 0) {
+        str += if (annotation.unique && annotation.length != 0)
           ".UNIQUE(${annotation.length})"
-        } else if (annotation.nullable && annotation.length != 0) {
+        else if (annotation.nullable && annotation.length != 0)
           ".NULLABLE(${annotation.length})"
-        } else if (!annotation.nullable && annotation.length != 0) {
+        else if (!annotation.nullable && annotation.length != 0)
           ".NOT_NULL(${annotation.length})"
-        } else {
-          throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
-        }
+        else LogUtil.e(IllegalStateException("element ${element.simpleName} is annotated as varchar without length"), element)
       } else {
         if (element.getAnnotation(promise.db.Text::class.java) != null) {
           str += ".TEXT"
           val annotation = element.getAnnotation(promise.db.Text::class.java)
-          str += if (annotation.nullable) {
+          str += if (annotation.nullable)
             ".NULLABLE()"
-          } else if (!annotation.nullable) {
+          else if (!annotation.nullable)
             ".NOT_NULL()"
-          } else {
-            throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
-          }
-        } else {
-          str += ".TEXT.NULLABLE()"
-        }
+          else
+            LogUtil.e(IllegalStateException("unknown error in  ${element.simpleName}"), element)
+        } else str += ".TEXT.NULLABLE()"
       }
     } else {
       if (element.getAnnotation(promise.db.VarChar::class.java) != null) {
         str += ".VARCHAR"
         val annotation = element.getAnnotation(promise.db.VarChar::class.java)
-        str += if (annotation.unique && annotation.length != 0) {
+        str += if (annotation.unique && annotation.length != 0)
           ".UNIQUE(${annotation.length})"
-        } else if (annotation.nullable && annotation.length != 0) {
+        else if (annotation.nullable && annotation.length != 0)
           ".NULLABLE(${annotation.length})"
-        } else if (!annotation.nullable && annotation.length != 0) {
+        else if (!annotation.nullable && annotation.length != 0)
           ".NOT_NULL(${annotation.length})"
-        } else {
-          throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
-        }
+        else LogUtil.e(IllegalStateException("element ${element.simpleName} is annotated as varchar without length"), element)
       } else {
         if (element.getAnnotation(promise.db.Text::class.java) != null) {
           str += ".TEXT"
           val annotation = element.getAnnotation(promise.db.Text::class.java)
-          str += if (annotation.nullable) {
+          str += if (annotation.nullable)
             ".NULLABLE()"
-          } else if (!annotation.nullable) {
+          else if (!annotation.nullable)
             ".NOT_NULL()"
-          } else {
-            throw IllegalStateException("element ${element.simpleName} is annotated as varchar without length")
-          }
-        } else {
+          else LogUtil.e(IllegalStateException("unknown error in  ${element.simpleName} "), element)
+        } else
           str += ".TEXT.NULLABLE()"
-        }
       }
     }
     return str

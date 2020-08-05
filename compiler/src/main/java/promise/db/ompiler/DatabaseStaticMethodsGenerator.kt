@@ -63,23 +63,19 @@ class DatabaseStaticMethodsGenerator(
         .returns(ClassName.get("promise.db", "Migration"))
         .addModifiers(Modifier.PRIVATE, Modifier.STATIC)
         .addCode(migrationCodeBlock.build())
-        .addJavadoc("""
-          Migration callback for adding tables into existing database
-        """.trimIndent())
         .build()
 
     typeSpec.addMethod(migrationPropSpec)
 
-    if (TypeConverterAnnotatedProcessor.typeConverter != null) {
+    if (TypeConverterAnnotatedProcessor.typeConverter != null)
       typeSpec.addField(FieldSpec.builder(
-          TypeConverterAnnotatedProcessor.typeConverter!!.toTypeName(),
-          "typeConverter")
-          .addModifiers(Modifier.PRIVATE)
-          .addJavadoc("""
-            TypeConverter instance
-          """.trimIndent())
-          .build())
-    }
+        TypeConverterAnnotatedProcessor.typeConverter!!.toTypeName(),
+        "typeConverter")
+        .addModifiers(Modifier.PRIVATE)
+        .addJavadoc("""
+          TypeConverter instance
+        """.trimIndent())
+        .build())
 
     typeSpec.addField(FieldSpec.builder(Boolean::class.javaPrimitiveType, "initialized")
         .initializer("false")
@@ -90,13 +86,6 @@ class DatabaseStaticMethodsGenerator(
         .build())
 
 
-    // @JvmStatic
-    //    fun createDatabase(name: String): GeneratedDatabase {
-    //      if (instance != null) throw IllegalStateException("Database already created")
-    //      instance = FastDatabase.createDatabase(GeneratedDatabaseImpl::class.java,
-    //          name, migration)
-    //      return GeneratedDatabaseImpl()
-    //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")
@@ -132,12 +121,6 @@ class DatabaseStaticMethodsGenerator(
         """.trimIndent()))
         .build())
 
-    //    @JvmStatic
-    //    fun createInMemoryDatabase(): GeneratedDatabase {
-    //      if (instance != null) throw IllegalStateException("Database already created")
-    //      instance = FastDatabase.createInMemoryDatabase(GeneratedDatabaseImpl::class.java)
-    //      return GeneratedDatabaseImpl()
-    //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .returns(ClassName.get(pack, classnameImpl))
@@ -168,12 +151,6 @@ class DatabaseStaticMethodsGenerator(
         """.trimIndent()))
         .build())
 
-    //    @JvmStatic
-    //    fun createReactiveInMemoryDatabase(): GeneratedDatabase {
-    //      if (instance != null) throw IllegalStateException("Database already created")
-    //      instance = FastDatabase.createInMemoryReactiveDatabase(GeneratedDatabaseImpl::class.java)
-    //      return GeneratedDatabaseImpl()
-    //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .returns(ClassName.get(pack, classnameImpl))
@@ -204,13 +181,6 @@ class DatabaseStaticMethodsGenerator(
         """.trimIndent()))
         .build())
 
-    //    @JvmStatic
-    //    fun createReactiveDatabase(name: String): GeneratedDatabase {
-    //      if (instance != null) throw IllegalStateException("Database already created")
-    //      instance = FastDatabase.createReactiveDatabase(GeneratedDatabaseImpl::class.java,
-    //          name, migration)
-    //      return GeneratedDatabaseImpl()
-    //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")

@@ -16,6 +16,7 @@ package promise.db.ompiler
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import promise.db.TypeConverter
+import promise.db.ompiler.utils.LogUtil
 import promise.db.ompiler.utils.Utils
 import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
@@ -28,11 +29,13 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
     val typeConverters = environment?.getElementsAnnotatedWith(TypeConverter::class.java)
     if (typeConverters != null) {
-      if (typeConverters.size > 1) processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "There can only be one typeConverter in the module")
-      else try {
-        typeConverter = typeConverters.firstOrNull() as TypeElement
+      if (typeConverters.size > 1)
+       LogUtil.e(Exception("There can only be one typeConverter in the module"))
+      else if (typeConverters.size == 1) try {
+        typeConverter = typeConverters.first() as TypeElement
         return Collections.singletonList(processElement(typeConverter!!))
       } catch (e: Throwable) {
+        LogUtil.e(e, typeConverter)
       }
     }
     return null
