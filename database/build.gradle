@@ -44,7 +44,7 @@ dependencies {
     api project(path: ':commons')
     compileOnly 'io.reactivex.rxjava2:rxjava:2.2.17'
     compileOnly 'androidx.appcompat:appcompat:1.1.0'
-    compileOnly 'com.github.android-promise:commons:1.1-beta02'
+    implementation 'com.github.android-promise:commons:1.1-beta02'
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
