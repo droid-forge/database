@@ -174,20 +174,8 @@ public final class TodoRelationsDao {
 
 }
 ```
-Instances of RelationDaos are retrieved from the generated database class,
-Sampled from AppDatabaseImpl file
-```java
-public final class AppDatabaseImpl extends AppDatabase {
-  ...
-  public TodoRelationsDao getTodoRelationsDao() {
-    return SingletonInstanceProvider.provider(TodoRelationsDaoInstanceProvider.create(new TodoRelationsDao.Builder()
-    .setTodoesTable(getTodoesTable())
-    .setPhotosTable(getPhotosTable())
-    .build())).get();
-  }
-  ...
-}
-```
+Instances of RelationDaos are retrieved from the generated database class
+
 
 #### HasMany Relation
 Denotes one entity has many entities of same type and the other entity has one entity of this type, a sample a post has many post comments and a post comment has one post
@@ -255,23 +243,12 @@ public final class PostRelationsDao {
     } );
     return posts;
   }
+  ...
+  // more convenience methods
 }
 ```
 Instances of RelationDaos are retrieved from the generated database class,
-Sampled from AppDatabaseImpl file
-```java
-public final class AppDatabaseImpl extends AppDatabase {
-  ...
-  public PostRelationsDao getPostRelationsDao() {
-    return SingletonInstanceProvider.provider(PostRelationsDaoInstanceProvider.create(new PostRelationsDao.Builder()
-    .setPostCommentsTable(getPostCommentsTable())
-    .setPostsTable(getPostsTable())
-    .setPhotosTable(getPhotosTable())
-    .build())).get();
-  }
-  ...
-}
-```
+
 
 ### Database Initialization
 The compiler generates a database class for creating your database implementation and accesing tables
