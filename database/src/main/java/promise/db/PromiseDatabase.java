@@ -18,12 +18,21 @@ import promise.commons.model.Identifiable;
 /**
  * Base class for classes annotated with DatabaseEntity
  */
-public interface PromiseDatabase {
+public abstract class PromiseDatabase {
+
+  private FastDatabase fastDatabase;
+
+  public PromiseDatabase(FastDatabase fastDatabase) {
+    this.fastDatabase = fastDatabase;
+  }
 
   /**
    * @return an instance of FastDatabase
    */
-  FastDatabase getDatabaseInstance();
+  public FastDatabase getDatabaseInstance() {
+    if (fastDatabase == null) throw new IllegalStateException("Database not initialized or created yet");
+    return fastDatabase;
+  }
 
   /**
    * returns the table associated with the entity class
@@ -33,7 +42,7 @@ public interface PromiseDatabase {
    * @return FastTable of the entity
    * @throws IllegalArgumentException if entity is not registered with the database
    */
-  <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException;
+  public abstract <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException;
 }
 
 

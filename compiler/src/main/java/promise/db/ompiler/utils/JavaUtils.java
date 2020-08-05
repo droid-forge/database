@@ -19,8 +19,6 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.MethodSpec;
 import com.squareup.javapoet.TypeName;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -78,24 +76,63 @@ public class JavaUtils {
         UtilsKt.toTypeName(converter));
   }
 
+  public static void generateAddRelationsDaoStatementInDatabaseConstructorMethod(
+      MethodSpec.Builder constructorMethod,
+      HashMap<ClassName, HashMap<ClassName, Element>> relationsMap) {
+    for (Map.Entry<ClassName, HashMap<ClassName, Element>> relationDao : relationsMap.entrySet()) {
+      CodeBlock.Builder codeBlock = generateGetRelationDaoCodeBlock(relationDao);
+      constructorMethod.addCode(codeBlock.build());
+    }
+  }
+
+  public static CodeBlock.Builder generateGetRelationDaoCodeBlock(Map.Entry<ClassName, HashMap<ClassName, Element>> relationDao) {
+    ClassName providerClassName = ClassName.get(relationDao.getKey().packageName(),
+        UtilsKt.getInstanceProviderClassName(relationDao.getKey().simpleName()));
+    CodeBlock.Builder codeBlock = CodeBlock.builder();
+    codeBlock.add("return $T.provider($T.create(new $T.Builder()\n",
+        ClassName.get("promise.commons", "SingletonInstanceProvider"),
+        providerClassName,
+        relationDao.getKey());
+    for (Map.Entry<ClassName, Element> tableAndEntity: relationDao.getValue().entrySet()) {
+      codeBlock.add(".set"+tableAndEntity.getKey().simpleName()+"(get"+tableAndEntity.getKey().simpleName()+"())\n");
+    }
+    codeBlock.addStatement(".build())).get()");
+    return codeBlock;
+  }
+
   public static void generateIfStatementObtainClassString(
       ProcessingEnvironment processingEnv,
       CodeBlock.Builder codeBlock,
       TypeElement entity) {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
     if (PersistableEntityUtilsKt.checkIfAnyElementNeedsTypeConverter(entity)) {
-      String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getClassName(entity));
+      String tableVarName = PersistableEntityUtilsKt.camelCase(PersistableEntityUtilsKt.getTableClassNameString(entity));
       codeBlock.beginControlFlow("if (entityClass == $T.class)", ClassName.get(pack, entity.getSimpleName().toString()));
       codeBlock.addStatement("$T " + tableVarName + " = getDatabaseInstance().obtain($T.class)",
-          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)),
-          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
+          ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)),
+          ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)));
       codeBlock.addStatement(tableVarName + ".setTypeConverter(typeConverter)");
       codeBlock.addStatement("return (FastTable<T>) " + tableVarName);
       codeBlock.endControlFlow();
     } else
       codeBlock.addStatement("if (entityClass == $T.class) return getDatabaseInstance().obtain($T.class)",
           ClassName.get(pack, entity.getSimpleName().toString()),
-          ClassName.get(pack, PersistableEntityUtilsKt.getClassName(entity)));
+          ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)));
+  }
+
+  public static CodeBlock generateGetTableStatement(
+      ProcessingEnvironment processingEnv,
+      TypeElement entity) {
+    String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
+      return CodeBlock.builder()
+          .addStatement("return ($T) tableOf($T.class)",
+              ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)),
+              TypeName.get(entity.asType()))
+          .build();
+  }
+
+  public static CodeBlock generateGetRelationsDao() {
+    return CodeBlock.builder().build();
   }
 
   public static CodeBlock generateSerializerRelationPutStatement(Element element, String colName) {
@@ -188,6 +225,13 @@ public class JavaUtils {
     if (variableElement.asType() instanceof DeclaredType) {
       DeclaredType declaredType = (DeclaredType) variableElement.asType();
       return declaredType.getTypeArguments();
+    }
+    return null;
+  }
+
+  public static TypeMirror getTypeMirror(VariableElement variableElement) {
+    if (variableElement.asType() instanceof DeclaredType) {
+      return variableElement.asType();
     }
     return null;
   }

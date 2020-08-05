@@ -19,6 +19,9 @@ import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
 import promise.db.DatabaseEntity
 import promise.db.ompiler.utils.JavaUtils
+import promise.db.ompiler.utils.asTableClassName
+import promise.db.ompiler.utils.getTableClassNameString
+import promise.db.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
@@ -54,9 +57,9 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 
-    val fileName = "${className}_Impl"
+    val fileName = "${className}Impl"
 
-    val tableAnnotationSpec = DatabaseAnnotationGenerator(processingEnv, element).generate()
+    val databaseAnnotationSpec = DatabaseAnnotationGenerator(processingEnv, element).generate()
 
     val classBuilder = TypeSpec.classBuilder(fileName)
 
@@ -64,18 +67,36 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
         .addParameter(ClassName.get("promise.db", "FastDatabase"),
             "fastDatabase")
         .addModifiers(Modifier.PRIVATE)
-        .addStatement("super()")
-        .addStatement("this.instance = fastDatabase")
+        .addStatement("super(fastDatabase)")
     if (TypeConverterAnnotatedProcessor.typeConverter != null) {
       constructorMethod.addJavadoc("""
         Initializes the TypeConverter as singleton
       """.trimIndent())
       JavaUtils.generateAddConverterStatementInDatabaseConstructorMethod(processingEnv, constructorMethod, TypeConverterAnnotatedProcessor.typeConverter!!)
     }
+
+    if (RelationsDaoGenerator.relationsMap.isNotEmpty()) {
+      classBuilder.addMethods(RelationsDaoGenerator.relationsMap.map {
+        MethodSpec.methodBuilder("get"+ it.key.simpleName())
+            .addModifiers(Modifier.PUBLIC)
+            .returns(it.key)
+            .addCode(JavaUtils.generateGetRelationDaoCodeBlock(it).build())
+            .build()
+      })
+    }
+
     classBuilder.superclass(ClassName.get(pack, className))
-        .addAnnotation(tableAnnotationSpec)
+        .addAnnotation(databaseAnnotationSpec)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addMethod(constructorMethod.build())
+
+    (element as TypeElement).getTableEntities(processingEnv).forEach {
+      classBuilder.addMethod(MethodSpec.methodBuilder("get"+it.getTableClassNameString())
+          .addModifiers(Modifier.PUBLIC)
+          .returns(it.asTableClassName(processingEnv))
+          .addCode(JavaUtils.generateGetTableStatement(processingEnv, it))
+          .build())
+    }
 
     DatabaseStaticMethodsGenerator(classBuilder, element, processingEnv).generate()
 

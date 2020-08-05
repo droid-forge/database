@@ -17,7 +17,7 @@ import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import promise.db.ompiler.utils.Utils
-import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getTableClassNameString
 import promise.db.ompiler.utils.getDatabaseVersion
 import promise.db.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
@@ -41,7 +41,7 @@ class DatabaseAnnotationGenerator(
       val version = element.getDatabaseVersion()
       try {
         entities?.forEachIndexed { index, entityClass ->
-          val className = entityClass.getClassName()
+          val className = entityClass.getTableClassNameString()
           //fileBuilder.addImport(pack, className)
           stmt += "$className.class"
           if (index != entities.size - 1) {

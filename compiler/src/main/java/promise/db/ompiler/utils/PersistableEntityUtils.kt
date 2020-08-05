@@ -39,7 +39,7 @@ import javax.lang.model.util.ElementFilter
  * gets the className for type element
  */
 fun TypeElement.asTableClassName(processingEnv: ProcessingEnvironment): ClassName {
-  val className = this.getClassName()
+  val className = this.getTableClassNameString()
   val pack = processingEnv.elementUtils.getPackageOf(this).toString()
   return ClassName.get(pack, className)
 }
@@ -47,7 +47,7 @@ fun TypeElement.asTableClassName(processingEnv: ProcessingEnvironment): ClassNam
 /**
  * gets the class name for the table class of this element
  */
-fun Element.getClassName(): String = "${this.simpleName.toString().pluralize().capitalizeFirst()}Table"
+fun Element.getTableClassNameString(): String = "${this.simpleName.toString().pluralize().capitalizeFirst()}Table"
 
 //@JvmName("PersistableEntityUtils")
 /**

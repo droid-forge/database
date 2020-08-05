@@ -21,7 +21,7 @@ import com.squareup.javapoet.TypeSpec
 import promise.db.AddedEntity
 import promise.db.ompiler.utils.JavaUtils
 import promise.db.ompiler.utils.Utils
-import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getTableClassNameString
 import promise.db.ompiler.utils.getTableEntities
 import promise.db.ompiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
@@ -37,14 +37,8 @@ class DatabaseStaticMethodsGenerator(
 
   override fun generate(): String {
     val className = element.simpleName.toString()
-    val classnameImpl = "${className}_Impl"
+    val classnameImpl = "${className}Impl"
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
-
-    try {
-      //fileSpec.addImport("android.database.sqlite", "SQLiteDatabase")
-    } catch (e: Throwable) {
-      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "Add Import: ${Utils.getStackTraceString(e)}")
-    }
 
     val entities = (element as TypeElement).getTableEntities(processingEnv)
         .filter {
@@ -58,7 +52,7 @@ class DatabaseStaticMethodsGenerator(
       entities.forEach {
         val migrationAnnotation = it.getAnnotation(AddedEntity::class.java)
         migrationCodeBlock.beginControlFlow("if (oldVersion == ${migrationAnnotation.fromVersion} && newVersion == ${migrationAnnotation.toVersion})")
-        migrationCodeBlock.addStatement("database.add(sqLiteDatabase, database.obtain(${it.getClassName()}.class))")
+        migrationCodeBlock.addStatement("database.add(sqLiteDatabase, database.obtain(${it.getTableClassNameString()}.class))")
         migrationCodeBlock.endControlFlow()
       }
       migrationCodeBlock.endControlFlow()
@@ -75,15 +69,6 @@ class DatabaseStaticMethodsGenerator(
         .build()
 
     typeSpec.addMethod(migrationPropSpec)
-    // adding db instance var
-    // private static volatile FastDatabase instance = null;
-    typeSpec.addField(FieldSpec.builder(ClassName.get("promise.db", "FastDatabase"), "instance")
-        .initializer("null")
-        .addModifiers(Modifier.PRIVATE)
-        .addJavadoc("""
-          Database instance
-        """.trimIndent())
-        .build())
 
     if (TypeConverterAnnotatedProcessor.typeConverter != null) {
       typeSpec.addField(FieldSpec.builder(
@@ -115,7 +100,7 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates the simplest database with name specified
           @Param name the name of the database
@@ -132,7 +117,7 @@ class DatabaseStaticMethodsGenerator(
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")
         .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates the simplest database with name specified with callback
           Callback can be used to pre populate database with records or
@@ -155,7 +140,7 @@ class DatabaseStaticMethodsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates an in memory database, useful for tests
         """.trimIndent())
@@ -169,7 +154,7 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates an in memory database, useful for tests
           Callback can be used to pre populate database with records or
@@ -191,7 +176,7 @@ class DatabaseStaticMethodsGenerator(
     //    }
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates an in memory database, enables calling rx DML functions in the tables
         """.trimIndent())
@@ -205,7 +190,7 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveInMemoryDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates an in memory database, enables calling rx DML functions in the tables
           Callback can be used to pre populate database with records or
@@ -229,7 +214,7 @@ class DatabaseStaticMethodsGenerator(
     typeSpec.addMethod(MethodSpec.methodBuilder("createReactiveDatabase")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates database, that enables calling rx DML functions in the tables
           @Param name name of the database 
@@ -246,7 +231,7 @@ class DatabaseStaticMethodsGenerator(
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC)
         .addParameter(ClassName.get(String::class.java), "name")
         .addParameter(ClassName.get("promise.db", "DatabaseCreationCallback"), "databaseCreationCallback")
-        .returns(ClassName.get(pack, className))
+        .returns(ClassName.get(pack, classnameImpl))
         .addJavadoc("""
           Creates database, that enables calling rx DML functions in the tables
           Callback can be used to pre populate database with records or
@@ -258,20 +243,6 @@ class DatabaseStaticMethodsGenerator(
           if (initialized) throw new IllegalStateException("Database already created");
            initialized = true;
           return new $classnameImpl(FastDatabase.createReactiveDatabase($classnameImpl.class, name, getMigration(), databaseCreationCallback));
-        """.trimIndent()))
-        .build())
-    //    @JvmStatic
-    //    fun getDatabaseInstance(): FastDatabase {
-    //      if (instance == null) throw IllegalStateException("Database not initialized or created yet")
-    //      return instance!!
-    //    }
-    typeSpec.addMethod(MethodSpec.methodBuilder("getDatabaseInstance")
-        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addAnnotation(Override::class.java)
-        .returns(ClassName.get("promise.db", "FastDatabase"))
-        .addCode(CodeBlock.of("""
-          if (instance == null) throw new IllegalStateException("Database not initialized or created yet");
-          return instance;
         """.trimIndent()))
         .build())
 

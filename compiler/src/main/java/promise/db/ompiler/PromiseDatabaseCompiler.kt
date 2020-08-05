@@ -15,8 +15,6 @@ package promise.db.ompiler
 
 import com.google.auto.service.AutoService
 import com.squareup.javapoet.JavaFile
-import net.ltgt.gradle.incap.IncrementalAnnotationProcessor
-import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType
 import promise.db.DatabaseEntity
 import promise.db.Entity
 import promise.db.TypeConverter
@@ -33,7 +31,6 @@ import javax.tools.Diagnostic
 import kotlin.collections.ArrayList
 
 @AutoService(Processor::class) // For registering the service
-@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.DYNAMIC)
 @SupportedSourceVersion(SourceVersion.RELEASE_8) // to support Java 8
 @SupportedOptions(PromiseDatabaseCompiler.KAPT_JAVA_GENERATED_OPTION_NAME)
 class PromiseDatabaseCompiler : AbstractProcessor() {
@@ -42,9 +39,9 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
     try {
       val javaFiles: ArrayList<JavaFile.Builder> = ArrayList()
       val processors: ArrayList<AnnotatedClassProcessor> = ArrayList()
-
       processors.add(TypeConverterAnnotatedProcessor(processingEnv))
       processors.add(EntityAnnotatedProcessor(processingEnv))
+      processors.add(RelationsDaoProcessor(processingEnv))
       processors.add(DatabaseEntityAnnotatedProcessor(processingEnv))
 
       processors.forEach {
@@ -79,13 +76,14 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       }
       return true
     } catch (e: Throwable) {
-      val stringBuilder = StringBuilder()
-      stringBuilder.append(Utils.getStackTraceString(e))
-      stringBuilder.append("\n")
-      stringBuilder.append("Trace: ").append(Arrays.toString(e.stackTrace))
-      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
-          "EntityProcessor: $stringBuilder ")
-      // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
+      e.printStackTrace()
+//      val stringBuilder = StringBuilder()
+//      stringBuilder.append(Utils.getStackTraceString(e))
+//      stringBuilder.append("\n")
+//      stringBuilder.append("Trace: ").append(Arrays.toString(e.stackTrace))
+//      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR,
+//          "EntityProcessor: $stringBuilder ")
+//      // "EntityProcessor Trace: ${Arrays.toString(e.stackTrace)}")
       return false
     }
   }

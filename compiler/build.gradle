@@ -20,8 +20,6 @@ apply plugin: 'maven'
 
 dependencies {
     compileOnly project(path: ':commons')
-    //compileOnly files(Jvm.current().getJre().homeDir.getAbsolutePath()+'/lib/rt.jar')
-    //compileOnly files("${System.properties['java.home']}/../lib/tools.jar")
     compileOnly files(Jvm.current().getToolsJar())
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
@@ -33,7 +31,5 @@ dependencies {
     compileOnly "com.google.auto.service:auto-service:1.0-rc4"
     kapt "com.google.auto.service:auto-service:1.0-rc4"
 
-    api "net.ltgt.gradle.incap:incap:0.2"
-    compileOnly "net.ltgt.gradle.incap:incap-processor:0.2"
     testImplementation 'junit:junit:4.13'
 }

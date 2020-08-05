@@ -26,15 +26,13 @@ import org.jetbrains.annotations.NotNull
 import promise.db.Entity
 import promise.db.ompiler.utils.JavaUtils
 import promise.db.ompiler.utils.checkIfAnyElementNeedsTypeConverter
-import promise.db.ompiler.utils.getClassName
-import promise.db.ompiler.utils.isElementAnnotatedAsRelation
+import promise.db.ompiler.utils.getTableClassNameString
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.lang.model.util.ElementFilter
 import javax.tools.Diagnostic
 
 class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
@@ -51,7 +49,6 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
             processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "The Entity class ${element.simpleName} must implement Identifiable")
           } else {
             javaFiles.add(processAnnotation(element))
-            javaFiles.addAll(processElementDaos(element))
           }
           //processAnnotation(element)
         }
@@ -63,7 +60,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 
-    val fileName = element.getClassName()
+    val fileName = element.getTableClassNameString()
 
     val tableAnnotationSpec = TableAnnotationGenerator(element, processingEnv).generate()
 
@@ -168,13 +165,4 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
     return JavaFile.builder(pack, classBuilder.build())
   }
 
-  private fun processElementDaos(element: Element): List<JavaFile.Builder?> {
-    val javaFiles = ArrayList<JavaFile.Builder?>()
-    val fields = ElementFilter.fieldsIn(element.enclosedElements).filter {
-      it.isElementAnnotatedAsRelation()
-    }
-    if (fields.isNotEmpty()) javaFiles.addAll(TableRelationsGenerator(processingEnv, element as TypeElement, fields).generate())
-
-    return javaFiles
-  }
 }

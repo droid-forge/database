@@ -22,7 +22,7 @@ import com.squareup.javapoet.WildcardTypeName
 import org.jetbrains.annotations.NotNull
 import promise.db.ompiler.utils.JavaUtils
 import promise.db.ompiler.utils.asTypeElement
-import promise.db.ompiler.utils.getClassName
+import promise.db.ompiler.utils.getTableClassNameString
 import promise.db.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
@@ -109,7 +109,7 @@ class DatabaseAbstractMethodsGenerator(
     if (entities.isEmpty()) entities = element.getTableEntities(processingEnv)
     var pack = ""
     entities.forEach {
-      if (returnTypeName == it.getClassName()) {
+      if (returnTypeName == it.getTableClassNameString()) {
         pack = processingEnv.elementUtils.getPackageOf(it).toString()
       }
     }
