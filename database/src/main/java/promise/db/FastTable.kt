@@ -166,7 +166,7 @@ abstract class FastTable<T : Identifiable<Int>>
     var columnNames = ""
     var indexSql = "("
     val indexes = compoundIndex.indexes
-    indexes.forEachIndexed { i, index ->
+    indexes.forEachIndexed { i: Int, index: Table.Index ->
       columnNames = if (i == indexes.size - 1) columnNames + index.columnName else "$columnNames${index.columnName}_"
       indexSql = if (i == indexes.size - 1) indexSql + index.columnName else "$indexSql${index.columnName}, "
     }
@@ -176,7 +176,7 @@ abstract class FastTable<T : Identifiable<Int>>
     } else "CREATE INDEX IF NOT EXISTS idx_$columnNames ON $nameOfTable $indexSql"
   }
 
-  private fun generateIndexQuery(index: Table.Index): String {
+  private fun generateIndexQueryForTableIndex(index: Table.Index): String {
     val indexSql = "(${index.columnName});"
     return "CREATE INDEX IF NOT EXISTS idx_${index.columnName} ON $nameOfTable $indexSql"
   }
@@ -296,14 +296,14 @@ abstract class FastTable<T : Identifiable<Int>>
 
   private fun addIndices(database: SQLiteDatabase, indexes: Array<Table.Index>) {
     indexes.forEach {
-      val indexSql = generateIndexQuery(it)
+      val indexSql = generateIndexQueryForTableIndex(it)
       LogUtil.d(TAG, indexSql)
       database.execSQL(indexSql)
     }
   }
 
   fun addIndex(database: SQLiteDatabase, index: String) {
-    val indexSql = generateIndexQuery(index)
+    val indexSql: String = generateIndexQuery(index)
     LogUtil.d(TAG, indexSql)
     database.execSQL(indexSql)
   }

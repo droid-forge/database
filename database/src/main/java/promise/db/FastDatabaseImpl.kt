@@ -26,6 +26,7 @@ import promise.commons.util.ClassUtil
 import promise.commons.util.Conditions
 import promise.model.IdentifiableList
 import java.util.*
+import promise.db.Table
 
 open class FastDatabaseImpl internal constructor(
     name: String?,
