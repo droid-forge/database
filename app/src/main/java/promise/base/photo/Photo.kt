@@ -1,13 +1,10 @@
 package promise.base.photo
 
 import android.annotation.SuppressLint
-import android.os.Parcel
-import android.os.Parcelable
-import promise.base.ID
 import promise.base.post.Post
 import promise.db.ActiveRecord
-import promise.db.Entity
-import promise.db.HasOne
+import promise.database.Entity
+import promise.database.HasOne
 
 @SuppressLint("ParcelCreator")
 @Entity

@@ -11,15 +11,18 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database.ompiler
 
-import promise.database.TypeConverter
+import org.junit.After
+import org.junit.Before
 
-@TypeConverter
-class AppTypeConverter {
+class PersistableEntityUtilsKtTest {
 
-  fun toUniqueId(data: String): ID = ID(data)
+  @Before
+  fun setUp() {
+  }
 
-  fun toString(data: ID?): String = data?.id ?: ""
-
+  @After
+  fun tearDown() {
+  }
 }

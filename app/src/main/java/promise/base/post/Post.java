@@ -10,8 +10,8 @@ import promise.base.ID;
 import promise.base.comment.PostComment;
 import promise.base.photo.Photo;
 import promise.db.ActiveRecord;
-import promise.db.Entity;
-import promise.db.HasMany;
+import promise.database.Entity;
+import promise.database.HasMany;
 
 @SuppressLint("ParcelCreator")
 @Entity

@@ -11,15 +11,23 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database.ompiler
 
-import promise.database.TypeConverter
+import com.squareup.javapoet.TypeSpec
+import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 
-@TypeConverter
-class AppTypeConverter {
+class DatabaseCrudStubMethodsGenerator(
+    private val typeSpec: TypeSpec.Builder,
+    private val element: Element,
+    private val processingEnv: ProcessingEnvironment) : CodeGenerator<String> {
 
-  fun toUniqueId(data: String): ID = ID(data)
+  override fun generate(): String {
+//    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
+//
+//    val entities = (element as TypeElement).getTableEntities(processingEnv)
 
-  fun toString(data: ID?): String = data?.id ?: ""
+    return "created"
+  }
 
 }

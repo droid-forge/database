@@ -11,15 +11,12 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database
 
-import promise.database.TypeConverter
 
-@TypeConverter
-class AppTypeConverter {
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class HasMany
 
-  fun toUniqueId(data: String): ID = ID(data)
 
-  fun toString(data: ID?): String = data?.id ?: ""
 
-}

@@ -17,7 +17,7 @@ import promise.base.comment.PostComment
 import promise.base.photo.Photo
 import promise.base.post.Post
 import promise.base.todo.Todo
-import promise.db.DatabaseEntity
+import promise.database.DatabaseEntity
 import promise.db.FastDatabase
 import promise.db.PromiseDatabase
 

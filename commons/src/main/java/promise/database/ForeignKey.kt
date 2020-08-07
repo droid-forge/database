@@ -11,15 +11,12 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database
 
-import promise.database.TypeConverter
+import kotlin.reflect.KClass
 
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
-}
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class ForeignKey(
+    val referencedEntity: KClass<*>,
+    val referencedEntityColumnName: String = "id")

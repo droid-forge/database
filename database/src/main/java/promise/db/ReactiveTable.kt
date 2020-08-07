@@ -14,6 +14,7 @@ package promise.db
 
 import io.reactivex.Maybe
 import promise.commons.model.Identifiable
+import promise.database.Number
 import promise.model.IdentifiableList
 
 /**

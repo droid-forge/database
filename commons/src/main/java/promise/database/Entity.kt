@@ -11,15 +11,16 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database
 
-import promise.database.TypeConverter
-
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Entity(val tableName: String = "",
+                        val compoundIndices: Array<CompoundIndex> = []
+) {
+  @Target(AnnotationTarget.FIELD)
+  @Retention(AnnotationRetention.SOURCE)
+  annotation class CompoundIndex(
+      val columns: Array<String>,
+      val unique: Boolean = false)
 }

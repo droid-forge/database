@@ -27,6 +27,8 @@ import promise.commons.model.List
 import promise.commons.model.List.fromArray
 import promise.commons.util.Conditions
 import promise.commons.util.DoubleConverter
+import promise.database.Number
+import promise.database.Table
 import promise.db.criteria.Criteria
 import promise.model.ITimeStamped
 import promise.db.projection.Projection

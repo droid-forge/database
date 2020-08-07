@@ -6,8 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 import promise.base.photo.Photo;
 import promise.db.ActiveRecord;
-import promise.db.Entity;
-import promise.db.HasOne;
+import promise.database.Entity;
+import promise.database.HasOne;
 
 @SuppressLint("ParcelCreator")
 @Entity

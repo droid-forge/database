@@ -11,15 +11,20 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database;
 
-import promise.database.TypeConverter
+import org.junit.Test;
 
-@TypeConverter
-class AppTypeConverter {
+import static org.junit.Assert.assertEquals;
 
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+/**
+ * Example local unit test, which will execute on the development machine (host).
+ *
+ * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
+ */
+public class ExampleUnitTest {
+  @Test
+  public void addition_isCorrect() {
+    assertEquals(4, 2 + 2);
+  }
 }

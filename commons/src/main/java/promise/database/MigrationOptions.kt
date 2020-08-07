@@ -11,15 +11,8 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database
 
-import promise.database.TypeConverter
-
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+enum class MigrationOptions {
+  CREATE, DROP, CREATE_INDEX
 }

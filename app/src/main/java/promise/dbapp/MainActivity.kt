@@ -64,14 +64,27 @@ class MainActivity : DaggerAppCompatActivity() {
 
    postRelationsDao.saveWithComments(posts)
 
-   val persons = postRelationsDao.listWithComments()
+    showInfo()
 
-   complex_values_textview.text = persons.toString()
+    clear_button.setOnClickListener {
+      deleteInfo()
+      showInfo()
+    }
+  }
 
-   persons.forEach {
-     postRelationsDao.deleteComments(it)
-     it.delete()
-   }
+  private fun showInfo() {
+
+    val persons = postRelationsDao.listWithComments()
+
+    complex_values_textview.text = persons.toString()
+  }
+
+  private fun deleteInfo() {
+    val persons = postRelationsDao.listWithComments()
+    persons.forEach {
+      postRelationsDao.deleteComments(it)
+      it.delete()
+    }
   }
 
 }

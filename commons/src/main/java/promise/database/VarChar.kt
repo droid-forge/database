@@ -11,15 +11,12 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database
 
-import promise.database.TypeConverter
-
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
-}
+@Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.SOURCE)
+annotation class VarChar(val columnName: String = "",
+                         val length: Int,
+                         val nullable: Boolean = true,
+                         val unique: Boolean = false,
+                         val index: Boolean = false)

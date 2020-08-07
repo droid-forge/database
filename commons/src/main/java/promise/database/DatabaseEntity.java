@@ -11,15 +11,19 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database;
 
-import promise.database.TypeConverter
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@TypeConverter
-class AppTypeConverter {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface DatabaseEntity {
+  int version() default 1;
 
-  fun toUniqueId(data: String): ID = ID(data)
+  boolean generateCrudStubs() default false;
 
-  fun toString(data: ID?): String = data?.id ?: ""
-
+  Class<?>[] persistableEntities();
 }

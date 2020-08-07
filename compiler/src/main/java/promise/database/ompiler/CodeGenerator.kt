@@ -11,15 +11,10 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database.ompiler
 
-import promise.database.TypeConverter
 
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+interface CodeGenerator<out T> {
+  @Throws(Exception::class)
+  fun generate(): T
 }

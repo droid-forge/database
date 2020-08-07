@@ -14,24 +14,22 @@
 package promise.dbapp
 
 import dagger.Module
-//import dagger.Provides
-//import promise.base.AppDatabase
-//import promise.base.AppDatabaseImpl
-//import promise.base.post.PostRelationsDao
-//import javax.inject.Singleton
+import dagger.Provides
+import promise.base.AppDatabase
+import promise.base.AppDatabaseImpl
+import promise.base.post.PostRelationsDao
+import javax.inject.Singleton
 
 @Module
 object DatabaseDependencies {
 
-//  @Provides
-//  @Singleton
-//  @JvmStatic
-//  fun provideAppDatabase(): AppDatabaseImpl = AppDatabaseImpl.createDatabase("blog_db")
-//
-//  @Provides
-//  @JvmStatic
-//  fun providePostRelationsDao(appDatabase: AppDatabaseImpl): PostRelationsDao =
-//      appDatabase.postRelationsDao
+  @Provides
+  @Singleton
+  @JvmStatic
+  fun provideAppDatabase(): AppDatabaseImpl = AppDatabaseImpl.createDatabase("blog_db")
 
-
+  @Provides
+  @JvmStatic
+  fun providePostRelationsDao(appDatabase: AppDatabaseImpl): PostRelationsDao =
+      appDatabase.postRelationsDao
 }

@@ -11,15 +11,11 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.database.ompiler
 
-import promise.database.TypeConverter
+import com.squareup.javapoet.JavaFile
+import javax.annotation.processing.RoundEnvironment
 
-@TypeConverter
-class AppTypeConverter {
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+abstract class AnnotatedClassProcessor {
+  abstract fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>?
 }
