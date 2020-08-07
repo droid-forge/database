@@ -12,8 +12,8 @@
  */
 
 
-include  'app'
-include 'database'
+include  ':app'
+include ':database'
 include ':compiler'
 include ':commons'
 

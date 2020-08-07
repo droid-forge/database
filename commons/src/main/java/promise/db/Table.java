@@ -18,74 +18,30 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- *
- */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Table {
-  /**
-   * @return
-   */
   String tableName();
-
-  /**
-   * @return
-   */
   Index[] indices() default {};
-
   CompoundIndex[] compoundIndexes() default {};
-
-  /**
-   * @return
-   */
   ForeignKey[] foreignKeys() default {};
-
-  /**
-   *
-   */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @interface Index {
-    /**
-     * @return
-     */
     String columnName();
-
-    ;
   }
-
-  /**
-   *
-   */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @interface CompoundIndex {
     boolean unique() default false;
-
     Index[] indexes() default {};
   }
 
-  /**
-   *
-   */
   @Target(ElementType.TYPE)
   @Retention(RetentionPolicy.RUNTIME)
   @interface ForeignKey {
-    /**
-     * @return
-     */
     String columnName();
-
-    /**
-     * @return
-     */
     String referencedTableName();
-
-    /**
-     * @return
-     */
     String referencedColumnName();
   }
-
 }

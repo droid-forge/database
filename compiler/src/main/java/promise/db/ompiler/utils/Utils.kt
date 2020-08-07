@@ -33,11 +33,14 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
+import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.MirroredTypeException
 import javax.lang.model.type.TypeKind
 import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
 import javax.tools.Diagnostic
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlin.reflect.KClass
 
 
@@ -66,7 +69,11 @@ fun VariableElement.getClass(): KClass<*> {
   }
 }
 
+@UseExperimental(ExperimentalContracts::class)
 fun TypeMirror.asTypeElement(processingEnv: ProcessingEnvironment): TypeElement {
+  contract {
+    returns() implies (this@asTypeElement is DeclaredType)
+  }
   val typeUtils: Types = processingEnv.typeUtils
   return (try {
     typeUtils.asElement(this)

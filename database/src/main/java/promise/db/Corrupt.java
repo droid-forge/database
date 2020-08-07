@@ -13,18 +13,7 @@
 
 package promise.db;
 
-/**
- * Created by yoctopus on 2/21/17.
- */
-public final class DBError extends Exception {
-  DBError() {
-  }
+public interface Corrupt {
 
-  DBError(String message) {
-    super(message);
-  }
-
-  DBError(Throwable cause) {
-    super(cause);
-  }
+  void onCorrupt();
 }

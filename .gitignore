@@ -9,17 +9,5 @@
 /build
 /captures
 .externalNativeBuild
-/app
-/appbase
-/commonsapp
-/modelapp
-/netapp
-/promise
-/promisecommons
-/promisemodel
-/promisenet
-/promisepref
-/promiseui
-/uiapp
 
 

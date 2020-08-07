@@ -34,6 +34,7 @@ import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 
+@SuppressWarnings("WeakerAccess")
 public class JavaUtils {
 
   // code generation participants

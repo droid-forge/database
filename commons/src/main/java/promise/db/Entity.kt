@@ -11,11 +11,16 @@
  * limitations under the License.
  */
 
-package promise.db.model;
+package promise.db
 
-public interface ITimeStamped {
-
-  void setCreatedAt(long createdAt);
-
-  void setUpdatedAt(long updatedAt);
+@Target(AnnotationTarget.CLASS)
+@Retention(AnnotationRetention.SOURCE)
+annotation class Entity(val tableName: String = "",
+                        val compoundIndices: Array<CompoundIndex> = []
+) {
+  @Target(AnnotationTarget.FIELD)
+  @Retention(AnnotationRetention.SOURCE)
+  annotation class CompoundIndex(
+      val columns: Array<String>,
+      val unique: Boolean = false)
 }

@@ -31,31 +31,22 @@ abstract class FastDatabase internal constructor(
 
   abstract fun <T : TableCrud<*, in SQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SQLiteDatabase>>): T
 
-  /**
-   *
-   */
   abstract fun querySql(sql: String): Cursor
 
-  /**
-   *
-   */
   abstract fun query(queryBuilder: QueryBuilder): Cursor
 
-  /**
-   *
-   */
   abstract fun writableDatabase(): SQLiteDatabase
+
+  abstract fun transact(block: FastDatabase.() -> Unit)
+
+  abstract fun delete(vararg tableCruds: TableCrud<*, in SQLiteDatabase>): Boolean
+
+  abstract fun name(): String
 
   companion object {
     private val dbCache: ArrayMap<String, FastDatabase> = ArrayMap()
-
     private val lock = Any()
-
-    /**
-     *
-     */
     const val DEFAULT_NAME = "fast"
-
     @JvmOverloads
     @JvmStatic
     fun createDatabase(dbClass: Class<*>,

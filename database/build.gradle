@@ -28,9 +28,10 @@ android {
     }
 
     buildTypes {
+
         release {
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            //proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -43,7 +44,7 @@ android {
 dependencies {
     api project(path: ':commons')
     compileOnly 'io.reactivex.rxjava2:rxjava:2.2.17'
-    compileOnly 'androidx.appcompat:appcompat:1.1.0'
+    compileOnly 'androidx.appcompat:appcompat:1.2.0'
     compileOnly 'com.github.android-promise:commons:1.1-beta02'
     testImplementation 'junit:junit:4.13'
     androidTestImplementation 'androidx.test:runner:1.2.0'

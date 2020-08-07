@@ -19,76 +19,34 @@ import promise.commons.model.Identifiable
 import promise.commons.model.List
 import promise.model.IdentifiableList
 
-/**
- *
- */
 interface ReactiveCrud<X> : Crud<X> {
 
   fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor>
 
-  /**
-   *
-   */
   @Throws(TableError::class)
   fun <T : Identifiable<Int>> readAsync(tableCrud: TableCrud<T, in X>): ReactiveTable.Extras<T>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> readAllAsync(tableCrud: TableCrud<T, in X>): Maybe<IdentifiableList<out T>>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> readAllAsync(tableCrud: TableCrud<T, in X>, vararg column: Column<*>): Maybe<IdentifiableList<out T>>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in X>, column: Column<*>): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in X>): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in X>, column: Column<*>): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in X>, t: T): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun deleteAsync(tableCrud: TableCrud<*, in X>): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <C> deleteAsync(tableCrud: TableCrud<*, in X>, column: Column<C>, list: List<out C>): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> saveAsync(t: T, tableCrud: TableCrud<T, in X>): Single<Long>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> saveAsync(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in X>): Single<Boolean>
 
-  /**
-   *
-   */
   fun deleteAllAsync(): Maybe<Boolean>
 
-  /**
-   *
-   */
   fun <T : Identifiable<Int>> getLastIdAsync(tableCrud: TableCrud<T, in X>): Maybe<Int>
 }

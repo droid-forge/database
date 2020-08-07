@@ -18,51 +18,31 @@ import promise.commons.model.Identifiable
 import promise.commons.util.Conditions
 import promise.model.TimeStamped
 
-/**
- *
- */
 abstract class ActiveRecord<T : Identifiable<Int>>() : TimeStamped() {
-  /**
-   *
-   */
+
   internal var table: FastTable<T>? = null
 
-  /**
-   *
-   */
   constructor(parcel: Parcel?) : this() {
     super.readFromParcel(parcel)
   }
 
-  /**
-   *
-   */
   @Throws(Exception::class)
   fun save(): Long {
     Conditions.checkNotNull(table, "This record has not been read from the database and can't be saved")
     return table!!.save(getEntity())
   }
 
-  /**
-   *
-   */
   @Throws(Exception::class)
   fun update(): Boolean {
     Conditions.checkNotNull(table, "This record has not been read from the database and can't be updated")
     return table!!.update(getEntity())
   }
 
-  /**
-   *
-   */
   @Throws(Exception::class)
   fun delete(): Boolean {
     Conditions.checkNotNull(table, "This record has not been read from the database and can't be deleted")
     return table!!.delete(getEntity())
   }
 
-  /**
-   *
-   */
   abstract fun getEntity(): T
 }

@@ -34,34 +34,6 @@ public class Utils {
     else
       return String.valueOf(value);
   }
-	
-	/*public static String dateToString(LocalDate date, DateTimeFormatter format) {
-		if (date == null)
-			return null;
-		
-		if(format == null)
-			format = QueryBuildConfiguration.current().getDateFormat();
-
-		try {
-			return date.toString(format);
-		} catch (Exception e) {
-			return null;
-		}
-	}
-
-	public static String dateToString(LocalDateTime date, DateTimeFormatter format) {
-		if (date == null)
-			return null;
-
-		if(format == null)
-			format = QueryBuildConfiguration.current().getDateTimeFormat();
-		
-		try {
-			return date.toString(format);
-		} catch (Exception e) {
-			return null;
-		}
-	}*/
 
   public static boolean isNullOrEmpty(String string) {
     return (string == null || string.length() <= 0);
@@ -71,12 +43,9 @@ public class Utils {
     return (string == null || string.trim().length() <= 0);
   }
 
-  public static Projection[] buildColumnProjections(Column... columns) {
+  static Projection[] buildColumnProjections(Column... columns) {
     Projection[] projections = new Projection[columns.length];
-
-    for (int i = 0; i < columns.length; i++) {
-      projections[i] = Projection.column(columns[i]);
-    }
+    for (int i = 0; i < columns.length; i++) projections[i] = Projection.column(columns[i]);
     return projections;
   }
 }

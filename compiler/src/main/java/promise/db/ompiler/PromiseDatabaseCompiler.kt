@@ -28,8 +28,8 @@ import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 
-@AutoService(Processor::class) // For registering the service
-@SupportedSourceVersion(SourceVersion.RELEASE_8) // to support Java 8
+@AutoService(Processor::class)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedOptions(PromiseDatabaseCompiler.KAPT_JAVA_GENERATED_OPTION_NAME)
 class PromiseDatabaseCompiler : AbstractProcessor() {
 
@@ -39,6 +39,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
   }
 
   override fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
+    if (mutableSet == null || mutableSet.isEmpty()) return false
     try {
       val javaFiles: ArrayList<JavaFile.Builder> = ArrayList()
       val processors: ArrayList<AnnotatedClassProcessor> = ArrayList()
@@ -53,7 +54,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       }
       javaFiles.forEach {
         it
-            .indent("  ")
+            .indent("\\t")
             .skipJavaLangImports(true)
             .addFileComment(
                 """

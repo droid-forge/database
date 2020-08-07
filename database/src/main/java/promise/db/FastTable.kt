@@ -28,7 +28,7 @@ import promise.commons.model.List.fromArray
 import promise.commons.util.Conditions
 import promise.commons.util.DoubleConverter
 import promise.db.criteria.Criteria
-import promise.db.model.ITimeStamped
+import promise.model.ITimeStamped
 import promise.db.projection.Projection
 import promise.model.IdentifiableList
 import java.util.*
@@ -46,10 +46,9 @@ abstract class FastTable<T : Identifiable<Int>>
 /**
  * @param database
  */(
-    /**
-     *
-     */
+
     val database: FastDatabase) : TableCrud<T, SQLiteDatabase>, DMLFunctions<T> {
+
   companion object {
     /**
      * The create prefix in a prefix for queries that create a table structure
@@ -512,7 +511,7 @@ abstract class FastTable<T : Identifiable<Int>>
   /**
    *
    */
-  inline fun transact(block: FastTable<T>.() -> Unit) = synchronized(this) {
+  override fun transact(block: FastTable<T>.() -> Unit) = synchronized(this) {
     val db = database.writableDatabase
     try {
       db.beginTransaction()

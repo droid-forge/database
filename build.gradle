@@ -45,6 +45,18 @@ allprojects {
 }
 
 subprojects { subProject ->
+//    apply plugin: 'checkstyle'
+//
+//    task checkstyle(type: Checkstyle) {
+//        description 'Runs Checkstyle inspection .'
+//        group = 'database'
+//        configFile rootProject.file('checkstyle.xml')
+//        ignoreFailures false
+//        showViolations true
+//        classpath = files()
+//        exclude '**/*.kt'
+//        source 'src/main/java'
+//    }
 
     configurations.all { configuration ->
         // Workaround for kapt bug with MPP dependencies
@@ -54,6 +66,11 @@ subprojects { subProject ->
             attributes.attribute(Usage.USAGE_ATTRIBUTE, subProject.objects.named(Usage.class, Usage.JAVA_RUNTIME))
         }
     }
+
+//     // check code style after project evaluation
+//    afterEvaluate {
+//        check.dependsOn('checkstyle')
+//    }
 }
 
 task clean(type: Delete) {

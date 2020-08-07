@@ -11,14 +11,30 @@
  * limitations under the License.
  */
 
-package promise.db;
+package promise.dbapp
 
-/**
- *
- */
-public interface Corrupt {
-  /**
-   *
-   */
-  void onCorrupt();
+import dagger.BindsInstance
+import dagger.Component
+import dagger.android.AndroidInjector
+import dagger.android.support.AndroidSupportInjectionModule
+import javax.inject.Singleton
+
+@Component(
+    modules = [
+      AndroidSupportInjectionModule::class,
+      ActivityBuildersModule::class,
+      DatabaseDependencies::class
+    ]
+)
+@Singleton
+interface AppComponent : AndroidInjector<App> {
+
+  @Component.Builder
+  interface Builder {
+
+    @BindsInstance
+    fun app(app: App): Builder
+
+    fun build(): AppComponent
+  }
 }

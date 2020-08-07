@@ -19,27 +19,15 @@ import promise.commons.model.Identifiable;
 import promise.commons.model.List;
 import promise.commons.tx.PromiseResult;
 
-/**
- * @param <T>
- */
 public class CrudStore<T extends Identifiable<Integer>>
     implements Store<T, TableCrud<T, ? super SQLiteDatabase>, Throwable> {
-  /**
-   *
-   */
+
   private Crud<SQLiteDatabase> crudStore;
 
-  /**
-   * @param crudStore
-   */
   public CrudStore(Crud<SQLiteDatabase> crudStore) {
     this.crudStore = crudStore;
   }
 
-  /**
-   * @param tsqLiteDatabaseTable
-   * @param callBack
-   */
   @Override
   public void get(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
@@ -53,11 +41,6 @@ public class CrudStore<T extends Identifiable<Integer>>
     }, callBack);
   }
 
-  /**
-   * @param tsqLiteDatabaseTable
-   * @param t
-   * @param callBack
-   */
   @Override
   public void delete(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
@@ -70,11 +53,6 @@ public class CrudStore<T extends Identifiable<Integer>>
     }
   }
 
-  /**
-   * @param tsqLiteDatabaseTable
-   * @param t
-   * @param callBack
-   */
   @Override
   public void update(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
@@ -87,11 +65,6 @@ public class CrudStore<T extends Identifiable<Integer>>
     }
   }
 
-  /**
-   * @param tsqLiteDatabaseTable
-   * @param t
-   * @param callBack
-   */
   @Override
   public void save(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
@@ -104,10 +77,6 @@ public class CrudStore<T extends Identifiable<Integer>>
     }
   }
 
-  /**
-   * @param tsqLiteDatabaseTable
-   * @param callBack
-   */
   @Override
   public void clear(
       TableCrud<T, ? super SQLiteDatabase> tsqLiteDatabaseTable,
@@ -119,9 +88,6 @@ public class CrudStore<T extends Identifiable<Integer>>
     }
   }
 
-  /**
-   * @param callBack
-   */
   @Override
   public void clear(PromiseResult<Boolean, Throwable> callBack) {
     try {

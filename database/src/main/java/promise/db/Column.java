@@ -230,23 +230,6 @@ public final class Column<T> {
       }
     }
 
-    public static class BLOB {
-      private static final String prefix =
-          "BLOB";
-
-      public static Type NULLABLE() {
-        return newType(prefix, NULL.YES);
-      }
-
-      public static Type UNIQUE() {
-        return newType(prefix);
-      }
-
-      public static Type NOT_NULL() {
-        return newType(prefix, NULL.NO);
-      }
-    }
-
     public static class REAL {
       private static final String prefix =
           "REAL";

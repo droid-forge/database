@@ -17,7 +17,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import promise.commons.model.Identifiable;
-import promise.db.model.ITimeStamped;
 
 public abstract class TimeStamped implements Identifiable<Integer>, ITimeStamped, Parcelable {
   private int id = 0;

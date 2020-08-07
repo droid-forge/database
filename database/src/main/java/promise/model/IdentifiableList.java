@@ -70,32 +70,26 @@ public class IdentifiableList<T extends Identifiable<Integer>> extends List<T> {
   }
 
   public boolean remove(T t) {
-    if (t instanceof ActiveRecord<?>) {
-      try {
-        ((ActiveRecord) t).delete();
-      } catch (Exception ignored) {
-      }
+    if (t instanceof ActiveRecord<?>) try {
+      ((ActiveRecord) t).delete();
+    } catch (Exception ignored) {
     }
     super.remove(getIndex(t));
     return true;
   }
 
   public void delete(T t) {
-    if (t instanceof ActiveRecord<?>) {
-      try {
-        ((ActiveRecord) t).delete();
-      } catch (Exception ignored) {
-      }
+    if (t instanceof ActiveRecord<?>) try {
+      ((ActiveRecord) t).delete();
+    } catch (Exception ignored) {
     }
     removeWithID(t.getId());
   }
 
   public void update(T t) {
-    if (t instanceof ActiveRecord<?>) {
-      try {
-        ((ActiveRecord) t).update();
-      } catch (Exception ignored) {
-      }
+    if (t instanceof ActiveRecord<?>) try {
+      ((ActiveRecord) t).update();
+    } catch (Exception ignored) {
     }
     super.set(getIndex(t), t);
   }
