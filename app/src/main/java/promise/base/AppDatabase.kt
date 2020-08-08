@@ -13,6 +13,7 @@
 
 package promise.base
 
+import promise.base.comment.Like
 import promise.base.comment.PostComment
 import promise.base.photo.Photo
 import promise.base.post.Post
@@ -26,7 +27,8 @@ import promise.db.PromiseDatabase
       PostComment::class,
       Photo::class,
       Post::class,
-      Todo::class
+      Todo::class,
+      Like::class
     ]
 )
 abstract class AppDatabase(fastDatabase: FastDatabase)

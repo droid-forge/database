@@ -13,6 +13,7 @@
 
 package promise.database.ompiler
 
+import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
@@ -84,8 +85,12 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
           .build()
     })
 
+    val supressWarningsSpec = AnnotationSpec.builder(SuppressWarnings::class.java)
+        .addMember("value" , "{\"unchecked\"}")
+
     classBuilder.superclass(ClassName.get(pack, className))
         .addAnnotation(databaseAnnotationSpec)
+        .addAnnotation(supressWarningsSpec.build())
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
         .addMethod(constructorMethod.build())
 
@@ -94,6 +99,7 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
           .addModifiers(Modifier.PUBLIC)
           .returns(it.asTableClassName(processingEnv))
           .addCode(JavaUtils.generateGetTableStatement(processingEnv, it))
+          .addAnnotation(supressWarningsSpec.build())
           .build())
     }
 

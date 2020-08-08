@@ -7,6 +7,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 
 import promise.base.ID;
+import promise.base.comment.Like;
 import promise.base.comment.PostComment;
 import promise.base.photo.Photo;
 import promise.db.ActiveRecord;
@@ -39,6 +40,8 @@ public class Post extends ActiveRecord<Post> {
 	@HasMany
 	private List<Photo> photos;
 
+	@HasMany
+	private List<Like> likes;
 
 	public String getTitle(){
 		return title;
@@ -94,6 +97,14 @@ public class Post extends ActiveRecord<Post> {
 
 	public void setPhotos(List<Photo> photos) {
 		this.photos = photos;
+	}
+
+	public List<Like> getLikes() {
+		return likes;
+	}
+
+	public void setLikes(List<Like> likes) {
+		this.likes = likes;
 	}
 
 	@NotNull
