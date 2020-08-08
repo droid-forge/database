@@ -17,7 +17,6 @@ import android.database.Cursor
 import promise.commons.model.Identifiable
 import promise.commons.model.List
 import promise.commons.util.DoubleConverter
-import promise.database.Number
 import promise.model.IdentifiableList
 
 /**

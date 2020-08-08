@@ -19,7 +19,7 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'maven'
 
 dependencies {
-    compileOnly project(path: ':commons')
+    compileOnly 'com.github.android-promise.database:commons:1.0.3-alpha4'
     compileOnly files(Jvm.current().getToolsJar())
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation'org.atteo:evo-inflector:1.0.1'
