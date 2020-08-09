@@ -97,6 +97,20 @@ abstract class FastTable<T : Identifiable<Int>>
 
   }
 
+  override fun single(cursor: Cursor): T {
+    cursor.moveToFirst()
+    return deserialize(cursor)
+  }
+
+  override fun collection(cursor: Cursor): IdentifiableList<out T> {
+    val collection = IdentifiableList<T>()
+    while (cursor.moveToNext()  && !cursor.isClosed) {
+      collection.add(getWithId(cursor))
+    }
+    cursor.close()
+    return collection
+  }
+
   open fun createEntityInstance(): T {
     throw RuntimeException("STUB ONLY SUPPORTED FOR ACTIVE RECORD ENTITIES")
   }
@@ -554,10 +568,7 @@ abstract class FastTable<T : Identifiable<Int>>
     val cursor: Cursor
     return try {
       cursor = x.rawQuery(builder.build(), builder.buildParameters())
-      val ts = IdentifiableList<T>()
-      while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-      cursor.close()
-      /*if (close) database.close();*/ts
+      collection(cursor)
     } catch (e: SQLiteException) {
       IdentifiableList<T>()
     }
@@ -583,11 +594,7 @@ abstract class FastTable<T : Identifiable<Int>>
         } else builder.orderByAscending(it)
       }
     }
-    val cursor = x.rawQuery(builder.build(), builder.buildParameters())
-    val ts = IdentifiableList<T>()
-    while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-    cursor.close()
-    /*database.close();*/return ts
+   return collection( x.rawQuery(builder.build(), builder.buildParameters()))
   }
 
   /**

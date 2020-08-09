@@ -40,7 +40,6 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment)
     val javaFiles = ArrayList<JavaFile.Builder?>()
     environment?.getElementsAnnotatedWith(Entity::class.java)
         ?.forEach { element ->
-          if (element.kind != ElementKind.CLASS) LogUtil.e(Exception("Only classes can be annotated"), element)
           val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
           val declaredInterface = JavaUtils.toWildCardType(processingEnv, identifiableInterface, 1)
           if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element as TypeElement, declaredInterface))

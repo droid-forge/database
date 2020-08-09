@@ -28,6 +28,10 @@ interface DMLFunctions<T : Identifiable<Int>> {
 
   fun save(t: T): Long
 
+  fun single(cursor: Cursor): T
+
+  fun collection(cursor: Cursor): IdentifiableList<out T>
+
   fun saveAsync(t: T): Single<Long>
 
   fun save(list: IdentifiableList<out T>): Boolean

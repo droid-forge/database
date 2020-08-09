@@ -175,6 +175,12 @@ public class JavaUtils {
     codeBlock.beginControlFlow("public void onMigrate(FastDatabase database, $T sqLiteDatabase, int oldVersion, int newVersion)", ClassName.get("android.database.sqlite", "SQLiteDatabase"));
   }
 
+  public static CodeBlock generateReturnDaoImplInstance(ClassName daoImpl) {
+    return CodeBlock.builder()
+        .addStatement("return new $T(this)", daoImpl)
+        .build();
+  }
+
   // safe because both Long.class and long.class are of type Class<Long>
   @SuppressWarnings("unchecked")
   public static <T> Class<T> wrap(Class<T> c) {

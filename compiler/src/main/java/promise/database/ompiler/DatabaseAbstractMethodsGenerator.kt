@@ -20,9 +20,9 @@ import com.squareup.javapoet.ParameterizedTypeName
 import com.squareup.javapoet.TypeVariableName
 import com.squareup.javapoet.WildcardTypeName
 import org.jetbrains.annotations.NotNull
+import promise.database.DAO
 import promise.database.ompiler.utils.JavaUtils
 import promise.database.ompiler.utils.asTypeElement
-import promise.database.ompiler.utils.getTableClassNameString
 import promise.database.ompiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
@@ -31,7 +31,6 @@ import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.TypeKind
 import javax.lang.model.util.ElementFilter
-import javax.tools.Diagnostic
 
 class DatabaseAbstractMethodsGenerator(
     private val element: TypeElement,
@@ -51,23 +50,15 @@ class DatabaseAbstractMethodsGenerator(
       it.parameters.isEmpty() && it.returnType.kind != TypeKind.VOID
     }.forEach { method ->
       val returnType = method.returnType
-      val methodName = method.simpleName
-
       val typeElement = returnType.asTypeElement(processingEnv)
-      val returnTypeName = method.returnType.toString()
-      val pack = processingEnv.elementUtils.getPackageOf(typeElement).toString()
-      processingEnv.messager.printMessage(Diagnostic.Kind.ERROR, "ReturnType: $pack $returnTypeName")
-      val className = ClassName.get(getPackage(element, returnTypeName), returnTypeName)
-      funSpecs.add(MethodSpec.methodBuilder(methodName.toString())
-          .addAnnotation(Override::class.java)
-          .addAnnotation(NotNull::class.java)
-          .addModifiers(Modifier.PUBLIC)
-          .returns(className)
-          .addCode(CodeBlock.builder()
-              .addStatement("return getDatabaseInstance().obtain(${className}.class)")
-              .build())
-          .build())
-
+      if (typeElement.getAnnotation(DAO::class.java) != null) {
+        val returnTypeName = method.returnType.toString()
+        val pack = processingEnv.elementUtils.getPackageOf(typeElement).toString()
+        val className = "${returnTypeName}Impl"
+        funSpecs.add(MethodSpec.overriding(method)
+            .addCode(JavaUtils.generateReturnDaoImplInstance(ClassName.get(pack, className)))
+            .build())
+      }
     }
 
     val codeBlock = CodeBlock.builder()
@@ -102,20 +93,18 @@ class DatabaseAbstractMethodsGenerator(
 
     return funSpecs
   }
-
-  private var entities: Array<TypeElement> = emptyArray()
-
-  private fun getPackage(element: TypeElement, returnTypeName: String): String {
-    if (entities.isEmpty()) entities = element.getTableEntities(processingEnv)
-    var pack = ""
-    entities.forEach {
-      if (returnTypeName == it.getTableClassNameString()) {
-        pack = processingEnv.elementUtils.getPackageOf(it).toString()
-      }
-    }
-    return pack
-
-  }
+//
+//  private fun getPackage(element: TypeElement, returnTypeName: String): String {
+//    if (entities.isEmpty()) entities = element.getTableEntities(processingEnv)
+//    var pack = ""
+//    entities.forEach {
+//      if (returnTypeName == it.getTableClassNameString()) {
+//        pack = processingEnv.elementUtils.getPackageOf(it).toString()
+//      }
+//    }
+//    return pack
+//
+//  }
 
 
 }

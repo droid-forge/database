@@ -45,7 +45,7 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
     return Utils.generateInstanceProviderHolder(ClassName.get(pack, className))
   }
-
+;
   companion object {
     var typeConverter: TypeElement? = null
   }

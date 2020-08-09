@@ -11,8 +11,16 @@
  * limitations under the License.
  */
 
-package promise.database
+package promise.base.comment;
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.SOURCE)
-annotation class Query(val where: String)
+import java.util.List;
+
+import promise.database.DAO;
+import promise.db.criteria.Criteria;
+
+@DAO
+public abstract class PostCommentDao {
+
+  public abstract List<PostCommentToReplyRelation> getPostComments(Criteria criteria);
+
+}

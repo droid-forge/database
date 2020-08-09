@@ -15,6 +15,7 @@ package promise.base
 
 import promise.base.comment.Like
 import promise.base.comment.PostComment
+import promise.base.comment.PostCommentDao
 import promise.base.photo.Photo
 import promise.base.post.Post
 import promise.base.todo.Todo
@@ -32,4 +33,7 @@ import promise.db.PromiseDatabase
     ]
 )
 abstract class AppDatabase(fastDatabase: FastDatabase)
-  : PromiseDatabase(fastDatabase)
+  : PromiseDatabase(fastDatabase) {
+
+  abstract fun getPostCommentsDao(): PostCommentDao
+}

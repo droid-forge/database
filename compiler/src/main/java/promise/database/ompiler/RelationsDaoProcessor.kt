@@ -39,7 +39,6 @@ class RelationsDaoProcessor(private val processingEnv: ProcessingEnvironment): A
     }
     if (fields.isNotEmpty())
       javaFiles.addAll(RelationsDaoGenerator(processingEnv, element as TypeElement, fields).generate())
-
     return javaFiles
   }
 }

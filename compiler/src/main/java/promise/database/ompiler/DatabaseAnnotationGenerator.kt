@@ -30,7 +30,7 @@ class DatabaseAnnotationGenerator(
 
   override fun generate(): AnnotationSpec {
     if (element is TypeElement) {
-      var stmt = " {\n"
+      var stmt = "{\n"
       var entities: Array<TypeElement>? = null
       try {
         entities = element.getTableEntities(processingEnv)
@@ -43,7 +43,7 @@ class DatabaseAnnotationGenerator(
           val className = entityClass.getTableClassNameString()
           stmt += "$className.class"
           if (index != entities.size - 1) {
-            stmt += ", \n"
+            stmt += ",\n"
           }
         }
         stmt += "\n}"

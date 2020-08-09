@@ -18,6 +18,8 @@ public class PostComment extends ActiveRecord<PostComment> {
 	private String body;
 	private String email;
 
+	private String postCommentId;
+
 	@HasOne
 	private Post post;
 

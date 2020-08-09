@@ -17,15 +17,7 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeName
-import promise.database.ompiler.utils.ConverterTypes
-import promise.database.ompiler.utils.JavaUtils
-import promise.database.ompiler.utils.camelCase
-import promise.database.ompiler.utils.capitalizeFirst
-import promise.database.ompiler.utils.checkIfHasTypeConverter
-import promise.database.ompiler.utils.getConverterCompatibleMethod
-import promise.database.ompiler.utils.isElementAnnotatedAsRelation
-import promise.database.ompiler.utils.isSameAs
-import promise.database.ompiler.utils.toTypeName
+import promise.database.ompiler.utils.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -74,8 +66,11 @@ class TableDeserializerMethodGenerator(
       val executableFn = varType.getConverterCompatibleMethod(ConverterTypes.DESERIALIZER)
       if (executableFn != null)
         codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(typeConverter.${executableFn.simpleName}(e.${getCursorReturn(TypeName.get(String::class.java))}(${colName}.getIndex(e))))")
-    } else if (varType.isElementAnnotatedAsRelation())
-      codeBlock.add(JavaUtils.generateDeserializerRelationSetStatement(objectName, varType, colName)) else codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)))")
+    } else if (varType.isElementAnnotatedAsRelation()) {
+      codeBlock.add(JavaUtils.generateDeserializerRelationSetStatement(objectName, varType, colName))
+    } else {
+      codeBlock.addStatement("$objectName.set${varName.capitalizeFirst()}(e.${getCursorReturn(varType.toTypeName())}(${colName}.getIndex(e)))")
+    }
   }
 
   private fun getCursorReturn(varType: TypeName): String =

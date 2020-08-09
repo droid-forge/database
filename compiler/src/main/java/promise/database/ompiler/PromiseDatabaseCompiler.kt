@@ -15,6 +15,7 @@ package promise.database.ompiler
 
 import com.google.auto.service.AutoService
 import com.squareup.javapoet.JavaFile
+import promise.database.DAO
 import promise.database.DatabaseEntity
 import promise.database.Entity
 import promise.database.TypeConverter
@@ -46,8 +47,8 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       processors.add(TypeConverterAnnotatedProcessor(processingEnv))
       processors.add(EntityAnnotatedProcessor(processingEnv))
       processors.add(RelationsDaoProcessor(processingEnv))
+      processors.add(DAOAnnotatedProcessor(processingEnv))
       processors.add(DatabaseEntityAnnotatedProcessor(processingEnv))
-
       processors.forEach {
         val builders = it.process(environment)
         if (builders != null) javaFiles.addAll(builders.filterNotNull())
@@ -88,7 +89,8 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
   override fun getSupportedAnnotationTypes(): MutableSet<String> = mutableSetOf(
       Entity::class.java.name,
       DatabaseEntity::class.java.name,
-      TypeConverter::class.java.name
+      TypeConverter::class.java.name,
+      DAO::class.java.name
   )
 
   companion object {

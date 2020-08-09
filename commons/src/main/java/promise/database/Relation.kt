@@ -13,6 +13,6 @@
 
 package promise.database
 
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-annotation class Query(val where: String)
+annotation class Relation
