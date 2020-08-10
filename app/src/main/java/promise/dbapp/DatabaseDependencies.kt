@@ -17,6 +17,7 @@ import dagger.Module
 import dagger.Provides
 import promise.base.AppDatabaseImpl
 import promise.base.post.PostRelationsDao
+import promise.base.post.PostsTable
 import javax.inject.Singleton
 
 @Module
@@ -31,6 +32,9 @@ object DatabaseDependencies {
  @JvmStatic
  fun providePostRelationsDao(appDatabase: AppDatabaseImpl): PostRelationsDao =
      appDatabase.postRelationsDao
-
+ @Provides
+ @JvmStatic
+ fun providePostTable(appDatabase: AppDatabaseImpl): PostsTable =
+     appDatabase.postsTable
 
 }

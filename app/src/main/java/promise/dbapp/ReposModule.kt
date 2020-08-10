@@ -13,15 +13,14 @@
 
 package promise.dbapp
 
+import dagger.Binds
 import dagger.Module
-import dagger.android.ContributesAndroidInjector
+import promise.base.post.PostRepository
+import promise.base.post.PostRepositoryImpl
 
 @Module
-abstract class ActivityBuildersModule {
-  @ContributesAndroidInjector (
-      modules = [
-        ReposModule::class
-      ]
-  )
-  abstract fun contributeMainActivity(): MainActivity
+abstract class ReposModule {
+
+  @Binds
+  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
 }

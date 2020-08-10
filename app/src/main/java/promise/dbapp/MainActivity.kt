@@ -18,18 +18,13 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.content_main.*
-import promise.base.ID
-import promise.base.comment.PostComment
-import promise.base.post.Post
-import promise.base.post.PostRelationsDao
-import promise.model.IdentifiableList
+import promise.base.post.PostRepository
 import javax.inject.Inject
-import promise.commons.model.List
 
 class MainActivity : DaggerAppCompatActivity() {
 
- @Inject
- lateinit var postRelationsDao: PostRelationsDao
+  @Inject
+  lateinit var postRepository: PostRepository
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -45,24 +40,6 @@ class MainActivity : DaggerAppCompatActivity() {
   override fun onPostCreate(savedInstanceState: Bundle?) {
     super.onPostCreate(savedInstanceState)
 
-    val posts = IdentifiableList(List.generate(5) {
-      Post().apply {
-        uId = ID(it.toString())
-        title = "post".plus(it)
-        body = "body".plus(it)
-        userId = it
-        comments = List.generate(4) {
-          PostComment().apply {
-            name = "nm".repeat(it)
-            uId = ID((it + 1).toString())
-            body = "hbytcvbcrxgfvbtrxt"
-            email = "ejmail;jgfccghcfcvhbhcgvb"
-          }
-        }
-      }
-    })
-
-   postRelationsDao.saveWithComments(posts)
 
     showInfo()
 
@@ -73,18 +50,12 @@ class MainActivity : DaggerAppCompatActivity() {
   }
 
   private fun showInfo() {
-
-    val persons = postRelationsDao.listWithComments()
-
+    val persons = postRepository.getPosts()
     complex_values_textview.text = persons.toString()
   }
 
   private fun deleteInfo() {
-    val persons = postRelationsDao.listWithComments()
-    persons.forEach {
-      postRelationsDao.deleteComments(it)
-      it.delete()
-    }
+    postRepository.deletePosts()
   }
 
 }

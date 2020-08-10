@@ -17,6 +17,8 @@ import dagger.BindsInstance
 import dagger.Component
 import dagger.android.AndroidInjector
 import dagger.android.support.AndroidSupportInjectionModule
+import promise.base.post.PostRelationsDao
+import promise.base.post.PostsTable
 import javax.inject.Singleton
 
 @Component(
@@ -29,6 +31,8 @@ import javax.inject.Singleton
 @Singleton
 interface AppComponent : AndroidInjector<App> {
 
+//  fun postsTable(): PostsTable
+//  fun postRelationsDao(): PostRelationsDao
   @Component.Builder
   interface Builder {
 
