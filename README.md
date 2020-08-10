@@ -3,19 +3,18 @@
 
 # Table of Contents
 
-**[Sample Application](##SampleApplication)**<br>
-***[Entity Classes](***EntityClasses)***<br>
-***[Database Class](###DatabaseClass)***<br>
-***[TypeConverter Class](###DatabaseClass)***<br>
-***[Entity Relations](###EntityRelations)***<br>
-***[Database Initialization](###DatabaseInitialization)***<br>
+**[Sample](##Sample)**<br>
+***[Entity](***Entity)***<br>
+***[Database](###Database)***<br>
+***[TypeConverter](###TypeConverter)***<br>
+***[Relations](###Relations)***<br>
+***[Initialization](###Initialization)***<br>
 ***[Migrations](###Migrations)***<br>
 **[Setup](##Setup)**<br>
-**[Initialization](##Initialization)**<br>
 **[Next Steps, Credits, Feedback, License](#next-steps)**<br>
 
-## Sample Application
-### Entity Classes
+## Sample
+### Entity
 Pojo classes to be persisted are annotated with @Entity
 The classes can either implement Identifiable<Integer> or extend from ActiveRecord
 This classes must hava a no args constructor or no constructors at all
@@ -87,7 +86,7 @@ public class Post extends ActiveRecord<Post> {
 
 > BOOLEAN fields MUST NOT start with `is`
 
-### Database Class
+### Database
 Database classe is annotated with @DatabaseEntity and contain a list
 of persistable entity classes
 The class must be abstract and extend from PromiseDatabase
@@ -107,7 +106,7 @@ abstract class AppDatabase(fastDatabase: FastDatabase)
 
 Rebuild your project to generate database implementation
 
-### TypeConverter Class
+### TypeConverter
 A type converter is a utility that helps to convert fields not directly persistable to persistable,
 For instance the Post entity has named uId with a type
 ```kotlin
@@ -131,7 +130,7 @@ Conversion methods in a type converter should have only one parameter and must r
 
 > Without a type converter provision, the compiler will not generate columns for non persistable fields
 
-### Entity Relations
+### Relations
 
 #### HasOne Relation
 Denotes one entity has one other entity, a sample
@@ -285,7 +284,7 @@ val posts = IdentifiableList(List.generate(5) {
 ```
 
 
-### Database Initialization
+### Initialization
 The compiler generates a database class for creating your database implementation and accesing tables
 and relation daos, sampled code from generated database file below
 
