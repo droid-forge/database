@@ -468,8 +468,8 @@ android {
 
 dependencies {
      ...
-     implementation 'com.github.android-promise.database:androidpromisedatabase:1.0.2-beta6'
-     kapt 'com.github.android-promise.database:androidpromisedatabasecompiler:1.0.2-beta6'
+     implementation 'com.github.android-promise.database:database:1.0.3-alpha5'
+     kapt 'com.github.android-promise.database:compiler:1.0.3-alpha5'
      implementation 'com.github.android-promise:commons:1.1-alpha03'
 }
 ```
