@@ -52,7 +52,7 @@ class DatabaseAbstractMethodsGenerator(
       val returnType = method.returnType
       val typeElement = returnType.asTypeElement(processingEnv)
       if (typeElement.getAnnotation(DAO::class.java) != null) {
-        val returnTypeName = method.returnType.toString()
+        val returnTypeName = typeElement.simpleName.toString()
         val pack = processingEnv.elementUtils.getPackageOf(typeElement).toString()
         val className = "${returnTypeName}Impl"
         funSpecs.add(MethodSpec.overriding(method)

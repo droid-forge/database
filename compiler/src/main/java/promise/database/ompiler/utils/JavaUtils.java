@@ -172,7 +172,8 @@ public class JavaUtils {
 
   public static void generateDatabaseMigrationOverrideControlBlock(CodeBlock.Builder codeBlock) {
     codeBlock.add("@Override \n");
-    codeBlock.beginControlFlow("public void onMigrate(FastDatabase database, $T sqLiteDatabase, int oldVersion, int newVersion)", ClassName.get("android.database.sqlite", "SQLiteDatabase"));
+    codeBlock.beginControlFlow("public void onMigrate(FastDatabase database, $T sqLiteDatabase, int oldVersion, int newVersion)",
+        ClassName.get("androidx.sqlite.db", "SupportSQLiteDatabase"));
   }
 
   public static CodeBlock generateReturnDaoImplInstance(ClassName daoImpl) {

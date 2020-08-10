@@ -18,7 +18,7 @@ public class PostComment extends ActiveRecord<PostComment> {
 	private String body;
 	private String email;
 
-	private String postCommentId;
+	private String postCommentId = "";
 
 	@HasOne
 	private Post post;
@@ -53,6 +53,14 @@ public class PostComment extends ActiveRecord<PostComment> {
 
 	public void setPost(Post post) {
 		this.post = post;
+	}
+
+	public String getPostCommentId() {
+		return postCommentId;
+	}
+
+	public void setPostCommentId(String postCommentId) {
+		this.postCommentId = postCommentId;
 	}
 
 	@Override

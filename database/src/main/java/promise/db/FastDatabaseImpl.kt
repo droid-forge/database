@@ -15,9 +15,9 @@ package promise.db
 import android.annotation.TargetApi
 import android.database.Cursor
 import android.database.DatabaseErrorHandler
-import android.database.sqlite.SQLiteDatabase
 import android.os.Build
 import androidx.collection.ArrayMap
+import androidx.sqlite.db.SupportSQLiteDatabase
 import promise.commons.createInstance
 import promise.commons.data.log.LogUtil
 import promise.commons.model.Identifiable
@@ -30,10 +30,9 @@ import java.util.*
 
 open class FastDatabaseImpl internal constructor(
     name: String?,
-    factory: SQLiteDatabase.CursorFactory?,
     version: Int,
     errorHandler: DatabaseErrorHandler)
-  : FastDatabase(name, factory, version, errorHandler) {
+  : FastDatabase(name, version, errorHandler) {
 
   private val cacheMap: ArrayMap<String, Any> = ArrayMap()
 
@@ -44,19 +43,17 @@ open class FastDatabaseImpl internal constructor(
   @TargetApi(Build.VERSION_CODES.HONEYCOMB)
   private constructor(name: String?,
                       version: Int,
-                      cursorListener: DatabaseCursorFactory.Listener?,
                       listener: Corrupt?) : this(
       name,
-      DatabaseCursorFactory(cursorListener),
       version,
       DatabaseErrorHandler {
         assert(listener != null)
         listener!!.onCorrupt()
       })
 
-  constructor(name: String?, version: Int) : this(name, version, null, null)
+  constructor(name: String?, version: Int) : this(name, version,  null)
 
-  final override fun onCreate(db: SQLiteDatabase) {
+  final override fun onCreate(db: SupportSQLiteDatabase) {
     if (databaseCreationCallback != null) {
       databaseCreationCallback!!.beforeCreate(db)
       create(db)
@@ -64,7 +61,7 @@ open class FastDatabaseImpl internal constructor(
     } else create(db)
   }
 
-  final override fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+  final override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
     LogUtil.d(TAG, "onUpgrade", oldVersion, newVersion)
     if (newVersion - oldVersion == 1)
       onUpgradeDatabase(database, oldVersion, newVersion)
@@ -78,7 +75,7 @@ open class FastDatabaseImpl internal constructor(
     upgradeTables(database, oldVersion, newVersion)
   }
 
-  private fun onUpgradeDatabase(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+  private fun onUpgradeDatabase(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
     if (migration != null) migration!!.onMigrate(this, database, oldVersion, newVersion)
   }
 
@@ -86,12 +83,12 @@ open class FastDatabaseImpl internal constructor(
 
   private var tables: List<out FastTable<*>>? = null
 
-  protected fun tables(): List<TableCrud<*, in SQLiteDatabase>> =
+  protected fun tables(): List<TableCrud<*, in SupportSQLiteDatabase>> =
       Conditions.checkNotNull(tables, "tables not found for this database")
-          as List<TableCrud<*, in SQLiteDatabase>>
+          as List<TableCrud<*, in SupportSQLiteDatabase>>
 
-  override fun <T : TableCrud<*, in SQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SQLiteDatabase>>): T {
-    fun <T : TableCrud<*, in SQLiteDatabase>> makeTable(tableClass: Class<out TableCrud<*, in SQLiteDatabase>>): T {
+  override fun <T : TableCrud<*, in SupportSQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SupportSQLiteDatabase>>): T {
+    fun <T : TableCrud<*, in SupportSQLiteDatabase>> makeTable(tableClass: Class<out TableCrud<*, in SupportSQLiteDatabase>>): T {
       if (ClassUtil.hasAnnotation(tableClass, Table::class.java)) {
         val table = tableClass.getAnnotation(Table::class.java)!!
         if (cacheMap.containsKey(table.tableName)) return cacheMap[table.tableName] as T
@@ -125,7 +122,7 @@ open class FastDatabaseImpl internal constructor(
     return this
   }
 
-  private fun create(database: SQLiteDatabase) {
+  private fun create(database: SupportSQLiteDatabase) {
     var created = true
     for (table in Conditions.checkNotNull(tables())) created = try {
       created && create(table, database)
@@ -135,7 +132,7 @@ open class FastDatabaseImpl internal constructor(
     }
   }
 
-  private fun upgradeTables(database: SQLiteDatabase, v1: Int, v2: Int) {
+  private fun upgradeTables(database: SupportSQLiteDatabase, v1: Int, v2: Int) {
     for (table in Conditions.checkNotNull(tables())) try {
       if (v2 - v1 == 1)
         checkTableExist(table).onUpgrade(database, v1, v2)
@@ -152,7 +149,7 @@ open class FastDatabaseImpl internal constructor(
   }
 
   @SafeVarargs
-  override fun add(database: SQLiteDatabase, vararg tables: TableCrud<*, in SQLiteDatabase>): Boolean {
+  override fun add(database: SupportSQLiteDatabase, vararg tables: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
     var created = true
     for (table in tables) {
       created = try {
@@ -165,8 +162,8 @@ open class FastDatabaseImpl internal constructor(
     return created
   }
 
-  private fun drop(database: SQLiteDatabase): Boolean {
-    /*for (Map.Entry<IndexCreated, Table<, SQLiteDatabase>> entry :
+  private fun drop(database: SupportSQLiteDatabase): Boolean {
+    /*for (Map.Entry<IndexCreated, Table<, SupportSQLiteDatabase>> entry :
         indexCreatedTableHashMap.entrySet()) {
       try {
         dropped = dropped && drop(checkTableExist(entry.getValue()), database);
@@ -178,7 +175,7 @@ open class FastDatabaseImpl internal constructor(
   }
 
   @Throws(DBError::class)
-  private fun create(tableCrud: TableCrud<*, in SQLiteDatabase>, database: SQLiteDatabase): Boolean {
+  private fun create(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, database: SupportSQLiteDatabase): Boolean {
     try {
       tableCrud.onCreate(database)
     } catch (e: TableError) {
@@ -188,7 +185,7 @@ open class FastDatabaseImpl internal constructor(
   }
 
   @Throws(DBError::class)
-  private fun drop(tableCrud: TableCrud<*, in SQLiteDatabase>, database: SQLiteDatabase): Boolean {
+  private fun drop(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, database: SupportSQLiteDatabase): Boolean {
     try {
       checkTableExist(tableCrud).onDrop(database)
     } catch (e: TableError) {
@@ -197,30 +194,30 @@ open class FastDatabaseImpl internal constructor(
     return true
   }
 
-  override fun writableDatabase(): SQLiteDatabase = writableDatabase
+  override fun writableDatabase(): SupportSQLiteDatabase = writableDatabase
 
   override fun querySql(sql: String): Cursor {
     LogUtil.d(TAG, "query: $sql")
-    return readableDatabase.rawQuery(sql, null)
+    return readableDatabase.query(sql, null)
   }
 
   override fun query(queryBuilder: QueryBuilder): Cursor {
     val sql = queryBuilder.build()
     val params = queryBuilder.buildParameters()
     LogUtil.d(TAG, "query: $sql", " params: " + Arrays.toString(params))
-    return readableDatabase.rawQuery(sql, params)
+    return readableDatabase.query(sql, params)
   }
 
-  override fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in SQLiteDatabase>): TableCrud.Extras<T> =
+  override fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): TableCrud.Extras<T> =
       checkTableExist(tableCrud).onFind(readableDatabase)
 
-  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>): IdentifiableList<out T> =
+  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): IdentifiableList<out T> =
       checkTableExist(tableCrud).onFindAll(readableDatabase, true)
 
-  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean =
+  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Boolean =
       checkTableExist(tableCrud).onUpdate(t, writableDatabase)
 
-  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>, column: Column<*>): Boolean =
+  override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>, column: Column<*>): Boolean =
       try {
         checkTableExist(tableCrud).onUpdate(t, writableDatabase, column)
       } catch (tableError: TableError) {
@@ -228,33 +225,33 @@ open class FastDatabaseImpl internal constructor(
         false
       }
 
-  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SQLiteDatabase>,
+  override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SupportSQLiteDatabase>,
                                                vararg columns: Column<*>): IdentifiableList<out T> =
       checkTableExist(tableCrud).onFindAll(readableDatabase, *columns)
 
-  override fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in SQLiteDatabase>, t: T): Boolean =
+  override fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in SupportSQLiteDatabase>, t: T): Boolean =
       checkTableExist(tableCrud).onDelete(t, writableDatabase)
 
-  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<*>): Boolean =
+  override fun delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, column: Column<*>): Boolean =
       checkTableExist(tableCrud).onDelete(writableDatabase, column)
 
-  override fun delete(tableCrud: TableCrud<*, in SQLiteDatabase>): Boolean =
+  override fun delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>): Boolean =
       checkTableExist(tableCrud).onDelete(writableDatabase)
 
   @SafeVarargs
- override fun delete(vararg tableCruds: TableCrud<*, in SQLiteDatabase>): Boolean {
+ override fun delete(vararg tableCruds: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
     var delete = true
     for (table in tableCruds) delete = delete && delete(table)
     return delete
   }
 
-  override fun <T> delete(tableCrud: TableCrud<*, in SQLiteDatabase>, column: Column<T>, list: List<out T>): Boolean =
+  override fun <T> delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, column: Column<T>, list: List<out T>): Boolean =
       checkTableExist(tableCrud).onDelete(writableDatabase, column, list)
 
-  override fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in SQLiteDatabase>): Long =
+  override fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Long =
       checkTableExist(tableCrud).onSave(t, writableDatabase)
 
-  override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SQLiteDatabase>): Boolean =
+  override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Boolean =
       checkTableExist(tableCrud).onSave(list, writableDatabase)
 
 
@@ -271,7 +268,7 @@ open class FastDatabaseImpl internal constructor(
     return deleted
   }
 
-  override fun getLastId(tableCrud: TableCrud<*, in SQLiteDatabase>): Int =
+  override fun getLastId(tableCrud: TableCrud<*, in SupportSQLiteDatabase>): Int =
       checkTableExist(tableCrud).onGetLastId(readableDatabase)
 
   override fun transact(block: FastDatabase.() -> Unit) = synchronized(this) {
@@ -285,7 +282,7 @@ open class FastDatabaseImpl internal constructor(
     }
   }
 
-  private fun <T : Identifiable<Int>> checkTableExist(tableCrud: TableCrud<T, in SQLiteDatabase>): TableCrud<T, in SQLiteDatabase> =
+  private fun <T : Identifiable<Int>> checkTableExist(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): TableCrud<T, in SupportSQLiteDatabase> =
       Conditions.checkNotNull(tableCrud)
 
   companion object {

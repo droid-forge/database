@@ -83,7 +83,7 @@ class TableMigrationFieldGenerator(
 
     return MethodSpec.methodBuilder("onUpgrade")
         .addParameter(
-            ClassName.get("android.database.sqlite", "SQLiteDatabase")
+            ClassName.get("androidx.sqlite.db", "SupportSQLiteDatabase")
                 .annotated(AnnotationSpec.builder(NotNull::class.java).build()),
             "x")
         .addParameter(Integer::class.javaPrimitiveType, "v1")

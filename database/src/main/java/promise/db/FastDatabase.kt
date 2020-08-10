@@ -17,29 +17,29 @@ import android.database.Cursor
 import android.database.DatabaseErrorHandler
 import android.database.sqlite.SQLiteDatabase
 import androidx.collection.ArrayMap
+import androidx.sqlite.db.SupportSQLiteDatabase
 import promise.commons.makeInstance
 import promise.commons.model.List
 import promise.commons.util.ClassUtil
 
 abstract class FastDatabase internal constructor(
     name: String?,
-    factory: SQLiteDatabase.CursorFactory?,
     version: Int,
-    errorHandler: DatabaseErrorHandler) : FastDatabaseOpenHelper(name, factory, version, errorHandler), Crud<SQLiteDatabase> {
+    errorHandler: DatabaseErrorHandler) : FastDatabaseOpenHelper(name, version, errorHandler), Crud<SupportSQLiteDatabase> {
 
-  abstract fun add(database: SQLiteDatabase, vararg tables: TableCrud<*, in SQLiteDatabase>): Boolean
+  abstract fun add(database: SupportSQLiteDatabase, vararg tables: TableCrud<*, in SupportSQLiteDatabase>): Boolean
 
-  abstract fun <T : TableCrud<*, in SQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SQLiteDatabase>>): T
+  abstract fun <T : TableCrud<*, in SupportSQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SupportSQLiteDatabase>>): T
 
   abstract fun querySql(sql: String): Cursor
 
   abstract fun query(queryBuilder: QueryBuilder): Cursor
 
-  abstract fun writableDatabase(): SQLiteDatabase
+  abstract fun writableDatabase(): SupportSQLiteDatabase
 
   abstract fun transact(block: FastDatabase.() -> Unit)
 
-  abstract fun delete(vararg tableCruds: TableCrud<*, in SQLiteDatabase>): Boolean
+  abstract fun delete(vararg tableCruds: TableCrud<*, in SupportSQLiteDatabase>): Boolean
 
   abstract fun name(): String
 

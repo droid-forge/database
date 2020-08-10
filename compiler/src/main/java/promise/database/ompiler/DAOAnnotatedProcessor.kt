@@ -104,31 +104,31 @@ class DAOAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : 
       //    }};
       //  }
     """.trimIndent()
-    ElementFilter.methodsIn(element.enclosedElements).forEach { executableElement ->
-      val returnType = processingEnv.typeUtils.asElement(executableElement.returnType)
-      val relationType: Element
-      if (JavaUtils.isCollectionType(processingEnv, returnType as VariableElement?)) {
-        val typeMirrors = JavaUtils.getParameterizedTypeMirrors(returnType)
-        if (typeMirrors != null && typeMirrors.isNotEmpty()) {
-          relationType = processingEnv.typeUtils.asElement(typeMirrors[0])
-          if (relationType.getAnnotation(Relation::class.java) != null) {
-            var relationFields = ElementFilter.fieldsIn(relationType.enclosedElements);
-            val parentRelations = relationFields.filter {
-              it.getAnnotation(Parent::class.java) != null
-            }
-            if (parentRelations.size > 1) {
-              LogUtil.e(Exception("Relation classes can only have one field annotated with Parent"), relationType)
-            }
-            val parentRelation = parentRelations[0]
-
-
-          } else LogUtil.e(Exception("Class must be annotated as Relation"), relationType)
-        }
-      }
-      else {
-
-      }
-    }
+//    ElementFilter.methodsIn(element.enclosedElements).forEach { executableElement ->
+//      val returnType = processingEnv.typeUtils.asElement(executableElement.returnType)
+//      val relationType: Element
+//      if (JavaUtils.isCollectionType(processingEnv, returnType as VariableElement?)) {
+//        val typeMirrors = JavaUtils.getParameterizedTypeMirrors(returnType)
+//        if (typeMirrors != null && typeMirrors.isNotEmpty()) {
+//          relationType = processingEnv.typeUtils.asElement(typeMirrors[0])
+//          if (relationType.getAnnotation(Relation::class.java) != null) {
+//            var relationFields = ElementFilter.fieldsIn(relationType.enclosedElements);
+//            val parentRelations = relationFields.filter {
+//              it.getAnnotation(Parent::class.java) != null
+//            }
+//            if (parentRelations.size > 1) {
+//              LogUtil.e(Exception("Relation classes can only have one field annotated with Parent"), relationType)
+//            }
+//            val parentRelation = parentRelations[0]
+//
+//
+//          } else LogUtil.e(Exception("Class must be annotated as Relation"), relationType)
+//        }
+//      }
+//      else {
+//
+//      }
+//    }
     return JavaFile.builder(pack, classBuilder.build())
   }
 

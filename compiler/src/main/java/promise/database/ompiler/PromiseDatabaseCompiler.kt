@@ -47,7 +47,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       processors.add(TypeConverterAnnotatedProcessor(processingEnv))
       processors.add(EntityAnnotatedProcessor(processingEnv))
       processors.add(RelationsDaoProcessor(processingEnv))
-      processors.add(DAOAnnotatedProcessor(processingEnv))
+      //processors.add(DAOAnnotatedProcessor(processingEnv))
       processors.add(DatabaseEntityAnnotatedProcessor(processingEnv))
       processors.forEach {
         val builders = it.process(environment)

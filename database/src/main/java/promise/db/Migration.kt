@@ -14,10 +14,11 @@
 package promise.db
 
 import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 interface Migration {
   fun onMigrate(database: FastDatabase,
-                sqLiteDatabase: SQLiteDatabase,
+                sqLiteDatabase: SupportSQLiteDatabase,
                 oldVersion: Int,
                 newVersion: Int)
 }

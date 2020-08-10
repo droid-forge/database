@@ -14,11 +14,12 @@
 package promise.db
 
 import android.database.sqlite.SQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 interface DatabaseCreationCallback {
 
-  fun beforeCreate(database: SQLiteDatabase)
+  fun beforeCreate(database: SupportSQLiteDatabase)
 
-  fun afterCreate(database: SQLiteDatabase)
+  fun afterCreate(database: SupportSQLiteDatabase)
 
 }

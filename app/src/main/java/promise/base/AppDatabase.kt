@@ -35,5 +35,5 @@ import promise.db.PromiseDatabase
 abstract class AppDatabase(fastDatabase: FastDatabase)
   : PromiseDatabase(fastDatabase) {
 
-  abstract fun getPostCommentsDao(): PostCommentDao
+  //abstract fun getPostCommentsDao(): PostCommentDao
 }

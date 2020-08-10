@@ -19,8 +19,8 @@ import promise.database.DAO;
 import promise.db.criteria.Criteria;
 
 @DAO
-public abstract class PostCommentDao {
+public interface PostCommentDao {
 
-  public abstract List<PostCommentToReplyRelation> getPostComments(Criteria criteria);
+  List<PostCommentToReplyRelation> getPostComments(Criteria criteria);
 
 }
