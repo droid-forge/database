@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 
 import promise.base.ID;
 import promise.base.post.Post;
+import promise.database.Migrate;
+import promise.database.MigrationOptions;
 import promise.db.ActiveRecord;
 import promise.database.Entity;
 import promise.database.HasOne;
@@ -14,13 +16,17 @@ import promise.database.HasOne;
 @Entity
 public class PostComment extends ActiveRecord<PostComment> {
 	private String name;
+	@Migrate(fromVersion = 1, toVersion = 2, action = MigrationOptions.CREATE)
 	private ID uId;
 	private String body;
+  @Migrate(fromVersion = 3, toVersion = 4, action = MigrationOptions.CREATE_INDEX)
 	private String email;
 
+	@Migrate(fromVersion = 1, toVersion = 2, action = MigrationOptions.CREATE)
 	private String postCommentId = "";
 
 	@HasOne
+  @Migrate(fromVersion = 3, toVersion = 4, action = MigrationOptions.DROP)
 	private Post post;
 
 	public void setName(String name){

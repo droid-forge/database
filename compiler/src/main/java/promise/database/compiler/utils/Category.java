@@ -11,16 +11,32 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler.utils;
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+public class Category<K, T> {
+  private List<? extends T> list;
+  private K name;
 
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+  Category(K name) {
+    this.name = name;
+  }
+
+  public List<? extends T> list() {
+    return list;
+  }
+
+  public Category<K, T> list(List<? extends T> list) {
+    this.list = list;
+    return this;
+  }
+
+  public K name() {
+    return name;
+  }
+
+  public Category<K, T> name(K name) {
+    this.name = name;
+    return this;
+  }
 }
+

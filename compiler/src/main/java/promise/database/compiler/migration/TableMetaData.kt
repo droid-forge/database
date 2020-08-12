@@ -11,16 +11,21 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler.migration
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+import com.fasterxml.jackson.annotation.JsonInclude
 
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+class Field {
+  var fieldName = ""
+  var columnName = ""
+  var nullable = true
+  var length  = 0
+}
+
+class TableMetaData {
+  var tableName: String = ""
+  var fields: List<Field> = emptyList()
+
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  var migrations : List<TableMigration> = emptyList()
 }

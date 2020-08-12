@@ -11,16 +11,23 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+import com.squareup.javapoet.TypeSpec
+import javax.annotation.processing.ProcessingEnvironment
+import javax.lang.model.element.Element
 
-@Module
-abstract class ReposModule {
+class DatabaseCrudStubMethodsGenerator(
+    private val typeSpec: TypeSpec.Builder,
+    private val element: Element,
+    private val processingEnv: ProcessingEnvironment) : CodeGenerator<String> {
+
+  override fun generate(): String {
+//    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 //
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+//    val entities = (element as TypeElement).getTableEntities(processingEnv)
+
+    return "created"
+  }
+
 }

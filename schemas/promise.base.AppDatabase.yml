@@ -1,0 +1,185 @@
+---
+dbVersion: 1
+tableMetaData:
+- tableName: "likes"
+  fields:
+  - fieldName: "uId"
+    columnName: "uId"
+    nullable: true
+    length: 0
+  - fieldName: "post"
+    columnName: "post"
+    nullable: true
+    length: 0
+  migrations: []
+- tableName: "postComments"
+  fields:
+  - fieldName: "name"
+    columnName: "name"
+    nullable: true
+    length: 0
+  - fieldName: "uId"
+    columnName: "uId"
+    nullable: true
+    length: 0
+  - fieldName: "body"
+    columnName: "body"
+    nullable: true
+    length: 0
+  - fieldName: "email"
+    columnName: "email"
+    nullable: true
+    length: 0
+  - fieldName: "postCommentId"
+    columnName: "postCommentId"
+    nullable: true
+    length: 0
+  - fieldName: "post"
+    columnName: "post"
+    nullable: true
+    length: 0
+  migrations:
+  - versionChange:
+      fromVersion: 1
+      toVersion: 2
+    field: "postCommentIdColumn"
+    action: "CREATE"
+  - versionChange:
+      fromVersion: 3
+      toVersion: 4
+    field: "postColumn"
+    action: "DROP"
+  - versionChange:
+      fromVersion: 1
+      toVersion: 2
+    field: "uIdColumn"
+    action: "CREATE"
+  - versionChange:
+      fromVersion: 3
+      toVersion: 4
+    field: "email"
+    action: "CREATE_INDEX"
+- tableName: "postComments"
+  fields:
+  - fieldName: "name"
+    columnName: "name"
+    nullable: true
+    length: 0
+  - fieldName: "uId"
+    columnName: "uId"
+    nullable: true
+    length: 0
+  - fieldName: "body"
+    columnName: "body"
+    nullable: true
+    length: 0
+  - fieldName: "email"
+    columnName: "email"
+    nullable: true
+    length: 0
+  - fieldName: "postCommentId"
+    columnName: "postCommentId"
+    nullable: true
+    length: 0
+  - fieldName: "post"
+    columnName: "post"
+    nullable: true
+    length: 0
+  migrations:
+  - versionChange:
+      fromVersion: 1
+      toVersion: 2
+    field: "postCommentIdColumn"
+    action: "CREATE"
+  - versionChange:
+      fromVersion: 3
+      toVersion: 4
+    field: "postColumn"
+    action: "DROP"
+  - versionChange:
+      fromVersion: 1
+      toVersion: 2
+    field: "uIdColumn"
+    action: "CREATE"
+  - versionChange:
+      fromVersion: 3
+      toVersion: 4
+    field: "email"
+    action: "CREATE_INDEX"
+- tableName: "posts"
+  fields:
+  - fieldName: "uId"
+    columnName: "uId"
+    nullable: true
+    length: 0
+  - fieldName: "title"
+    columnName: "title"
+    nullable: true
+    length: 0
+  - fieldName: "body"
+    columnName: "body"
+    nullable: true
+    length: 0
+  - fieldName: "userId"
+    columnName: "userId"
+    nullable: true
+    length: 0
+  - fieldName: "comments"
+    columnName: "comments"
+    nullable: true
+    length: 0
+  - fieldName: "photos"
+    columnName: "photos"
+    nullable: true
+    length: 0
+  - fieldName: "likes"
+    columnName: "likes"
+    nullable: true
+    length: 0
+  migrations: []
+- tableName: "todoes"
+  fields:
+  - fieldName: "uid"
+    columnName: "uid"
+    nullable: true
+    length: 0
+  - fieldName: "completed"
+    columnName: "completed"
+    nullable: true
+    length: 0
+  - fieldName: "title"
+    columnName: "title"
+    nullable: true
+    length: 0
+  - fieldName: "userId"
+    columnName: "userId"
+    nullable: true
+    length: 0
+  - fieldName: "photo"
+    columnName: "photo"
+    nullable: true
+    length: 0
+  migrations: []
+- tableName: "photos"
+  fields:
+  - fieldName: "albumId"
+    columnName: "albumId"
+    nullable: true
+    length: 0
+  - fieldName: "title"
+    columnName: "title"
+    nullable: true
+    length: 0
+  - fieldName: "url"
+    columnName: "url"
+    nullable: true
+    length: 0
+  - fieldName: "thumbnailUrl"
+    columnName: "thumbnailUrl"
+    nullable: true
+    length: 0
+  - fieldName: "post"
+    columnName: "post"
+    nullable: true
+    length: 0
+  migrations: []

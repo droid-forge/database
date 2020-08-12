@@ -11,16 +11,8 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler.utils.function;
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
-
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+public interface FilterFunction<T> {
+  boolean select(T t);
 }

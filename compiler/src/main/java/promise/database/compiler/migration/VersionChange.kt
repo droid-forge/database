@@ -11,16 +11,23 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler.migration
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+class VersionChange {
+   var fromVersion: Int = 0
+    var toVersion: Int = 0
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    other as VersionChange
+    if (fromVersion != other.fromVersion) return false
+    if (toVersion != other.toVersion) return false
+    return true
+  }
 
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+  override fun hashCode(): Int {
+    var result = fromVersion
+    result = 31 * result + toVersion
+    return result
+  }
 }

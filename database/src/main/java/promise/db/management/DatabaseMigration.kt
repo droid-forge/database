@@ -11,16 +11,15 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.db.management
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+import android.annotation.SuppressLint
+import promise.db.ActiveRecord
 
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+@SuppressLint("ParcelCreator")
+class DatabaseMigration : ActiveRecord<DatabaseMigration>() {
+
+  private var version: Int = 1
+
+  override fun getEntity(): DatabaseMigration = this
 }

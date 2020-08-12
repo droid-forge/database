@@ -11,16 +11,11 @@
  * limitations under the License.
  */
 
-package promise.dbapp
+package promise.database.compiler
 
-import dagger.Binds
-import dagger.Module
-import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+import com.squareup.javapoet.JavaFile
+import javax.annotation.processing.RoundEnvironment
 
-@Module
-abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+abstract class AnnotatedClassProcessor {
+  abstract fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>?
 }
