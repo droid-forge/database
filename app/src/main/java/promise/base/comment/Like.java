@@ -14,9 +14,7 @@
 package promise.base.comment;
 
 import android.annotation.SuppressLint;
-
 import org.jetbrains.annotations.NotNull;
-
 import promise.base.ID;
 import promise.base.post.Post;
 import promise.database.AddedEntity;
@@ -26,13 +24,12 @@ import promise.db.ActiveRecord;
 
 @SuppressLint("ParcelCreator")
 @Entity
-@AddedEntity(fromVersion = 1, toVersion = 2)
+//@AddedEntity(fromVersion = 1, toVersion = 2)
 public class Like extends ActiveRecord<Like> {
 	private ID uId;
 
 	@HasOne
 	private Post post;
-
 
 	@Override
  	public String toString(){

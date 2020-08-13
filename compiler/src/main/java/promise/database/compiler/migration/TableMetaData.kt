@@ -19,7 +19,6 @@ class Field {
   var fieldName = ""
   var columnName = ""
   var nullable = true
-  var length  = 0
 }
 
 class TableMetaData {

@@ -23,6 +23,7 @@ import promise.database.compiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
+import kotlin.math.max
 
 class DatabaseAnnotationGenerator(
     private val processingEnv: ProcessingEnvironment,
@@ -36,7 +37,8 @@ class DatabaseAnnotationGenerator(
         entities = element.getTableEntities(processingEnv)
       } catch (e: Throwable) { LogUtil.e(e)
       }
-      val version = element.getDatabaseVersion()
+      val generatedVersion = TableMetaDataWriter.finalMaxDbVersion()
+      val version = max(element.getDatabaseVersion(), generatedVersion)
       try {
         entities?.forEachIndexed { index, entityClass ->
           val className = entityClass.getTableClassNameString()

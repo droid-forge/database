@@ -333,9 +333,22 @@ abstract class FastTable<T : Identifiable<Int>>
    * @throws TableError if theirs an sql error
    */
   @Throws(TableError::class)
-  fun dropColumns(database: SupportSQLiteDatabase, vararg columns: Column<*>): Boolean {
+  fun dropColumns(database: SupportSQLiteDatabase, vararg columns: String): Boolean {
     for (column in columns) {
-      val alterSql = ALTER_COMMAND + " `" + name + "` " + "DROP COLUMN " + column.name + ";"
+      val alterSql = "$ALTER_COMMAND `$name` DROP COLUMN $column;"
+      try {
+        database.execSQL(alterSql)
+      } catch (e: SQLException) {
+        throw TableError(e)
+      }
+    }
+    return true
+  }
+
+  @Throws(TableError::class)
+  fun renameColumns(database: SupportSQLiteDatabase, vararg columns: Pair<String, String>): Boolean {
+    for (column in columns) {
+      val alterSql = "$ALTER_COMMAND `$name` SET COLUMN ${column.first} ${column.second};"
       try {
         database.execSQL(alterSql)
       } catch (e: SQLException) {

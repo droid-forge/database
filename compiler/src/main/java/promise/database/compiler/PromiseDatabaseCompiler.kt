@@ -48,12 +48,12 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
     try {
       val database = DatabaseEntityAnnotatedProcessor.getDatabaseElement(environment, processingEnv)
       if (database != null) {
-        val pkg = processingEnv.elementUtils.getPackageOf(database).toString()
-        val projectFolder = File(File(File("${pkg}${File.separator}${database.simpleName}.java").parent).parent).parent
+//        val pkg = processingEnv.elementUtils.getPackageOf(database).toString()
+//        val projectFolder = File(File(File("${pkg}${File.separator}${database.simpleName}.java").parent).parent).parent
 //        val resource = processingEnv.filer.createResource(StandardJavaFileManager.getLocation(StandardLocation),
 //            "schemas", database.asType().toString() + ".yml")
 //        val schemaPath = resource.toUri().path
-        databaseMetaDataWriter = DatabaseMetaDataWriter(database, "${projectFolder}${File.separator}schemas${File.separator}${database.asType()}.yml")
+        databaseMetaDataWriter = DatabaseMetaDataWriter(database, "schemas${File.separator}${database.asType()}.yml")
       } else LogUtil.e(Exception("No database class found in module"))
       val javaFiles: ArrayList<JavaFile.Builder> = ArrayList()
       val processors: ArrayList<AnnotatedClassProcessor> = ArrayList()

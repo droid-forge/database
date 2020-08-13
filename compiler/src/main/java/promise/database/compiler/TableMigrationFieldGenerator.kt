@@ -18,13 +18,12 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import com.squareup.javapoet.MethodSpec
 import org.jetbrains.annotations.NotNull
-import promise.database.Migrate
+import promise.database.HasMany
+import promise.database.Ignore
 import promise.database.MigrationOptions
-import promise.database.Migrations
 import promise.database.compiler.migration.TableMigration
 import promise.database.compiler.migration.VersionChange
 import promise.database.compiler.utils.List
-import promise.database.compiler.utils.getNameOfColumn
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -39,7 +38,7 @@ class TableMigrationFieldGenerator(
     codeBlock.add("if (v1 == ${versionChange.fromVersion} && v2 == ${versionChange.toVersion}) {\n")
     codeBlock.indent()
     tableMigrations.groupBy { it.action }
-        .forEach {category ->
+        .forEach { category ->
           when (category.name()) {
             MigrationOptions.CREATE -> {
               val list: StringBuilder = StringBuilder("")
@@ -60,6 +59,7 @@ class TableMigrationFieldGenerator(
             MigrationOptions.CREATE_INDEX -> category.list().forEach {
               codeBlock.addStatement("addIndex(x, \"${it.field}\")")
             }
+
           }
         }
     codeBlock.unindent()
@@ -67,39 +67,50 @@ class TableMigrationFieldGenerator(
   }
 
   override fun generate(): MethodSpec? {
-
-    val tableMetaDataWriter = TableMetaDataWriter(entityElement, elements)
-    tableMetaDataWriter.process()
-
-    val migrateFields = elements.filter {
-      it.key.getAnnotation(Migrate::class.java) != null ||
-          it.key.getAnnotation(Migrations::class.java) != null
+    /**
+     * ignore fields with Has many relation and ones with Ignore annotation
+     */
+    val elements2 = elements.filter {
+      it.key.getAnnotation(HasMany::class.java) == null &&
+          it.key.getAnnotation(Ignore::class.java) == null
     }
+    val tableMetaDataWriter = TableMetaDataWriter(entityElement, elements2)
 
-    if (migrateFields.isEmpty()) return null
-    val codeBlock = CodeBlock.builder()
+
     val tableMigrations = tableMetaDataWriter.process()
-    tableMigrations.groupBy { it.versionChange }
-        .forEach {
-          buildMigration(it.name()!!, it.list(), codeBlock)
-        }
-
-    return MethodSpec.methodBuilder("onUpgrade")
-        .addParameter(
-            ClassName.get("androidx.sqlite.db", "SupportSQLiteDatabase")
-                .annotated(AnnotationSpec.builder(NotNull::class.java).build()),
-            "x")
-        .addParameter(Integer::class.javaPrimitiveType, "v1")
-        .addParameter(Integer::class.javaPrimitiveType, "v2")
-        .addAnnotation(Override::class.java)
-        .addJavadoc("""
-          Migration callback, adds, deletes columns in this table
-          May also create indices
-        """.trimIndent())
-        .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .addException(ClassName.get("promise.db", "TableError"))
-        .addCode(codeBlock.build())
-        .build()
+//
+//    tableMigrations.addAll(elements2.filter { it.key.getAnnotation(RenameColumn::class.java) != null }
+//        .map {
+//          val renameColumn = it.key.getAnnotation(RenameColumn::class.java)
+//          RenameColumnTableMigration().apply {
+//            versionChange = VersionChange().apply {
+//              fromVersion = renameColumn.fromVersion
+//              toVersion = renameColumn.toVersion
+//            }
+//            field = it.key.getNameOfColumn()
+//            oldColumnName = renameColumn.oldName
+//          }
+//        })
+//
+    if (tableMigrations.isNotEmpty()) {
+      val codeBlock = CodeBlock.builder()
+      tableMigrations.groupBy { it.versionChange }
+          .forEach {
+            buildMigration(it.name()!!, it.list(), codeBlock)
+          }
+      return MethodSpec.methodBuilder("onUpgrade")
+          .addParameter(
+              ClassName.get("androidx.sqlite.db", "SupportSQLiteDatabase")
+                  .annotated(AnnotationSpec.builder(NotNull::class.java).build()),
+              "x")
+          .addParameter(Integer::class.javaPrimitiveType, "v1")
+          .addParameter(Integer::class.javaPrimitiveType, "v2")
+          .addAnnotation(Override::class.java)
+          .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
+          .addException(ClassName.get("promise.db", "TableError"))
+          .addCode(codeBlock.build())
+          .build()
+    }
+    return null
   }
-
 }

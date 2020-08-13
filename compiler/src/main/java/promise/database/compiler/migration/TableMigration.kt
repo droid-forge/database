@@ -15,7 +15,7 @@ package promise.database.compiler.migration
 
 import promise.database.MigrationOptions
 
-class TableMigration {
+open class TableMigration {
    var versionChange: VersionChange? = null
    var field: String? = null
    var action: MigrationOptions? = null
@@ -36,4 +36,29 @@ class TableMigration {
       result = 31 * result + (action?.hashCode() ?: 0)
       return result
    }
+}
+
+class RenameColumnTableMigration: TableMigration() {
+
+   var oldColumnName: String? = null
+
+   init {
+     super.action = MigrationOptions.RENAME_COLUMN
+   }
+
+   override fun equals(other: Any?): Boolean {
+      if (this === other) return true
+      if (javaClass != other?.javaClass) return false
+      if (!super.equals(other)) return false
+      other as RenameColumnTableMigration
+      if (oldColumnName != other.oldColumnName) return false
+      return true
+   }
+
+   override fun hashCode(): Int {
+      var result = 0
+      result = 31 * result + (oldColumnName?.hashCode() ?: 0)
+      return result
+   }
+
 }

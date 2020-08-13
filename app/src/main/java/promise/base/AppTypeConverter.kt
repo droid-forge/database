@@ -14,9 +14,18 @@
 package promise.base
 
 import promise.database.TypeConverter
+import java.util.*
 
 @TypeConverter
 class AppTypeConverter {
+
+  fun dateToString(date: Date): String {
+    return date.toString()
+  }
+
+  fun stringToDate(data: String): Date {
+    return Date()
+  }
 
   fun toUniqueId(data: String): ID = ID(data)
 

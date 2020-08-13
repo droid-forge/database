@@ -25,6 +25,7 @@ import java.io.FileReader
 import java.io.FileWriter
 import java.io.IOException
 import javax.lang.model.element.TypeElement
+import kotlin.math.max
 
 class DatabaseMetaDataWriter(
     private val databaseElement: TypeElement,
@@ -57,8 +58,9 @@ class DatabaseMetaDataWriter(
     val databaseMetaData = DatabaseMetaData()
     if (TableMetaDataWriter.tableMetaData.isNotEmpty()) {
       databaseMetaData.tableMetaData = TableMetaDataWriter.tableMetaData
+      val generatedVersion = TableMetaDataWriter.finalMaxDbVersion()
+      databaseMetaData.dbVersion = max(databaseElement.getDatabaseVersion(), generatedVersion)
     }
-    databaseMetaData.dbVersion = databaseElement.getDatabaseVersion()
     serializeToXML(databaseMetaData)
   }
 

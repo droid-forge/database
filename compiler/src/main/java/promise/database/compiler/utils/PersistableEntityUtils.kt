@@ -152,6 +152,25 @@ fun Element.getNameOfColumn(): String {
   return this.simpleName.toString()
 }
 
+fun Element.isColumnNullable(): Boolean {
+  var nullable: Boolean = true
+  if ((this.toTypeName().isSameAs(Integer::class.java) ||
+          this.toTypeName().isSameAs(Float::class.java) ||
+          this.toTypeName().isSameAs(Double::class.java) ||
+          this.toTypeName().isSameAs(Boolean::class.java)) &&
+      this.getAnnotation(promise.database.Number::class.java) != null) {
+    nullable = this.getAnnotation(promise.database.Number::class.java).nullable
+  } else if (this.toTypeName().isSameAs(String::class.java) &&
+      this.getAnnotation(VarChar::class.java) != null) {
+    nullable = this.getAnnotation(VarChar::class.java).nullable
+  } else if (this.getAnnotation(Text::class.java) != null) {
+    nullable = this.getAnnotation(Text::class.java).nullable
+  } else if (this.getAnnotation(VarChar::class.java) != null) {
+    nullable = this.getAnnotation(VarChar::class.java).nullable
+  }
+  return nullable
+}
+
 /**
  * capitalize the first char of string
  */

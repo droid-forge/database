@@ -2,8 +2,11 @@ package promise.base.post;
 
 import android.annotation.SuppressLint;
 
+import androidx.annotation.NonNull;
+
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Date;
 import java.util.List;
 
 import promise.base.ID;
@@ -22,6 +25,9 @@ public class Post extends ActiveRecord<Post> {
 	private String body;
 	private int userId;
 
+	private Date publishedDate;
+
+	@NonNull
 	@Override
 	public String toString() {
 		return "Post{" +
@@ -111,5 +117,13 @@ public class Post extends ActiveRecord<Post> {
 	@Override
 	public Post getEntity() {
 		return this;
+	}
+
+	public Date getPublishedDate() {
+		return publishedDate;
+	}
+
+	public void setPublishedDate(Date publishedDate) {
+		this.publishedDate = publishedDate;
 	}
 }

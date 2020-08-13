@@ -14,5 +14,5 @@
 package promise.database
 
 enum class MigrationOptions {
-  CREATE, DROP, CREATE_INDEX
+  CREATE, DROP, CREATE_INDEX, RENAME_COLUMN
 }

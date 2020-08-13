@@ -15,7 +15,8 @@ public class Todo extends ActiveRecord<Todo> {
 	private int uid;
 	private boolean completed;
 	private String title;
-	private int userId;
+
+	private String description;
 
 	@HasOne
 	private Photo photo;
@@ -52,12 +53,12 @@ public class Todo extends ActiveRecord<Todo> {
 		return title;
 	}
 
-	public void setUserId(int userId){
-		this.userId = userId;
+	public String getDescription() {
+		return description;
 	}
 
-	public int getUserId(){
-		return userId;
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 	@Override
@@ -66,8 +67,7 @@ public class Todo extends ActiveRecord<Todo> {
 			"Todo{" + 
 			"id = '" + uid + '\'' +
 			",completed = '" + completed + '\'' + 
-			",title = '" + title + '\'' + 
-			",userId = '" + userId + '\'' + 
+			",title = '" + title + '\'' +
 			"}";
 		}
 
