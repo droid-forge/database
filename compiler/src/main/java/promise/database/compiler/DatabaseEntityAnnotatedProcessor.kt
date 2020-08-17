@@ -18,9 +18,7 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.JavaFile
 import com.squareup.javapoet.MethodSpec
 import com.squareup.javapoet.TypeSpec
-import promise.database.DatabaseEntity
 import promise.database.compiler.utils.JavaUtils
-import promise.database.compiler.utils.LogUtil
 import promise.database.compiler.utils.asTableClassName
 import promise.database.compiler.utils.getTableClassNameString
 import promise.database.compiler.utils.getTableEntities
@@ -28,7 +26,6 @@ import java.util.*
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
@@ -36,35 +33,10 @@ import javax.tools.Diagnostic
 class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
                                        private val database: TypeElement) : AnnotatedClassProcessor() {
 
-  companion object {
-    fun getDatabaseElement(environment: RoundEnvironment?, processingEnv: ProcessingEnvironment): TypeElement? {
-      val databases = environment?.getElementsAnnotatedWith(DatabaseEntity::class.java) ?: emptySet()
-      if (databases.size > 1)
-        LogUtil.e(Exception("There can only be one database in the module"))
-      else if (databases.size == 1) {
-        val element = databases.first()
-        if (element.kind != ElementKind.CLASS) {
-          LogUtil.e(Exception("Only classes can be annotated"), element)
-          return null
-        }
-        if (element.kind == ElementKind.CLASS && !(element as TypeElement).modifiers.contains(Modifier.ABSTRACT))
-          LogUtil.e(Exception("Database class must be abstract"), element)
-        val promiseDatabaseType = JavaUtils.getDeclaredType(processingEnv,
-            processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase"))
-        if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element, promiseDatabaseType))
-          LogUtil.e(Exception("Database class must extend from promise.db.PromiseDatabase"), element)
-        return element as TypeElement?
-      }
-      return null
-    }
-  }
-
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? =
       Collections.singletonList(processElement(database))
 
   private fun processElement(element: Element): JavaFile.Builder {
-    processingEnv.messager.printMessage(Diagnostic.Kind.OTHER, "DatabaseProcessor Processing: ${element.simpleName}")
-
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 
@@ -84,15 +56,15 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
 
     if (RelationsDaoGenerator.relationsMap.isNotEmpty())
       classBuilder.addMethods(RelationsDaoGenerator.relationsMap.map {
-      MethodSpec.methodBuilder("get"+ it.key.simpleName())
-          .addModifiers(Modifier.PUBLIC)
-          .returns(it.key)
-          .addCode(JavaUtils.generateGetRelationDaoCodeBlock(it).build())
-          .build()
-    })
+        MethodSpec.methodBuilder("get" + it.key.simpleName())
+            .addModifiers(Modifier.PUBLIC)
+            .returns(it.key)
+            .addCode(JavaUtils.generateGetRelationDaoCodeBlock(it).build())
+            .build()
+      })
 
     val supressWarningsSpec = AnnotationSpec.builder(SuppressWarnings::class.java)
-        .addMember("value" , "{\"unchecked\"}")
+        .addMember("value", "{\"unchecked\"}")
 
     classBuilder.superclass(ClassName.get(pack, className))
         .addAnnotation(databaseAnnotationSpec)
@@ -101,7 +73,7 @@ class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvi
         .addMethod(constructorMethod.build())
 
     (element as TypeElement).getTableEntities(processingEnv).forEach {
-      classBuilder.addMethod(MethodSpec.methodBuilder("get"+it.getTableClassNameString())
+      classBuilder.addMethod(MethodSpec.methodBuilder("get" + it.getTableClassNameString())
           .addModifiers(Modifier.PUBLIC)
           .returns(it.asTableClassName(processingEnv))
           .addCode(JavaUtils.generateGetTableStatement(processingEnv, it))

@@ -18,7 +18,9 @@ import com.squareup.javapoet.JavaFile
 import promise.database.DAO
 import promise.database.DatabaseEntity
 import promise.database.Entity
+import promise.database.Relation
 import promise.database.TypeConverter
+import promise.database.compiler.utils.JavaUtils
 import promise.database.compiler.utils.LogUtil
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
@@ -28,10 +30,9 @@ import javax.annotation.processing.RoundEnvironment
 import javax.annotation.processing.SupportedOptions
 import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.tools.JavaFileManager
-import javax.tools.StandardJavaFileManager
-import javax.tools.StandardLocation
 
 @AutoService(Processor::class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
@@ -43,24 +44,46 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
     LogUtil.initLogger(processingEnv)
   }
 
+  private fun getDatabaseElement(environment: RoundEnvironment?, processingEnv: ProcessingEnvironment): TypeElement? {
+    val databases = environment?.getElementsAnnotatedWith(DatabaseEntity::class.java) ?: emptySet()
+    if (databases.size > 1)
+      LogUtil.e(Exception("There can only be one database in the module"))
+    else if (databases.size == 1) {
+      val element = databases.first()
+      if (element.kind != ElementKind.CLASS) {
+        LogUtil.e(Exception("Only classes can be annotated"), element)
+        return null
+      }
+      if (element.kind == ElementKind.CLASS && !(element as TypeElement).modifiers.contains(Modifier.ABSTRACT))
+        LogUtil.e(Exception("Database class must be abstract"), element)
+      val promiseDatabaseType = JavaUtils.getDeclaredType(processingEnv,
+          processingEnv.elementUtils.getTypeElement("promise.db.PromiseDatabase"))
+      if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element, promiseDatabaseType))
+        LogUtil.e(Exception("Database class must extend from promise.db.PromiseDatabase"), element)
+      return element as TypeElement
+    }
+    return null
+  }
+
   override fun process(mutableSet: MutableSet<out TypeElement>?, environment: RoundEnvironment?): Boolean {
     if (mutableSet == null || mutableSet.isEmpty()) return false
     try {
-      val database = DatabaseEntityAnnotatedProcessor.getDatabaseElement(environment, processingEnv)
+      val database = getDatabaseElement(environment, processingEnv)
       if (database != null) {
-//        val pkg = processingEnv.elementUtils.getPackageOf(database).toString()
-//        val projectFolder = File(File(File("${pkg}${File.separator}${database.simpleName}.java").parent).parent).parent
-//        val resource = processingEnv.filer.createResource(StandardJavaFileManager.getLocation(StandardLocation),
-//            "schemas", database.asType().toString() + ".yml")
-//        val schemaPath = resource.toUri().path
-        databaseMetaDataWriter = DatabaseMetaDataWriter(database, "schemas${File.separator}${database.asType()}.yml")
+        var schelocation = ""
+        val options = processingEnv?.options ?: emptyMap()
+        if (options.containsKey("promise.database.projectDir")) schelocation = options["promise.database.projectDir"]!!
+        else LogUtil.e(Exception("you must provide schema location as argument"))
+        val finalLocation = "${schelocation}${File.separator}schemas${File.separator}${database.asType()}"
+        //LogUtil.e(Exception("Schema loc $finalLocation"))
+        databaseMetaDataWriter = DatabaseMetaDataWriter(database, finalLocation)
       } else LogUtil.e(Exception("No database class found in module"))
       val javaFiles: ArrayList<JavaFile.Builder> = ArrayList()
       val processors: ArrayList<AnnotatedClassProcessor> = ArrayList()
       processors.add(TypeConverterAnnotatedProcessor(processingEnv))
       processors.add(EntityAnnotatedProcessor(processingEnv, database!!))
       processors.add(RelationsDaoProcessor(processingEnv))
-      //processors.add(DAOAnnotatedProcessor(processingEnv))
+      processors.add(DAOAnnotatedProcessor(processingEnv))
       processors.add(DatabaseEntityAnnotatedProcessor(processingEnv, database))
       processors.forEach {
         val builders = it.process(environment)
@@ -94,7 +117,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       }
       return true
     } catch (e: Throwable) {
-      LogUtil.eTrace(e)
+      LogUtil.e(e)
       return false
     }
   }

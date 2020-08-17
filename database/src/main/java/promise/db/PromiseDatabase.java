@@ -13,7 +13,11 @@
 
 package promise.db;
 
+import org.jetbrains.annotations.NotNull;
+
 import promise.commons.model.Identifiable;
+import promise.utils.Acceptor;
+import promise.utils.Visitor;
 
 /**
  * Base class for classes annotated with DatabaseEntity
@@ -34,6 +38,8 @@ public abstract class PromiseDatabase {
     return fastDatabase;
   }
 
+  public abstract <T extends Identifiable<Integer>> Visitor<Class<? extends T>, FastTable<T>> getEntityClassVisitor();
+
   /**
    * returns the table associated with the entity class
    *
@@ -42,7 +48,11 @@ public abstract class PromiseDatabase {
    * @return FastTable of the entity
    * @throws IllegalArgumentException if entity is not registered with the database
    */
-  public abstract <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException;
+  public  <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException {
+    Visitor<? super Class<? extends T>, ? extends FastTable<T>> t = getEntityClassVisitor();
+    return t.visit(entityClass);
+  }
+
 }
 
 

@@ -45,15 +45,11 @@ class ReactiveFastDatabase private constructor(
 
   constructor(name: String?, version: Int) : this(name, version,  null)
 
-  private fun <T : Identifiable<Int>> dropAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>,
-                                                database: SupportSQLiteDatabase): Single<Boolean> =
-      Single.fromCallable { tableCrud.onDrop(database) }
-
   override fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> = Single.fromCallable { query(queryBuilder) }
 
   @Throws(TableError::class)
   override fun <T : Identifiable<Int>> readAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): ReactiveTable.Extras<T> =
-      object : QueryExtras<T>(tableCrud, readableDatabase) {
+      object : QueryExtras<T>(tableCrud) {
         override fun serialize(t: T): ContentValues = tableCrud.serialize(t)
         override fun deserialize(e: Cursor): T = tableCrud.deserialize(e)
       }
@@ -62,33 +58,33 @@ class ReactiveFastDatabase private constructor(
       Maybe.fromCallable { findAll(tableCrud) }
 
   override fun <T : Identifiable<Int>> readAllAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>, vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
-      Maybe.fromCallable { tableCrud.onFindAll(readableDatabase, *column) }
+      Maybe.fromCallable { findAll(tableCrud, *column) }
 
   override fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>, column: Column<*>): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onUpdate(t, writableDatabase, column) }
+      Maybe.fromCallable { update(t, tableCrud, column) }
 
   override fun <T : Identifiable<Int>> updateAsync(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onUpdate(t, writableDatabase) }
+      Maybe.fromCallable { update(t, tableCrud) }
 
   override fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>, column: Column<*>): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onDelete(writableDatabase, column) }
+      Maybe.fromCallable { delete(tableCrud, column) }
 
   override fun <T : Identifiable<Int>> deleteAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>, t: T): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onDelete(t, writableDatabase) }
+      Maybe.fromCallable { delete(tableCrud, t) }
 
   override fun deleteAsync(tableCrud: TableCrud<*, in SupportSQLiteDatabase>): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onDelete(writableDatabase) }
+      Maybe.fromCallable { delete(tableCrud) }
 
   override fun <C> deleteAsync(tableCrud: TableCrud<*, in SupportSQLiteDatabase>,
                                column: Column<C>,
                                list: List<out C>): Maybe<Boolean> =
-      Maybe.fromCallable { tableCrud.onDelete(writableDatabase, column, list) }
+      Maybe.fromCallable { delete(tableCrud, column, list) }
 
   override fun <T : Identifiable<Int>> saveAsync(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Single<Long> =
-      Single.fromCallable { tableCrud.onSave(t, writableDatabase) }
+      Single.fromCallable { save(t, tableCrud) }
 
   override fun <T : Identifiable<Int>> saveAsync(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Single<Boolean> =
-      Single.fromCallable { tableCrud.onSave(list, writableDatabase) }
+      Single.fromCallable { save(list, tableCrud) }
 
   override fun deleteAllAsync(): Maybe<Boolean> =
       Maybe.zip(tables().map { tableCrud: TableCrud<*, in SupportSQLiteDatabase> -> this.deleteAsync(tableCrud) }
@@ -99,49 +95,49 @@ class ReactiveFastDatabase private constructor(
       }
 
   override fun <T : Identifiable<Int>> getLastIdAsync(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Maybe<Int> =
-      Maybe.fromCallable { tableCrud.onGetLastId(readableDatabase) }
+      Maybe.fromCallable { getLastId(tableCrud) }
 
-  private abstract inner class QueryExtras<T : Identifiable<Int>> internal constructor(private val tableCrud: TableCrud<T, in SupportSQLiteDatabase>,
-                                                                                       private val database: SupportSQLiteDatabase) :
+  private abstract inner class QueryExtras<T : Identifiable<Int>>
+  internal constructor(private val tableCrud: TableCrud<T, in SupportSQLiteDatabase>) :
       ReactiveTable.Extras<T>, DoubleConverter<T, Cursor, ContentValues> {
 
-    override fun first(): Maybe<T> = Maybe.fromCallable { tableCrud.onFind(database).first() }
+    override fun first(): Maybe<T> = Maybe.fromCallable { find(tableCrud).first() }
 
-    override fun last(): Maybe<T> = Maybe.fromCallable { tableCrud.onFind(database).last() }
+    override fun last(): Maybe<T> = Maybe.fromCallable { find(tableCrud).last() }
 
     override fun all(): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).all() }
+        Maybe.fromCallable { find(tableCrud).all() }
 
     override fun limit(limit: Int): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).limit(limit) }
+        Maybe.fromCallable { find(tableCrud).limit(limit) }
 
     override fun paginate(skip: Int, limit: Int): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).paginate(skip, limit) }
+        Maybe.fromCallable { find(tableCrud).paginate(skip, limit) }
 
     override fun paginateDescending(skip: Int, limit: Int): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).paginateDescending(skip, limit) }
+        Maybe.fromCallable { find(tableCrud).paginateDescending(skip, limit) }
 
     override fun between(column: Column<Number>, a: Number, b: Number): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).between(column, a, b) }
+        Maybe.fromCallable { find(tableCrud).between(column, a, b) }
 
     override fun where(vararg column: Column<*>): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).where(*column) }
+        Maybe.fromCallable { find(tableCrud).where(*column) }
 
     @SafeVarargs
     override fun notIn(column: Column<Number>, vararg bounds: Number): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).notIn(column, *bounds) }
+        Maybe.fromCallable { find(tableCrud).notIn(column, *bounds) }
 
     override fun like(vararg column: Column<String>): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).like(*column) }
+        Maybe.fromCallable { find(tableCrud).like(*column) }
 
     override fun orderBy(column: Column<*>): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).orderBy(column) }
+        Maybe.fromCallable { find(tableCrud).orderBy(column) }
 
     override fun groupBy(column: Column<*>): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).groupBy(column) }
+        Maybe.fromCallable { find(tableCrud).groupBy(column) }
 
     override fun groupAndOrderBy(column: Column<*>, column1: Column<*>): Maybe<IdentifiableList<out T>> =
-        Maybe.fromCallable { tableCrud.onFind(database).groupAndOrderBy(column, column1) }
+        Maybe.fromCallable { find(tableCrud).groupAndOrderBy(column, column1) }
   }
 
 }

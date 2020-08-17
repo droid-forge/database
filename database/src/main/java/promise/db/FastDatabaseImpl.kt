@@ -51,7 +51,7 @@ open class FastDatabaseImpl internal constructor(
         listener!!.onCorrupt()
       })
 
-  constructor(name: String?, version: Int) : this(name, version,  null)
+  constructor(name: String?, version: Int) : this(name, version, null)
 
   final override fun onCreate(db: SupportSQLiteDatabase) {
     if (databaseCreationCallback != null) {
@@ -209,17 +209,18 @@ open class FastDatabaseImpl internal constructor(
   }
 
   override fun <T : Identifiable<Int>> find(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): TableCrud.Extras<T> =
-      checkTableExist(tableCrud).onFind(readableDatabase)
+      checkTableExist(tableCrud).accept(FetchExtrasVisitor(readableDatabase)) as TableCrud.Extras<T>
+  //return checkTableExist(tableCrud).onFind(readableDatabase)
 
   override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): IdentifiableList<out T> =
-      checkTableExist(tableCrud).onFindAll(readableDatabase, true)
+      checkTableExist(tableCrud).accept(FetchAllVisitor(readableDatabase, null)) as IdentifiableList<out T>
 
   override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Boolean =
-      checkTableExist(tableCrud).onUpdate(t, writableDatabase)
+      checkTableExist(tableCrud).accept(UpdateVisitor(writableDatabase, t, null)) as Boolean
 
   override fun <T : Identifiable<Int>> update(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>, column: Column<*>): Boolean =
       try {
-        checkTableExist(tableCrud).onUpdate(t, writableDatabase, column)
+        checkTableExist(tableCrud).accept(UpdateVisitor(writableDatabase, t, column)) as Boolean
       } catch (tableError: TableError) {
         LogUtil.e(TAG, "update error", tableError)
         false
@@ -227,32 +228,32 @@ open class FastDatabaseImpl internal constructor(
 
   override fun <T : Identifiable<Int>> findAll(tableCrud: TableCrud<T, in SupportSQLiteDatabase>,
                                                vararg columns: Column<*>): IdentifiableList<out T> =
-      checkTableExist(tableCrud).onFindAll(readableDatabase, *columns)
+      checkTableExist(tableCrud).accept(FetchAllVisitor(readableDatabase, columns)) as IdentifiableList<out T>
 
   override fun <T : Identifiable<Int>> delete(tableCrud: TableCrud<T, in SupportSQLiteDatabase>, t: T): Boolean =
-      checkTableExist(tableCrud).onDelete(t, writableDatabase)
+      checkTableExist(tableCrud).accept(DeleteVisitor(writableDatabase, t)) as Boolean
 
   override fun delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, column: Column<*>): Boolean =
-      checkTableExist(tableCrud).onDelete(writableDatabase, column)
+      checkTableExist(tableCrud).acceptErasure(DeleteErasureVisitor(writableDatabase, column)) as Boolean
 
   override fun delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>): Boolean =
-      checkTableExist(tableCrud).onDelete(writableDatabase)
+      checkTableExist(tableCrud).acceptErasure(DeleteErasureVisitor(writableDatabase)) as Boolean
 
   @SafeVarargs
- override fun delete(vararg tableCruds: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
+  override fun delete(vararg tableCruds: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
     var delete = true
     for (table in tableCruds) delete = delete && delete(table)
     return delete
   }
 
   override fun <T> delete(tableCrud: TableCrud<*, in SupportSQLiteDatabase>, column: Column<T>, list: List<out T>): Boolean =
-      checkTableExist(tableCrud).onDelete(writableDatabase, column, list)
+      checkTableExist(tableCrud).acceptErasure(DeleteListErasureVisitor(writableDatabase, column, list)) as Boolean
 
   override fun <T : Identifiable<Int>> save(t: T, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Long =
-      checkTableExist(tableCrud).onSave(t, writableDatabase)
+      checkTableExist(tableCrud).accept(SaveVisitor(UpdateVisitor(writableDatabase, t, null), writableDatabase, t)) as Long
 
   override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Boolean =
-      checkTableExist(tableCrud).onSave(list, writableDatabase)
+      checkTableExist(tableCrud).accept(SaveListVisitor(writableDatabase, list)) as Boolean
 
 
   override fun deleteAll(): Boolean = synchronized(FastDatabaseImpl::class.java) {
@@ -269,7 +270,7 @@ open class FastDatabaseImpl internal constructor(
   }
 
   override fun getLastId(tableCrud: TableCrud<*, in SupportSQLiteDatabase>): Int =
-      checkTableExist(tableCrud).onGetLastId(readableDatabase)
+      checkTableExist(tableCrud).acceptErasure(FetchLastIdVisitor(readableDatabase)) as Int
 
   override fun transact(block: FastDatabase.() -> Unit) = synchronized(this) {
     val db = writableDatabase

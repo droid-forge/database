@@ -34,4 +34,12 @@ interface DDLFunctions<in X> {
    */
   @Throws(TableError::class)
   fun onUpgrade(x: X, v1: Int, v2: Int)
+
+  /**
+   * @param x
+   * @return
+   * @throws TableError
+   */
+  @Throws(TableError::class)
+  fun onDrop(x: X): Boolean
 }

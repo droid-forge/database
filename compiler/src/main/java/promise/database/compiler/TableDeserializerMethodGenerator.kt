@@ -26,7 +26,7 @@ import promise.database.compiler.utils.getConverterCompatibleMethod
 import promise.database.compiler.utils.isElementAnnotatedAsRelation
 import promise.database.compiler.utils.isSameAs
 import promise.database.compiler.utils.toTypeName
-import promise.database.ompiler.utils.*
+import promise.database.compiler.utils.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 
@@ -85,6 +85,7 @@ class TableDeserializerMethodGenerator(
   private fun getCursorReturn(varType: TypeName): String =
       when {
         varType.isSameAs(Integer::class.java) -> "getInt"
+        varType.isSameAs(Long::class.java) -> "getLong"
         varType.isSameAs(Boolean::class.java) -> "getInt"
         varType.isSameAs(Double::class.java) -> "getDouble"
         varType.isSameAs(Float::class.java) -> "getFloat"

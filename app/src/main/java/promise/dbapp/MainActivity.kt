@@ -22,9 +22,9 @@ import promise.base.post.PostRepository
 import javax.inject.Inject
 
 class MainActivity : DaggerAppCompatActivity() {
-//
-//  @Inject
-//  lateinit var postRepository: PostRepository
+
+  @Inject
+  lateinit var postRepository: PostRepository
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -37,25 +37,22 @@ class MainActivity : DaggerAppCompatActivity() {
     }
   }
 
-//  override fun onPostCreate(savedInstanceState: Bundle?) {
-//    super.onPostCreate(savedInstanceState)
-//
-//
-//    showInfo()
-//
-//    clear_button.setOnClickListener {
-//      deleteInfo()
-//      showInfo()
-//    }
-//  }
-//
-//  private fun showInfo() {
-//    val persons = postRepository.getPosts()
-//    complex_values_textview.text = persons.toString()
-//  }
-//
-//  private fun deleteInfo() {
-//    postRepository.deletePosts()
-//  }
+  override fun onPostCreate(savedInstanceState: Bundle?) {
+    super.onPostCreate(savedInstanceState)
+    showInfo()
+    clear_button.setOnClickListener {
+      deleteInfo()
+      showInfo()
+    }
+  }
+
+  private fun showInfo() {
+    val persons = postRepository.getPosts()
+    complex_values_textview.text = persons.toString()
+  }
+
+  private fun deleteInfo() {
+    postRepository.deletePosts()
+  }
 
 }

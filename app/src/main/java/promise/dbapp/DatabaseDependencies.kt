@@ -22,19 +22,19 @@ import javax.inject.Singleton
 
 @Module
 object DatabaseDependencies {
-//
-// @Provides
-// @Singleton
-// @JvmStatic
-// fun provideAppDatabase(): AppDatabaseImpl = AppDatabaseImpl.createDatabase("blog_db")
-//
-// @Provides
-// @JvmStatic
-// fun providePostRelationsDao(appDatabase: AppDatabaseImpl): PostRelationsDao =
-//     appDatabase.postRelationsDao
-// @Provides
-// @JvmStatic
-// fun providePostTable(appDatabase: AppDatabaseImpl): PostsTable =
-//     appDatabase.postsTable
+
+ @Provides
+ @Singleton
+ @JvmStatic
+ fun provideAppDatabase(): AppDatabaseImpl = AppDatabaseImpl.createDatabase("blog_db")
+
+ @Provides
+ @JvmStatic
+ fun providePostRelationsDao(appDatabase: AppDatabaseImpl): PostRelationsDao =
+     appDatabase.postRelationsDao
+ @Provides
+ @JvmStatic
+ fun providePostTable(appDatabase: AppDatabaseImpl): PostsTable =
+     appDatabase.postsTable
 
 }

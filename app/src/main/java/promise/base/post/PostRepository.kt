@@ -27,42 +27,42 @@ interface PostRepository {
 
   fun deletePosts()
 }
-//
-//@Singleton
-//class PostRepositoryImpl @Inject constructor(
-//    private var postRelationsDao: PostRelationsDao,
-//    private var postsTable: PostsTable) : PostRepository {
-//  init {
-//    val posts = IdentifiableList(promise.commons.model.List.generate(5) {
-//      Post().apply {
-//        uId = ID(it.toString())
-//        title = "post".plus(it)
-//        body = "body".plus(it)
-//        userId = it
-//        comments = promise.commons.model.List.generate(4) {
-//          PostComment().apply {
-//            name = "nm".repeat(it)
-//            uId = ID((it + 1).toString())
-//            body = "hbytcvbcrxgfvbtrxt"
-//            email = "ejmail;jgfccghcfcvhbhcgvb"
-//          }
-//        }
-//      }
-//    })
-//
-//    postRelationsDao.saveWithComments(posts)
-//  }
-//
-//  override fun savePost(post: Post) {
-//    postsTable.save(post)
-//  }
-//
-//  override fun getPosts(): List<Post> = postRelationsDao.listWithComments()
-//  override fun deletePosts() {
-//    val persons = postRelationsDao.listWithComments()
-//    persons.forEach {
-//      postRelationsDao.deleteComments(it)
-//      it.delete()
-//    }
-//  }
-//}
+
+@Singleton
+class PostRepositoryImpl @Inject constructor(
+    private var postRelationsDao: PostRelationsDao,
+    private var postsTable: PostsTable) : PostRepository {
+  init {
+    val posts = IdentifiableList(promise.commons.model.List.generate(5) {
+      Post().apply {
+        uId = ID(it.toString())
+        title = "post".plus(it)
+        body = "body".plus(it)
+        userId = it
+        comments = promise.commons.model.List.generate(4) {
+          PostComment().apply {
+            name = "nm".repeat(it)
+            uId = ID((it + 1).toString())
+            body = "hbytcvbcrxgfvbtrxt"
+            email = "ejmail;jgfccghcfcvhbhcgvb"
+          }
+        }
+      }
+    })
+
+    postRelationsDao.saveWithComments(posts)
+  }
+
+  override fun savePost(post: Post) {
+    postsTable.save(post)
+  }
+
+  override fun getPosts(): List<Post> = postRelationsDao.listWithComments()
+  override fun deletePosts() {
+    val persons = postRelationsDao.listWithComments()
+    persons.forEach {
+      postRelationsDao.deleteComments(it)
+      it.delete()
+    }
+  }
+}

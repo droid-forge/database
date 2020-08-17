@@ -26,6 +26,7 @@ import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -77,15 +78,6 @@ public class JavaUtils {
         UtilsKt.toTypeName(converter));
   }
 
-  public static void generateAddRelationsDaoStatementInDatabaseConstructorMethod(
-      MethodSpec.Builder constructorMethod,
-      HashMap<ClassName, HashMap<ClassName, Element>> relationsMap) {
-    for (Map.Entry<ClassName, HashMap<ClassName, Element>> relationDao : relationsMap.entrySet()) {
-      CodeBlock.Builder codeBlock = generateGetRelationDaoCodeBlock(relationDao);
-      constructorMethod.addCode(codeBlock.build());
-    }
-  }
-
   public static CodeBlock.Builder generateGetRelationDaoCodeBlock(Map.Entry<ClassName, HashMap<ClassName, Element>> relationDao) {
     ClassName providerClassName = ClassName.get(relationDao.getKey().packageName(),
         UtilsKt.getInstanceProviderClassName(relationDao.getKey().simpleName()));
@@ -94,9 +86,8 @@ public class JavaUtils {
         ClassName.get("promise.commons", "SingletonInstanceProvider"),
         providerClassName,
         relationDao.getKey());
-    for (Map.Entry<ClassName, Element> tableAndEntity: relationDao.getValue().entrySet()) {
-      codeBlock.add(".set"+tableAndEntity.getKey().simpleName()+"(get"+tableAndEntity.getKey().simpleName()+"())\n");
-    }
+    for (Map.Entry<ClassName, Element> tableAndEntity: relationDao.getValue().entrySet())
+      codeBlock.add(".set" + tableAndEntity.getKey().simpleName() + "(get" + tableAndEntity.getKey().simpleName() + "())\n");
     codeBlock.addStatement(".build())).get()");
     return codeBlock;
   }
@@ -188,13 +179,6 @@ public class JavaUtils {
     return c.isPrimitive() ? (Class<T>) PRIMITIVES_TO_WRAPPERS.get(c) : c;
   }
 
-  /**
-   * checks if typemirror is equal to a typename
-   *
-   * @param typeMirror
-   * @param otherType
-   * @return
-   */
   public static boolean isTypeEqual(TypeMirror typeMirror, TypeName otherType) {
     if (typeMirror.getKind() == TypeKind.NONE || otherType == TypeName.VOID ||
         typeMirror.getKind() == TypeKind.VOID) {
@@ -225,6 +209,7 @@ public class JavaUtils {
     return isSubTypeOfDeclaredType(processingEnvironment, variableElement, collectionType);
   }
 
+
   public static List<? extends TypeMirror> getParameterizedTypeMirrors(VariableElement variableElement) {
     if (variableElement.asType() instanceof DeclaredType) {
       DeclaredType declaredType = (DeclaredType) variableElement.asType();
@@ -234,11 +219,7 @@ public class JavaUtils {
   }
 
   public static TypeMirror getTypeMirror(VariableElement variableElement) {
-    if (variableElement.asType() instanceof DeclaredType) {
-      return variableElement.asType();
-    }
+    if (variableElement.asType() instanceof DeclaredType) return variableElement.asType();
     return null;
   }
-
-
 }

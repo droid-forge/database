@@ -62,32 +62,33 @@ class DatabaseAbstractMethodsGenerator(
     }
 
     val codeBlock = CodeBlock.builder()
+        .beginControlFlow("return new Visitor<Class<? extends T>, FastTable<T>>()")
+        .add("@Override \n")
+        .beginControlFlow("public FastTable<T> visit(Class<? extends T> entityClass)")
     element.getTableEntities(processingEnv).forEach {
       JavaUtils.generateIfStatementObtainClassString(processingEnv, codeBlock, it)
     }
     codeBlock.addStatement("throw new IllegalArgumentException(entityClass.getCanonicalName() + \"not registered with this database\")")
+        .endControlFlow()
+        .add("};")
 
     val typeVariable: TypeVariableName? = TypeVariableName.get("T").withBounds(
         ParameterizedTypeName.get(
             ClassName.get("promise.commons.model", "Identifiable"),
             ClassName.get(Integer::class.java)))
-    funSpecs.add(MethodSpec.methodBuilder("tableOf")
+
+    funSpecs.add(MethodSpec.methodBuilder("getEntityClassVisitor")
         .addTypeVariable(typeVariable)
-        .addParameter(ParameterizedTypeName.get(ClassName.get(Class::class.java),
-            WildcardTypeName.subtypeOf(TypeVariableName.get("T"))
-        ), "entityClass")
         .addAnnotation(Override::class.java)
         .addAnnotation(NotNull::class.java)
-        .addJavadoc("""
-          Returns the table for the specified entity
-          @Param entityClass Class of the entity persisted
-          @Returns the table instance
-        """.trimIndent())
-        .addException(IllegalArgumentException::class.java)
         .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
-        .returns(ParameterizedTypeName.get(
-            ClassName.get("promise.db", "FastTable"),
-            TypeVariableName.get("T")))
+        .returns(ParameterizedTypeName.get(ClassName.get("promise.utils", "Visitor"),
+            ParameterizedTypeName.get(ClassName.get(Class::class.java),
+                WildcardTypeName.subtypeOf(TypeVariableName.get("T"))
+            ),
+            ParameterizedTypeName.get(
+                ClassName.get("promise.db", "FastTable"),
+                TypeVariableName.get("T"))))
         .addCode(codeBlock.build())
         .build())
 

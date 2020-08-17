@@ -130,7 +130,7 @@ class TableColumnFieldsGenerator(
   private fun getColumnInitializer(element: Element, classTypeName: TypeName): String {
     var str = "Column.Type"
     if (classTypeName.isSameAs(Integer::class.java) ||
-        classTypeName.isSameAs(Integer::class.java) ||
+        classTypeName.isSameAs(Long::class.java) ||
         classTypeName.isSameAs(Float::class.java) ||
         classTypeName.isSameAs(Double::class.java) ||
         classTypeName.isSameAs(Boolean::class.java)) {
@@ -194,6 +194,4 @@ class TableColumnFieldsGenerator(
     }
     return str
   }
-
-
 }

@@ -43,6 +43,7 @@ public class LogUtil {
   }
 
   public static void n(Object... messages) {
+
     StringBuilder builder = new StringBuilder();
 
     builder.append(TAG);

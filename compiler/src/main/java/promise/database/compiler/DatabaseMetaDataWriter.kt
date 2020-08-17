@@ -27,29 +27,39 @@ import java.io.IOException
 import javax.lang.model.element.TypeElement
 import kotlin.math.max
 
-class DatabaseMetaDataWriter(
+class DatabaseMetaDataWriter
+(
     private val databaseElement: TypeElement,
     private val schemasPath: String) {
 
+  init {
+    val dir = File(schemasPath)
+    dir.parentFile.mkdirs()
+   dir.mkdirs()
+  }
+
   var currentDatabaseMetaData: DatabaseMetaData? = null
 
-  fun loadCurrentMetaData() {
-    try {
-      val file = File(schemasPath)
-      if (file.exists()) {
+  fun loadCurrentMetaData() = try {
+    val file = File(schemasPath)
+    if (file.exists() && file.isDirectory) {
+     val files = file.listFiles()
+      if (files.isNotEmpty()) {
+        files.sortBy { it.name }
+        val currentFile = files.last()
         val om = ObjectMapper(YAMLFactory())
         //xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        val fileWriter = FileReader(file)
+        val fileWriter = FileReader(currentFile)
         currentDatabaseMetaData = om.readValue(fileWriter,  DatabaseMetaData::class.java)
         fileWriter.close()
       }
       else currentDatabaseMetaData = DatabaseMetaData()
-    } catch (e: JsonProcessingException) {
-      LogUtil.e(e)
-    } catch (e: IOException) {
-      LogUtil.e(e)
     }
-
+    else currentDatabaseMetaData = DatabaseMetaData()
+  } catch (e: JsonProcessingException) {
+    LogUtil.e(e)
+  } catch (e: IOException) {
+    LogUtil.e(e)
   }
 
   fun process(
@@ -61,13 +71,13 @@ class DatabaseMetaDataWriter(
       val generatedVersion = TableMetaDataWriter.finalMaxDbVersion()
       databaseMetaData.dbVersion = max(databaseElement.getDatabaseVersion(), generatedVersion)
     }
-    serializeToXML(databaseMetaData)
+    serializeToXML(databaseMetaData, databaseMetaData.dbVersion)
   }
 
-  private fun serializeToXML(obj: Any) {
+  private fun serializeToXML(obj: Any, version: Int) {
     try {
-      val file = File(schemasPath)
-      file.delete()
+      val file = File(schemasPath + File.separator + version + ".yml")
+      if (file.exists()) file.delete()
       file.createNewFile()
       val om = ObjectMapper(YAMLFactory())
       // serialize our Object into XML string

@@ -11,19 +11,8 @@
  * limitations under the License.
  */
 
-package promise.base
-import promise.database.TypeConverter
-import java.util.*
+package promise.utils
 
-@TypeConverter
-class AppTypeConverter {
-
-  fun dateToString(date: Date?): String = (date ?: Date()).time.toString()
-
-  fun stringToDate(data: String): Date = Date(data.toLong())
-
-  fun toUniqueId(data: String): ID = ID(data)
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+interface Visitor<in T, out R> {
+  fun visit(t: T): R
 }

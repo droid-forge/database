@@ -33,10 +33,9 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.lang.model.type.DeclaredType
-import javax.lang.model.type.MirroredTypeException
-import javax.lang.model.type.TypeKind
-import javax.lang.model.type.TypeMirror
+import javax.lang.model.type.*
+import javax.lang.model.util.SimpleTypeVisitor6
+import javax.lang.model.util.SimpleTypeVisitor7
 import javax.lang.model.util.Types
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
@@ -77,9 +76,14 @@ fun TypeMirror.asTypeElement(processingEnv: ProcessingEnvironment): TypeElement 
   }) as TypeElement
 }
 
-fun String.getInstanceProviderClassName(): String {
-  return "${this}InstanceProvider"
+fun TypeMirror.asVariableElement(processingEnv: ProcessingEnvironment): VariableElement? {
+  val typeUtils: Types = processingEnv.typeUtils
+  val typeMirror = typeUtils.erasure(this)
+  if (typeMirror is VariableElement) return typeMirror
+  return null
 }
+
+fun String.getInstanceProviderClassName(): String = "${this}InstanceProvider"
 
 object Utils {
 

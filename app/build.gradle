@@ -33,6 +33,13 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "promise.database.projectDir"  : "$projectDir".toString()
+                ]
+            }
+        }
     }
 
     compileOptions {

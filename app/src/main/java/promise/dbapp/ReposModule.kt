@@ -16,11 +16,11 @@ package promise.dbapp
 import dagger.Binds
 import dagger.Module
 import promise.base.post.PostRepository
-//import promise.base.post.PostRepositoryImpl
+import promise.base.post.PostRepositoryImpl
 
 @Module
 abstract class ReposModule {
-//
-//  @Binds
-//  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
+
+  @Binds
+  abstract fun bindPostsRepository(postRepositoryImpl: PostRepositoryImpl): PostRepository
 }

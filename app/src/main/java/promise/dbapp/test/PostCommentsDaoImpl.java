@@ -12,57 +12,50 @@
  */
 
 package promise.dbapp.test;
-//
-//import android.database.Cursor;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//
-//import promise.base.comment.PostComment;
-//import promise.base.comment.PostCommentDao;
-//import promise.base.comment.PostCommentToReplyRelation;
-//import promise.base.comment.PostCommentsTable;
-//import promise.db.PromiseDatabase;
-//import promise.db.criteria.Criteria;
-//import promise.model.IdentifiableList;
+
+import android.database.Cursor;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import promise.base.comment.PostComment;
+import promise.base.comment.PostCommentDao;
+import promise.base.comment.PostCommentToReplyRelation;
+import promise.base.comment.PostCommentsTable;
+import promise.db.PromiseDatabase;
+import promise.db.criteria.Criteria;
+import promise.model.IdentifiableList;
 
 public class PostCommentsDaoImpl
-    //extends PostCommentDao
+    implements PostCommentDao
 {
-//
-//  private PromiseDatabase fastDatabase;
-//  private PostCommentsTable postCommentsTable;
-//
-//  public PostCommentsDaoImpl(PromiseDatabase fastDatabase) {
-//    this.fastDatabase = fastDatabase;
-//    this.postCommentsTable = (PostCommentsTable) fastDatabase.tableOf(PostComment.class);
-//  }
-//
-//  @Override
-//  public List<PostCommentToReplyRelation> getPostComments(Criteria andCriteria) {
-//    Cursor cursor = fastDatabase.getDatabaseInstance().query(
-//        postCommentsTable.queryBuilder()
-//            .whereAnd(andCriteria));
-//    return getPostCommentRepliesImpl(cursor);
-//  }
-//
-//  public List<PostComment> getPostCommentRepliesImpl(PostComment postComment) {
-//    return new ArrayList<>(postCommentsTable.findAll(PostCommentsTable.idColumn.with(postComment.getId())));
-//  }
-//
-//  private List<PostCommentToReplyRelation> getPostCommentRepliesImpl(Cursor cursor) {
-//    IdentifiableList<? extends PostComment> postComments = postCommentsTable.collection(cursor);
-//    return postComments.map(postComment -> new PostCommentToReplyRelation() {{
-//      setPostComment(postComment);
-//      setPostCommentReplies(getPostCommentRepliesImpl(postComment));
-//    }});
-//  }
-//
-//  private PostCommentToReplyRelation getPostCommentReplyImpl(Cursor cursor) {
-//    PostComment postComment = postCommentsTable.single(cursor);
-//    return new PostCommentToReplyRelation() {{
-//      setPostComment(postComment);
-//      setPostCommentReplies(getPostCommentRepliesImpl(postComment));
-//    }};
-//  }
+
+  private PromiseDatabase promiseDatabase;
+
+  public PostCommentsDaoImpl(PromiseDatabase fastDatabase) {
+    this.promiseDatabase = fastDatabase;
+  }
+
+  private PostCommentToReplyRelation getPostCommentToReplyRelation(PostComment postComment) {
+    return new PostCommentToReplyRelation() {{
+      setPostComment(postComment);
+      setPostCommentReplies(new ArrayList<>(
+          promiseDatabase.tableOf(PostComment.class).findAll(
+              PostCommentsTable.postCommentIdColumn.with(
+                  postComment.getId().toString()))));
+    }};
+  }
+
+  @Override
+  public List<PostCommentToReplyRelation> getPostComments(Criteria andCriteria) {
+    Cursor cursor = promiseDatabase.getDatabaseInstance().query(
+        promiseDatabase.tableOf(PostComment.class).queryBuilder()
+            .whereAnd(andCriteria));
+    return getPostCommentToReplyRelationCollection(cursor);
+  }
+
+  private List<PostCommentToReplyRelation> getPostCommentToReplyRelationCollection(Cursor cursor) {
+    IdentifiableList<? extends PostComment> postComments = promiseDatabase.tableOf(PostComment.class).collection(cursor);
+    return postComments.map(this::getPostCommentToReplyRelation);
+  }
 }

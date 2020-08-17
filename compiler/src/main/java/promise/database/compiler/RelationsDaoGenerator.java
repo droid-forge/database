@@ -122,7 +122,6 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
         .addParameters(constructorParameters)
         .addCode(constructorBlock.build())
         .build());
-
     generateRelationsDaoBuilder(constructorParameters, pack, fileName);
     javaFiles.add(JavaFile.builder(pack, classBuilder.build()));
     javaFiles.add(Utils.INSTANCE.generateInstanceProviderHolder(ClassName.get(pack, fileName)));

@@ -13,12 +13,8 @@
 package promise.db
 
 import android.annotation.SuppressLint
-import android.content.ContentValues
 import android.database.Cursor
 import android.database.SQLException
-import android.database.sqlite.SQLiteDatabase.CONFLICT_ROLLBACK
-import android.database.sqlite.SQLiteException
-import android.text.TextUtils
 import androidx.sqlite.db.SupportSQLiteDatabase
 import io.reactivex.Maybe
 import io.reactivex.Single
@@ -27,11 +23,8 @@ import promise.commons.model.Identifiable
 import promise.commons.model.List
 import promise.commons.model.List.fromArray
 import promise.commons.util.Conditions
-import promise.commons.util.DoubleConverter
 import promise.database.Table
-import promise.db.criteria.Criteria
 import promise.model.ITimeStamped
-import promise.db.projection.Projection
 import promise.model.IdentifiableList
 import java.util.*
 
@@ -105,7 +98,7 @@ abstract class FastTable<T : Identifiable<Int>>
 
   override fun collection(cursor: Cursor): IdentifiableList<out T> {
     val collection = IdentifiableList<T>()
-    while (cursor.moveToNext()  && !cursor.isClosed) {
+    while (cursor.moveToNext() && !cursor.isClosed) {
       collection.add(getWithId(cursor))
     }
     cursor.close()
@@ -130,7 +123,7 @@ abstract class FastTable<T : Identifiable<Int>>
   /**
    * The specific tag for logging in this table
    */
-  private val TAG: String = LogUtil.makeTag(FastTable::class.java) + name
+  override val TAG: String = LogUtil.makeTag(FastTable::class.java) + name
 
   /**
    * Temporary data holder for holding data during dangerous table structure changes
@@ -552,189 +545,6 @@ abstract class FastTable<T : Identifiable<Int>>
   }
 
   /**
-   * more verbose readAsync operation against the database
-   *
-   * @param x readable sql database
-   * @return an extras instance for more concise reads
-   */
-  override fun onFind(x: SupportSQLiteDatabase): TableCrud.Extras<T> =
-      object : QueryExtras<T>(x) {
-        /**
-         *
-         */
-        override fun serialize(t: T): ContentValues = this@FastTable.serialize(t)
-
-        /**
-         *
-         */
-        override fun deserialize(e: Cursor): T = this@FastTable.deserialize(e)
-      }
-
-  /**
-   * readAsync all the rows in the database
-   *
-   * @param x readable sql database
-   * @param close    close the connection if this is true
-   * @return a list of records
-   */
-  override fun onFindAll(x: SupportSQLiteDatabase, close: Boolean): IdentifiableList<out T> {
-    val builder: QueryBuilder = queryBuilder()
-    val cursor: Cursor
-    return try {
-      cursor = x.query(builder.build(), builder.buildParameters())
-      collection(cursor)
-    } catch (e: SQLiteException) {
-      IdentifiableList<T>()
-    }
-  }
-
-  /**
-   * readAsync the rows following the criteria specified in the column provided
-   * for each of the columns
-   * if [Column.value] is not null, filter with the value
-   * if [Column.order] is not null, order by that column too
-   *
-   * @param x readable sql database
-   * @param column  the fields to infer where and order by conditions
-   * @return list of records satisfying the criteria
-   */
-  override fun onFindAll(x: SupportSQLiteDatabase, vararg column: Column<*>): IdentifiableList<out T> {
-    val builder: QueryBuilder = queryBuilder().takeAll()
-    column.forEach {
-      if (it.value() != null) builder.whereAnd(Criteria.equals(it, it.value()))
-      if (it.order() != null) {
-        if (it.order() == Column.DESCENDING) {
-          builder.orderByDescending(it)
-        } else builder.orderByAscending(it)
-      }
-    }
-   return collection( x.query(builder.build(), builder.buildParameters()))
-  }
-
-  /**
-   * updateAsync a row in the table
-   *
-   * @param t        instance to updateAsync
-   * @param x writable sql database
-   * @param column   field with where condition to updateAsync
-   * @return true if instance is updated
-   */
-  @Throws(TableError::class)
-  override fun onUpdate(t: T, x: SupportSQLiteDatabase, column: Column<*>): Boolean {
-    val whereArg: String = if (column.operand != null && column.value() != null)
-      column.name + column.operand + column.value()
-    else throw TableError("Cant update the record, missing updating information")
-    val values = serialize(t)
-    values.put(updatedAt.name, System.currentTimeMillis())
-    return x.update(name, CONFLICT_ROLLBACK, values, whereArg, null) > 0;
-  }
-
-  /**
-   * updated an instance with an id value more than zero
-   *
-   * @param t        the instance to updateAsync
-   * @param x writable sql database
-   * @return true if updated
-   */
-  override fun onUpdate(t: T, x: SupportSQLiteDatabase): Boolean = try {
-    onUpdate(t, x, id.with(t.getId()))
-  } catch (tableError: TableError) {
-    false
-  }
-
-  /**
-   * deletes multiple rows from the table where the column matches all the
-   * given values in list
-   *
-   * @param x writable sql database
-   * @param column   the matching column
-   * @param list     values to match with
-   * @param <C>      the type of matching, must not be derived data type
-   * @return true if all rows are deleted
-  </C> */
-  override fun <C> onDelete(x: SupportSQLiteDatabase, column: Column<C>, list: List<out C>): Boolean {
-    val deleted: Boolean
-    var where = ""
-    var i = 0
-    val listSize = list.size
-    while (i < listSize) {
-      val c = list[i]
-      where = if (i == listSize - 1) {
-        column.name + " " + column.operand + " " + c
-      } else column.name + " " + column.operand + " " + c + " OR "
-      i++
-    }
-    deleted = x.delete(name, where, null) >= 0
-    return deleted
-  }
-
-  /**
-   * deleteAsync a row in the table matching condition in the column
-   *
-   * @param x writable sql database
-   * @param column   field to match
-   * @return true if row is deleted
-   */
-  override fun onDelete(x: SupportSQLiteDatabase, column: Column<*>): Boolean {
-    val where = column.name + column.operand + column.value()
-    return x.delete(name, where, null) >= 0
-  }
-
-  /**
-   * deleteAsync an instance from the table
-   *
-   * @param t        instance to be removed must have an id more than zero
-   * @param x writable sql database
-   * @return true if item is deleted
-   */
-  override fun onDelete(t: T, x: SupportSQLiteDatabase): Boolean =
-      onDelete(x, id.with(t.getId()))
-
-  /**
-   * deleteAsync all rows in the table
-   *
-   * @param x writable sql database
-   * @return true if all rows are deleted
-   */
-  override fun onDelete(x: SupportSQLiteDatabase): Boolean =
-      !TextUtils.isEmpty(name) && x.delete(name, null, null) >= 0
-
-  /**
-   * saveAsync an instance to the database
-   * serialize it to content values
-   *
-   * @param t        instance to be saved
-   * @param x writable sql database
-   * @return id of the row affected
-   */
-  override fun onSave(t: T, x: SupportSQLiteDatabase): Long {
-    if (t.getId() != 0 && onUpdate(t, x)) return t.getId().toLong()
-    val values = serialize(t)
-    values.put(createdAt.name, System.currentTimeMillis())
-    values.put(updatedAt.name, System.currentTimeMillis())
-    return x.insert(name, CONFLICT_ROLLBACK, values)
-  }
-
-  /**
-   * saveAsync a list of items in the database
-   *
-   * @param list     items to be saved
-   * @param x writable sql database
-   * @return true if all the items are saved
-   */
-  override fun onSave(list: IdentifiableList<out T>, x: SupportSQLiteDatabase): Boolean {
-    var saved = true
-    var i = 0
-    val listSize = list.size
-    while (i < listSize) {
-      val t = list[i]
-      saved = saved && onSave(t, x) > 0
-      i++
-    }
-    /*if (close) database.close();*/return saved
-  }
-
-  /**
    * drop this table from the database
    *
    * @param x writable sql database
@@ -753,26 +563,13 @@ abstract class FastTable<T : Identifiable<Int>>
   }
 
   /**
-   * get the last id of the last row in the table
-   * uses projection to count the id column as num
-   *
-   * @param x readable sql database
-   * @return the id
-   */
-  override fun onGetLastId(x: SupportSQLiteDatabase): Int {
-    val builder: QueryBuilder = queryBuilder().select(Projection.count(id).`as`("num"))
-    @SuppressLint("Recycle") val cursor = x.query(builder.build(), builder.buildParameters())
-    return cursor.getInt(id.index)
-  }
-
-  /**
    * backup all the items in the table during dangerous upgrdes
    *
    * @param database readable database instance
    */
   fun backup(database: SupportSQLiteDatabase) {
     backup = IdentifiableList()
-    backup!!.addAll(onFindAll(database, false))
+    backup!!.addAll(accept(FetchAllVisitor(database, null)) as IdentifiableList<T>)
   }
 
   /**
@@ -782,7 +579,7 @@ abstract class FastTable<T : Identifiable<Int>>
    */
   fun restore(database: SupportSQLiteDatabase) {
     if (backup != null && !backup!!.isEmpty()) {
-      onSave(backup!!, database)
+      accept(SaveListVisitor<T>(database, backup!!))
       backup!!.clear()
     }
     backup = null
@@ -807,323 +604,4 @@ abstract class FastTable<T : Identifiable<Int>>
     return t
   }
 
-  /**
-   * This class contains special queries for reading from the table
-   * see [TimeAware] for encapsulating id and timestamps
-   * see [DoubleConverter] for serializing and de-serializing
-   *
-   * @param <Q> The type of the items in the table
-  </Q> */
-  private abstract inner class QueryExtras<Q : Identifiable<Int>> internal constructor(
-      /**
-       * the database instance to readAsync fromm
-       */
-      private val database: SupportSQLiteDatabase) : TableCrud.Extras<Q>, DoubleConverter<Q, Cursor, ContentValues> {
-
-    fun database(): SupportSQLiteDatabase = database
-
-    /**
-     * get a record pre populated with id and timestamps from each readAsync
-     *
-     * @param cursor serialized version of Q
-     * @return Q the de-serialized output of reading the cursor
-     */
-    fun getWithId(cursor: Cursor): Q {
-      var t = deserialize(cursor)
-      t.setId(cursor.getInt(id.getIndex(cursor)))
-      if (t is ITimeStamped) {
-        val iTimeAware = t as ITimeStamped
-        iTimeAware.setCreatedAt(cursor.getInt(createdAt.getIndex(cursor)).toLong())
-        iTimeAware.setUpdatedAt(cursor.getInt(updatedAt.getIndex(cursor)).toLong())
-        t = iTimeAware as Q
-      }
-      if (t is ActiveRecord<*>) (t as ActiveRecord<T>).table = this@FastTable
-      return t
-    }
-
-    /**
-     * get the first record in the table
-     *
-     * @return the first records or null if theirs none in the table
-     */
-    override fun first(): Q? {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().take(1)
-        cursor = database.query(builder.build(), builder.buildParameters())
-        cursor.moveToFirst()
-        getWithId(cursor)
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        null
-      }
-    }
-
-    /**
-     * get the last record in the table
-     *
-     * @return an item or null if theirs none stored in the table
-     */
-    override fun last(): Q? {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().orderByDescending(id).take(1)
-        cursor = database.query(builder.build(), builder.buildParameters())
-        cursor.moveToFirst()
-        getWithId(cursor)
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        null
-      }
-    }
-
-    /**
-     * get all the items in the table
-     *
-     * @return the items or an empty list if theirs none
-     */
-    override fun all(): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().takeAll()
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * readAsync the top items in the table
-     *
-     * @param limit the number of records to readAsync
-     * @return a list of the items
-     */
-    override fun limit(limit: Int): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().take(limit)
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * reads the records between the skip and limit in the table
-     *
-     * @param skip  of set from the top to not readAsync
-     * @param limit items to load after skip
-     * @return a list of records
-     */
-    override fun paginate(skip: Int, limit: Int): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().take(limit).skip(skip)
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    override fun paginateDescending(skip: Int, limit: Int): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().orderByDescending(id).take(limit).skip(skip)
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * gets all items that match in between the int left and right
-     *
-     * @param column column to match between
-     * @param a      lower between bound
-     * @param b      upper between bound
-     * @return a list of items
-     */
-    override fun between(column: Column<Number>, a: Number, b: Number): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().takeAll().whereAnd(Criteria.between(column, a, b))
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * gets all items matching the multiple columns
-     *
-     * @param column fields to match their values
-     * @return a list of items
-     */
-    override fun where(vararg column: Column<*>): IdentifiableList<out Q> {
-      val cursor: Cursor
-      return try {
-        val builder: QueryBuilder = queryBuilder().takeAll()
-        for (column1 in column) if (column1.value() != null) builder.whereAnd(Criteria.equals(column1, column1.value()))
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
-        ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * gets all the items matching not in any of the columns
-     *
-     * @param column field to match
-     * @param bounds not in bounds
-     * @return a list of items
-     */
-    @SafeVarargs
-    override fun notIn(column: Column<Number>, vararg bounds: Number): IdentifiableList<out Q> {
-      val cursor: Cursor
-      val items = arrayOfNulls<Any>(bounds.size)
-      System.arraycopy(bounds, 0, items, 0, bounds.size)
-      val builder: QueryBuilder = queryBuilder().takeAll()
-          .whereAnd(Criteria.notIn(column, items))
-      return try {
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) {
-          val t = getWithId(cursor)
-          ts.add(t)
-        }
-        cursor.close()
-        /*database.close();*/ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * get all the rows where the column is like the columns values
-     *
-     * @param column the fields to compute like from
-     * @return a list of columns
-     */
-    override fun like(vararg column: Column<*>): IdentifiableList<out Q> {
-      val cursor: Cursor
-      val builder: QueryBuilder = queryBuilder().takeAll()
-      for (column1 in column) builder.whereAnd(Criteria.contains(column1, column1.value().toString()))
-      return try {
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) {
-          val t = getWithId(cursor)
-          ts.add(t)
-        }
-        cursor.close()
-        /*database.close();*/ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * get all the rows in the oder specified by the column
-     *
-     * @param column field to order by
-     * @return a list of ordered items
-     */
-    override fun orderBy(column: Column<*>): IdentifiableList<out Q> {
-      val cursor: Cursor
-      val builder: QueryBuilder = queryBuilder().takeAll()
-      if (column.order() == Column.DESCENDING) {
-        builder.orderByDescending(column)
-      } else builder.orderByAscending(column)
-      return try {
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) {
-          val t = getWithId(cursor)
-          ts.add(t)
-        }
-        cursor.close()
-        /*database.close();*/ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * gets all the items grouped by the column
-     *
-     * @param column field to group by
-     * @return a list of grouped items
-     */
-    override fun groupBy(column: Column<*>): IdentifiableList<out Q> {
-      val cursor: Cursor
-      val builder: QueryBuilder = queryBuilder().takeAll().groupBy(column)
-      return try {
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) {
-          val t = getWithId(cursor)
-          ts.add(t)
-        }
-        cursor.close()
-        /*database.close();*/ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-
-    /**
-     * gets all the items grouped and ordered by the two columns
-     *
-     * @param column  group by field
-     * @param column1 order by fields
-     * @return a list of items
-     */
-    override fun groupAndOrderBy(column: Column<*>, column1: Column<*>): IdentifiableList<out Q> {
-      val cursor: Cursor
-      val builder: QueryBuilder = queryBuilder().takeAll().groupBy(column)
-      if (column1.order() == Column.DESCENDING) {
-        builder.orderByDescending(column1)
-      } else builder.orderByAscending(column1)
-      return try {
-        cursor = database.query(builder.build(), builder.buildParameters())
-        val ts = IdentifiableList<Q>()
-        while (cursor.moveToNext() && !cursor.isClosed) {
-          val t = getWithId(cursor)
-          ts.add(t)
-        }
-        cursor.close()
-        /*database.close();*/ts
-      } catch (e: SQLiteException) {
-        LogUtil.e(TAG, e)
-        IdentifiableList<Q>()
-      }
-    }
-  }
 }
