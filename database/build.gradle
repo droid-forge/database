@@ -42,8 +42,8 @@ android {
 }
 
 dependencies {
-    //api 'com.github.android-promise.database:commons:1.0.3-alpha4'
-    api project(path: ':commons')
+    api 'com.github.android-promise.database:commons:dev-4cc181146c-1'
+    //api project(path: ':commons')
     api 'androidx.sqlite:sqlite:2.1.0'
     implementation 'androidx.sqlite:sqlite-framework:2.1.0'
     compileOnly 'io.reactivex.rxjava2:rxjava:2.2.17'

@@ -19,8 +19,8 @@ apply plugin: 'kotlin-kapt'
 apply plugin: 'maven'
 
 dependencies {
-    //compileOnly 'com.github.android-promise.database:commons:1.0.3-alpha4'
-    compileOnly project(path: ':commons')
+    compileOnly 'com.github.android-promise.database:commons:dev-4cc181146c-1'
+    //compileOnly project(path: ':commons')
     compileOnly files(Jvm.current().getToolsJar())
     implementation 'com.google.auto.value:auto-value-annotations:1.7.4'
     kapt 'com.google.auto.value:auto-value:1.7.4'
