@@ -279,6 +279,16 @@ Compile with java 8, add rxJava dependency of using rx DML functions in the tabl
 ```gradle
 android {
     ...
+    defaultConfig {
+        ...
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = [
+                        "promise.database.projectDir": "$projectDir".toString()
+                ]
+            }
+        }
+    }
     compileOptions {
             sourceCompatibility JavaVersion.VERSION_1_8
             targetCompatibility JavaVersion.VERSION_1_8
@@ -292,6 +302,9 @@ dependencies {
      implementation 'com.github.android-promise:commons:1.1-alpha03'
 }
 ```
+
+> The projectDir specifies where object tree file will be stored
+
 ##### Initialization
 Initialize Promise in your main application class
 ```java
