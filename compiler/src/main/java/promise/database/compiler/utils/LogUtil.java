@@ -21,22 +21,21 @@ import javax.tools.Diagnostic;
 
 public class LogUtil {
 
-  private static ProcessingEnvironment processingEnv;
-
   private static final String TAG = "PromiseDatabaseCompiler: ";
-
-  public static void initLogger(ProcessingEnvironment processingEnvironment) {
-    LogUtil.processingEnv = processingEnvironment;
-  }
+  private static ProcessingEnvironment processingEnv;
 
   private LogUtil() {
     //no instance
   }
 
-  public static void w( Object... messages) {
+  public static void initLogger(ProcessingEnvironment processingEnvironment) {
+    LogUtil.processingEnv = processingEnvironment;
+  }
+
+  public static void w(Object... messages) {
     StringBuilder builder = new StringBuilder();
     builder.append(TAG);
-    for (Object message: messages) {
+    for (Object message : messages) {
       builder.append(message.toString());
     }
     processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, builder.toString());
@@ -47,7 +46,7 @@ public class LogUtil {
     StringBuilder builder = new StringBuilder();
 
     builder.append(TAG);
-    for (Object message: messages) {
+    for (Object message : messages) {
       builder.append(message.toString());
     }
     processingEnv.getMessager().printMessage(Diagnostic.Kind.NOTE, builder.toString());
@@ -55,7 +54,7 @@ public class LogUtil {
 
   public static void e(Throwable t) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
-        TAG +  Utils.INSTANCE.getStackTraceString(t));
+        TAG + Utils.INSTANCE.getStackTraceString(t));
   }
 
   public static void eTrace(Throwable t) {

@@ -136,6 +136,7 @@ fun Element.getNameOfColumn(): String {
   var name: String? = null
   if ((this.toTypeName().isSameAs(Integer::class.java) ||
           this.toTypeName().isSameAs(Float::class.java) ||
+          this.toTypeName().isSameAs(Long::class.java) ||
           this.toTypeName().isSameAs(Double::class.java) ||
           this.toTypeName().isSameAs(Boolean::class.java)) &&
       this.getAnnotation(promise.database.Number::class.java) != null) {
@@ -156,6 +157,7 @@ fun Element.isColumnNullable(): Boolean {
   var nullable: Boolean = true
   if ((this.toTypeName().isSameAs(Integer::class.java) ||
           this.toTypeName().isSameAs(Float::class.java) ||
+          this.toTypeName().isSameAs(Long::class.java) ||
           this.toTypeName().isSameAs(Double::class.java) ||
           this.toTypeName().isSameAs(Boolean::class.java)) &&
       this.getAnnotation(promise.database.Number::class.java) != null) {
@@ -225,11 +227,11 @@ fun Element.isElementAnnotatedAsRelation(): Boolean {
 
 fun Element.isPersistable(): Boolean = try {
   this.toTypeName().isSameAs(Integer::class.java) ||
+      this.toTypeName().isSameAs(Long::class.java) ||
       this.toTypeName().isSameAs(String::class.java) ||
       this.toTypeName().isSameAs(Float::class.java) ||
       this.toTypeName().isSameAs(Double::class.java) ||
       this.toTypeName().isSameAs(Boolean::class.java)
 } catch (e: Throwable) {
-
   false
 }

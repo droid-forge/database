@@ -13,7 +13,6 @@
 
 package promise.database.compiler
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
@@ -35,27 +34,31 @@ class DatabaseMetaDataWriter
   init {
     val dir = File(schemasPath)
     dir.parentFile.mkdirs()
-   dir.mkdirs()
+    dir.mkdirs()
   }
 
   var currentDatabaseMetaData: DatabaseMetaData? = null
 
+  @Suppress("RECEIVER_NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")
   fun loadCurrentMetaData() = try {
     val file = File(schemasPath)
     if (file.exists() && file.isDirectory) {
-     val files = file.listFiles()
+      var files = file.listFiles { pathname -> pathname.isFile && pathname.name.endsWith(".yml") }
+          .toList()
       if (files.isNotEmpty()) {
-        files.sortBy { it.name }
-        val currentFile = files.last()
+        val currentFile: File
+        if (files.size == 1) currentFile = files[0] else {
+          files = files.sortedWith(Comparator<File> { o1, o2 -> o1.name.compareTo(o2.name) })
+          currentFile = files.last()
+        }
+        //LogUtil.n("Current file: ${currentFile.name}")
         val om = ObjectMapper(YAMLFactory())
         //xmlMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         val fileWriter = FileReader(currentFile)
-        currentDatabaseMetaData = om.readValue(fileWriter,  DatabaseMetaData::class.java)
+        currentDatabaseMetaData = om.readValue(fileWriter, DatabaseMetaData::class.java)
         fileWriter.close()
-      }
-      else currentDatabaseMetaData = DatabaseMetaData()
-    }
-    else currentDatabaseMetaData = DatabaseMetaData()
+      } else currentDatabaseMetaData = DatabaseMetaData()
+    } else currentDatabaseMetaData = DatabaseMetaData()
   } catch (e: JsonProcessingException) {
     LogUtil.e(e)
   } catch (e: IOException) {

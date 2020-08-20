@@ -16,8 +16,8 @@ package promise.base.comment;
 import java.util.List;
 
 import promise.database.Child;
-import promise.database.Relation;
 import promise.database.Parent;
+import promise.database.Relation;
 
 @Relation
 public class PostCommentToReplyRelation {

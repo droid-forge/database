@@ -28,7 +28,6 @@ import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
-import javax.tools.Diagnostic
 
 class DatabaseEntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
                                        private val database: TypeElement) : AnnotatedClassProcessor() {

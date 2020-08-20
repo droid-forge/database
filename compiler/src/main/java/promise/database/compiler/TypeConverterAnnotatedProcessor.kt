@@ -29,12 +29,12 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
     val typeConverters = environment?.getElementsAnnotatedWith(TypeConverter::class.java)
     if (typeConverters != null) {
       if (typeConverters.size > 1)
-       LogUtil.e(Exception("There can only be one typeConverter in the module"))
+        LogUtil.e(Exception("There can only be one typeConverter in the module"))
       else if (typeConverters.size == 1) try {
         typeConverter = typeConverters.first() as TypeElement
         return Collections.singletonList(processElement(typeConverter!!))
       } catch (e: Throwable) {
-       LogUtil.e(e, typeConverter)
+        LogUtil.e(e, typeConverter)
       }
     }
     return null
@@ -42,10 +42,10 @@ class TypeConverterAnnotatedProcessor(private val processingEnv: ProcessingEnvir
 
   private fun processElement(element: TypeElement): JavaFile.Builder {
     val className = element.simpleName.toString()
-   val pack = processingEnv.elementUtils.getPackageOf(element).toString()
+    val pack = processingEnv.elementUtils.getPackageOf(element).toString()
     return Utils.generateInstanceProviderHolder(ClassName.get(pack, className))
   }
-;
+  ;
   companion object {
     var typeConverter: TypeElement? = null
   }

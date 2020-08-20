@@ -13,8 +13,6 @@
 
 package promise.db;
 
-import android.database.DatabaseErrorHandler;
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.sqlite.db.SupportSQLiteDatabase;
@@ -27,14 +25,12 @@ public abstract class FastDatabaseOpenHelper extends SupportSQLiteOpenHelper.Cal
 
   private SupportSQLiteOpenHelper helper;
 
-  private DatabaseErrorHandler errorHandler;
+  private Corrupt errorHandler;
 
   public FastDatabaseOpenHelper(@Nullable String name,
-                                int version,
-                                @Nullable DatabaseErrorHandler errorHandler) {
+                                int version) {
     super(version);
     SupportSQLiteOpenHelper.Factory factory = new FrameworkSQLiteOpenHelperFactory();
-    this.errorHandler = errorHandler;
     SupportSQLiteOpenHelper.Configuration configuration = SupportSQLiteOpenHelper.Configuration
         .builder(AndroidPromise.instance().context())
         .name(name)
@@ -42,11 +38,15 @@ public abstract class FastDatabaseOpenHelper extends SupportSQLiteOpenHelper.Cal
         .build();
 
     this.helper = factory.create(configuration);
-   // super(AndroidPromise.instance().context(), name, version, errorHandler);
+    // super(AndroidPromise.instance().context(), name, version, errorHandler);
   }
 
-  public void onCorruption(SupportSQLiteDatabase db) {
-    //if (this.errorHandler != null) this.errorHandler.onCorruption(db);
+  public void setErrorHandler(Corrupt errorHandler) {
+    this.errorHandler = errorHandler;
+  }
+
+  public void onCorruption(@NonNull SupportSQLiteDatabase db) {
+    if (this.errorHandler != null) this.errorHandler.onCorrupt(db);
   }
 
 

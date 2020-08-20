@@ -26,7 +26,6 @@ import javax.lang.model.element.TypeElement;
 import promise.database.Entity;
 import promise.database.Table;
 import promise.database.compiler.utils.LogUtil;
-import promise.database.compiler.utils.LogUtil;
 import promise.database.compiler.utils.PersistableEntityUtilsKt;
 
 public class TableAnnotationGenerator implements CodeGenerator<AnnotationSpec> {

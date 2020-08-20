@@ -45,7 +45,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
     environment?.getElementsAnnotatedWith(Entity::class.java)
         ?.forEach { element ->
           val identifiableInterface = processingEnv.elementUtils.getTypeElement("promise.commons.model.Identifiable")
-          val declaredInterface =JavaUtils.toWildCardType(processingEnv, identifiableInterface, 1)
+          val declaredInterface = JavaUtils.toWildCardType(processingEnv, identifiableInterface, 1)
           if (!JavaUtils.isSubTypeOfDeclaredType(processingEnv, element as TypeElement, declaredInterface))
             LogUtil.e(Exception("The Entity class ${element.simpleName} must implement Identifiable"), element)
           else javaFiles.add(processAnnotation(element))
@@ -84,7 +84,7 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
     classBuilder.addAnnotation(tableAnnotationSpec)
 
     val activeRecordType = processingEnv.elementUtils.getTypeElement("promise.db.ActiveRecord")
-    val declaredActiveRecordType =JavaUtils.toWildCardType(processingEnv, activeRecordType, 1)
+    val declaredActiveRecordType = JavaUtils.toWildCardType(processingEnv, activeRecordType, 1)
 
     if (JavaUtils.isSubTypeOfDeclaredType(processingEnv, (element as TypeElement), declaredActiveRecordType))
       classBuilder.addMethod(MethodSpec.methodBuilder("createEntityInstance")

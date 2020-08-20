@@ -26,7 +26,6 @@ import promise.database.compiler.utils.getConverterCompatibleMethod
 import promise.database.compiler.utils.isElementAnnotatedAsRelation
 import promise.database.compiler.utils.isSameAs
 import promise.database.compiler.utils.toTypeName
-import promise.database.compiler.utils.*
 import javax.lang.model.element.Element
 import javax.lang.model.element.Modifier
 

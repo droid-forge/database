@@ -53,11 +53,12 @@ class FetchAllVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabas
       cursor = x.query(builder.build(), builder.buildParameters())
       t.collection(cursor)
     } catch (e: SQLiteException) {
-      IdentifiableList<T>()
+      IdentifiableList()
     }
   }
 }
 
+@Suppress("KDocUnresolvedReference")
 class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, TableCrud.Extras<T>> {
 
   override fun visit(t: TableCrud<T, in SupportSQLiteDatabase>): TableCrud.Extras<T> =
@@ -73,6 +74,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
    *
    * @param <Q> The type of the items in the table
   </Q> */
+  @Suppress("UNCHECKED_CAST")
   private abstract inner class QueryExtras<Q : Identifiable<Int>> internal constructor(
       /**
        * the database instance to readAsync fromm
@@ -151,7 +153,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         while (cursor.moveToNext() && !cursor.isClosed) ts.add(getWithId(cursor))
         ts
       } catch (e: SQLiteException) {
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -171,7 +173,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -192,7 +194,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -206,7 +208,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -228,7 +230,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -249,7 +251,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -278,7 +280,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         /*database.close();*/ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -303,7 +305,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         /*database.close();*/ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -330,7 +332,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         /*database.close();*/ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -354,7 +356,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         /*database.close();*/ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
 
@@ -382,7 +384,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
         /*database.close();*/ts
       } catch (e: SQLiteException) {
         LogUtil.e(fastTable.TAG, e)
-        IdentifiableList<Q>()
+        IdentifiableList()
       }
     }
   }

@@ -13,117 +13,123 @@ import promise.base.ID;
 import promise.base.comment.Like;
 import promise.base.comment.PostComment;
 import promise.base.photo.Photo;
-import promise.db.ActiveRecord;
 import promise.database.Entity;
 import promise.database.HasMany;
+import promise.db.ActiveRecord;
 
 @SuppressLint("ParcelCreator")
 @Entity
 public class Post extends ActiveRecord<Post> {
-	private ID uId;
-	private String title;
-	private String body;
-	private int userId;
+  private ID uId;
+  private String title;
+  private String body;
+  private int userId;
 
-	private Date publishedDate;
+  private int numberOfViews;
+  private Date publishedDate;
+  @HasMany
+  private List<PostComment> comments;
+  @HasMany
+  private List<Photo> photos;
+  @HasMany
+  private List<Like> likes;
 
-	@NonNull
-	@Override
-	public String toString() {
-		return "Post{" +
-				"uId=" + uId +
-				", title='" + title + '\'' +
-				", body='" + body + '\'' +
-				", userId=" + userId +
-				", comments=" + comments +
-				", photos=" + photos +
-				'}';
-	}
+  public int getNumberOfViews() {
+    return numberOfViews;
+  }
 
-	@HasMany
-	private List<PostComment> comments;
+  public void setNumberOfViews(int numberOfViews) {
+    this.numberOfViews = numberOfViews;
+  }
 
-	@HasMany
-	private List<Photo> photos;
+  @NonNull
+  @Override
+  public String toString() {
+    return "Post{" +
+        "uId=" + uId +
+        ", title='" + title + '\'' +
+        ", body='" + body + '\'' +
+        ", userId=" + userId +
+        ", comments=" + comments +
+        ", photos=" + photos +
+        '}';
+  }
 
-	@HasMany
-	private List<Like> likes;
+  public String getTitle() {
+    return title;
+  }
 
-	public String getTitle(){
-		return title;
-	}
+  public void setTitle(String title) {
+    this.title = title;
+  }
 
-	public String getBody(){
-		return body;
-	}
+  public String getBody() {
+    return body;
+  }
 
-	public int getUserId(){
-		return userId;
-	}
+  public void setBody(String body) {
+    this.body = body;
+  }
 
-	public ID getUId() {
-		return uId;
-	}
+  public int getUserId() {
+    return userId;
+  }
 
-	public void setUId(ID uId) {
-		this.uId = uId;
-	}
+  public void setUserId(int userId) {
+    this.userId = userId;
+  }
 
-	public void setTitle(String title) {
-		this.title = title;
-	}
+  public ID getUId() {
+    return uId;
+  }
 
-	public void setBody(String body) {
-		this.body = body;
-	}
+  public void setUId(ID uId) {
+    this.uId = uId;
+  }
 
-	public void setUserId(int userId) {
-		this.userId = userId;
-	}
+  public ID getuId() {
+    return uId;
+  }
 
-	public ID getuId() {
-		return uId;
-	}
+  public void setuId(ID uId) {
+    this.uId = uId;
+  }
 
-	public void setuId(ID uId) {
-		this.uId = uId;
-	}
+  public List<PostComment> getComments() {
+    return comments;
+  }
 
-	public List<PostComment> getComments() {
-		return comments;
-	}
+  public void setComments(List<PostComment> comments) {
+    this.comments = comments;
+  }
 
-	public void setComments(List<PostComment> comments) {
-		this.comments = comments;
-	}
+  public List<Photo> getPhotos() {
+    return photos;
+  }
 
-	public List<Photo> getPhotos() {
-		return photos;
-	}
+  public void setPhotos(List<Photo> photos) {
+    this.photos = photos;
+  }
 
-	public void setPhotos(List<Photo> photos) {
-		this.photos = photos;
-	}
+  public List<Like> getLikes() {
+    return likes;
+  }
 
-	public List<Like> getLikes() {
-		return likes;
-	}
+  public void setLikes(List<Like> likes) {
+    this.likes = likes;
+  }
 
-	public void setLikes(List<Like> likes) {
-		this.likes = likes;
-	}
+  @NotNull
+  @Override
+  public Post getEntity() {
+    return this;
+  }
 
-	@NotNull
-	@Override
-	public Post getEntity() {
-		return this;
-	}
+  public Date getPublishedDate() {
+    return publishedDate;
+  }
 
-	public Date getPublishedDate() {
-		return publishedDate;
-	}
-
-	public void setPublishedDate(Date publishedDate) {
-		this.publishedDate = publishedDate;
-	}
+  public void setPublishedDate(Date publishedDate) {
+    this.publishedDate = publishedDate;
+  }
 }

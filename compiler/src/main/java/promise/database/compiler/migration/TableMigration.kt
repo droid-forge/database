@@ -16,49 +16,49 @@ package promise.database.compiler.migration
 import promise.database.MigrationOptions
 
 open class TableMigration {
-   var versionChange: VersionChange? = null
-   var field: String? = null
-   var action: MigrationOptions? = null
+  var versionChange: VersionChange? = null
+  var field: String? = null
+  var action: MigrationOptions? = null
 
-   override fun equals(other: Any?): Boolean {
-      if (javaClass != other?.javaClass) return false
-      other as TableMigration
+  override fun equals(other: Any?): Boolean {
+    if (javaClass != other?.javaClass) return false
+    other as TableMigration
 
-      if (versionChange != other.versionChange) return false
-      if (field != other.field) return false
-      if (action != other.action) return false
-      return true
-   }
+    if (versionChange != other.versionChange) return false
+    if (field != other.field) return false
+    if (action != other.action) return false
+    return true
+  }
 
-   override fun hashCode(): Int {
-      var result = versionChange?.hashCode() ?: 0
-      result = 31 * result + (field?.hashCode() ?: 0)
-      result = 31 * result + (action?.hashCode() ?: 0)
-      return result
-   }
+  override fun hashCode(): Int {
+    var result = versionChange?.hashCode() ?: 0
+    result = 31 * result + (field?.hashCode() ?: 0)
+    result = 31 * result + (action?.hashCode() ?: 0)
+    return result
+  }
 }
 
-class RenameColumnTableMigration: TableMigration() {
+class RenameColumnTableMigration : TableMigration() {
 
-   var oldColumnName: String? = null
+  var oldColumnName: String? = null
 
-   init {
-     super.action = MigrationOptions.RENAME_COLUMN
-   }
+  init {
+    super.action = MigrationOptions.RENAME_COLUMN
+  }
 
-   override fun equals(other: Any?): Boolean {
-      if (this === other) return true
-      if (javaClass != other?.javaClass) return false
-      if (!super.equals(other)) return false
-      other as RenameColumnTableMigration
-      if (oldColumnName != other.oldColumnName) return false
-      return true
-   }
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+    if (!super.equals(other)) return false
+    other as RenameColumnTableMigration
+    if (oldColumnName != other.oldColumnName) return false
+    return true
+  }
 
-   override fun hashCode(): Int {
-      var result = 0
-      result = 31 * result + (oldColumnName?.hashCode() ?: 0)
-      return result
-   }
+  override fun hashCode(): Int {
+    var result = 0
+    result = 31 * result + (oldColumnName?.hashCode() ?: 0)
+    return result
+  }
 
 }

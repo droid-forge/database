@@ -10,35 +10,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package promise.db
 
-package promise.db;
-
-import org.jetbrains.annotations.NotNull;
-
-import promise.commons.model.Identifiable;
-import promise.utils.Acceptor;
-import promise.utils.Visitor;
+import promise.commons.model.Identifiable
+import promise.utils.Visitor
 
 /**
  * Base class for classes annotated with DatabaseEntity
  */
-public abstract class PromiseDatabase {
-
-  private FastDatabase fastDatabase;
-
-  public PromiseDatabase(FastDatabase fastDatabase) {
-    this.fastDatabase = fastDatabase;
-  }
+abstract class PromiseDatabase(private val fastDatabase: FastDatabase?) {
 
   /**
    * @return an instance of FastDatabase
    */
-  public FastDatabase getDatabaseInstance() {
-    if (fastDatabase == null) throw new IllegalStateException("Database not initialized or created yet");
-    return fastDatabase;
-  }
+  val databaseInstance: FastDatabase
+    get() {
+      checkNotNull(fastDatabase) { "Database not initialized or created yet" }
+      return fastDatabase
+    }
 
-  public abstract <T extends Identifiable<Integer>> Visitor<Class<? extends T>, FastTable<T>> getEntityClassVisitor();
+  abstract fun <T : Identifiable<Int>> getEntityClassVisitor(): Visitor<Class<out T>, FastTable<T>>
 
   /**
    * returns the table associated with the entity class
@@ -47,12 +38,11 @@ public abstract class PromiseDatabase {
    * @param <T>         entity
    * @return FastTable of the entity
    * @throws IllegalArgumentException if entity is not registered with the database
-   */
-  public  <T extends Identifiable<Integer>> FastTable<T> tableOf(Class<? extends T> entityClass) throws IllegalArgumentException {
-    Visitor<? super Class<? extends T>, ? extends FastTable<T>> t = getEntityClassVisitor();
-    return t.visit(entityClass);
+  </T> */
+  @Throws(IllegalArgumentException::class)
+  fun <T : Identifiable<Int>> tableOf(entityClass: Class<out T>): FastTable<T> {
+    val t: Visitor<Class<out T>, FastTable<T>> = getEntityClassVisitor()
+    return t.visit(entityClass)
   }
 
 }
-
-

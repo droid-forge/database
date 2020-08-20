@@ -13,7 +13,6 @@
 
 package promise.db
 
-import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 interface Migration {

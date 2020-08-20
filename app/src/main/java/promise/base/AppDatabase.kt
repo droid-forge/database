@@ -19,9 +19,11 @@ import promise.base.comment.PostCommentDao
 import promise.base.photo.Photo
 import promise.base.post.Post
 import promise.base.todo.Todo
+import promise.commons.data.log.LogUtil
 import promise.database.DatabaseEntity
 import promise.db.FastDatabase
 import promise.db.PromiseDatabase
+import promise.utils.Visitor
 
 @DatabaseEntity(
     persistableEntities = [
@@ -35,5 +37,20 @@ import promise.db.PromiseDatabase
 abstract class AppDatabase(fastDatabase: FastDatabase)
   : PromiseDatabase(fastDatabase) {
 
+  init {
+    fastDatabase.accept(object : Visitor<FastDatabase, Unit> {
+      override fun visit(t: FastDatabase) {
+        t.setErrorHandler {
+          LogUtil.e(TAG, "database error: ${it.path}")
+        }
+        t.fallBackToDestructiveMigration()
+      }
+    })
+  }
+
   abstract fun getPostCommentsDao(): PostCommentDao
+
+  companion object {
+    val TAG: String = LogUtil.makeTag(AppDatabase::class.java)
+  }
 }

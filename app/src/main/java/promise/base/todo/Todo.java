@@ -5,75 +5,93 @@ import android.annotation.SuppressLint;
 import org.jetbrains.annotations.NotNull;
 
 import promise.base.photo.Photo;
-import promise.db.ActiveRecord;
 import promise.database.Entity;
 import promise.database.HasOne;
+import promise.db.ActiveRecord;
 
 @SuppressLint("ParcelCreator")
 @Entity
 public class Todo extends ActiveRecord<Todo> {
-	private int uid;
-	private boolean completed;
-	private String title;
+  private int uid;
+  private boolean completed;
 
-	private String description;
+  private String title;
 
-	@HasOne
-	private Photo photo;
+  private long timeStarted;
+  private long timeFinished;
+  private String description;
+  @HasOne
+  private Photo photo;
 
-	public int getUid() {
-		return uid;
-	}
+  public long getTimeFinished() {
+    return timeFinished;
+  }
 
-	public void setUid(int uid) {
-		this.uid = uid;
-	}
+  public void setTimeFinished(long timeFinished) {
+    this.timeFinished = timeFinished;
+  }
 
-	public Photo getPhoto() {
-		return photo;
-	}
+  public long getTimeStarted() {
+    return timeStarted;
+  }
 
-	public void setPhoto(Photo photo) {
-		this.photo = photo;
-	}
+  public void setTimeStarted(long timeStarted) {
+    this.timeStarted = timeStarted;
+  }
 
-	public void setCompleted(boolean completed){
-		this.completed = completed;
-	}
+  public int getUid() {
+    return uid;
+  }
 
-	public boolean isCompleted(){
-		return completed;
-	}
+  public void setUid(int uid) {
+    this.uid = uid;
+  }
 
-	public void setTitle(String title){
-		this.title = title;
-	}
+  public Photo getPhoto() {
+    return photo;
+  }
 
-	public String getTitle(){
-		return title;
-	}
+  public void setPhoto(Photo photo) {
+    this.photo = photo;
+  }
 
-	public String getDescription() {
-		return description;
-	}
+  public boolean isCompleted() {
+    return completed;
+  }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+  public void setCompleted(boolean completed) {
+    this.completed = completed;
+  }
 
-	@Override
- 	public String toString(){
-		return 
-			"Todo{" + 
-			"id = '" + uid + '\'' +
-			",completed = '" + completed + '\'' + 
-			",title = '" + title + '\'' +
-			"}";
-		}
+  public String getTitle() {
+    return title;
+  }
 
-	@NotNull
-	@Override
-	public Todo getEntity() {
-		return this;
-	}
+  public void setTitle(String title) {
+    this.title = title;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription(String description) {
+    this.description = description;
+  }
+
+  @Override
+  public String toString() {
+    return
+        "Todo{" +
+            "id = '" + uid + '\'' +
+            ",completed = '" + completed + '\'' +
+            ",title = '" + title + '\'' +
+            "}";
+  }
+
+  @NotNull
+  @Override
+  public Todo getEntity() {
+    return this;
+  }
 }

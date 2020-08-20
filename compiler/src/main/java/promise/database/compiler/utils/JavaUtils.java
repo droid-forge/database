@@ -26,7 +26,6 @@ import java.util.Map;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -86,7 +85,7 @@ public class JavaUtils {
         ClassName.get("promise.commons", "SingletonInstanceProvider"),
         providerClassName,
         relationDao.getKey());
-    for (Map.Entry<ClassName, Element> tableAndEntity: relationDao.getValue().entrySet())
+    for (Map.Entry<ClassName, Element> tableAndEntity : relationDao.getValue().entrySet())
       codeBlock.add(".set" + tableAndEntity.getKey().simpleName() + "(get" + tableAndEntity.getKey().simpleName() + "())\n");
     codeBlock.addStatement(".build())).get()");
     return codeBlock;
@@ -116,11 +115,11 @@ public class JavaUtils {
       ProcessingEnvironment processingEnv,
       TypeElement entity) {
     String pack = processingEnv.getElementUtils().getPackageOf(entity).toString();
-      return CodeBlock.builder()
-          .addStatement("return ($T) tableOf($T.class)",
-              ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)),
-              TypeName.get(entity.asType()))
-          .build();
+    return CodeBlock.builder()
+        .addStatement("return ($T) tableOf($T.class)",
+            ClassName.get(pack, PersistableEntityUtilsKt.getTableClassNameString(entity)),
+            TypeName.get(entity.asType()))
+        .build();
   }
 
   public static CodeBlock generateSerializerRelationPutStatement(Element element, String colName) {
@@ -208,7 +207,6 @@ public class JavaUtils {
         1);
     return isSubTypeOfDeclaredType(processingEnvironment, variableElement, collectionType);
   }
-
 
   public static List<? extends TypeMirror> getParameterizedTypeMirrors(VariableElement variableElement) {
     if (variableElement.asType() instanceof DeclaredType) {

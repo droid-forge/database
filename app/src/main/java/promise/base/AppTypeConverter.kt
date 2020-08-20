@@ -12,6 +12,7 @@
  */
 
 package promise.base
+
 import promise.database.TypeConverter
 import java.util.*
 

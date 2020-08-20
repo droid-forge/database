@@ -14,39 +14,73 @@
 package promise.db
 
 import android.database.Cursor
-import android.database.DatabaseErrorHandler
-import android.database.sqlite.SQLiteDatabase
 import androidx.collection.ArrayMap
 import androidx.sqlite.db.SupportSQLiteDatabase
 import promise.commons.makeInstance
 import promise.commons.model.List
 import promise.commons.util.ClassUtil
+import promise.utils.Visitor
 
 abstract class FastDatabase internal constructor(
     name: String?,
-    version: Int,
-    errorHandler: DatabaseErrorHandler) : FastDatabaseOpenHelper(name, version, errorHandler), Crud<SupportSQLiteDatabase> {
-
+    version: Int) : FastDatabaseOpenHelper(name, version),
+    Crud<SupportSQLiteDatabase> {
+  /**
+   * adds tables to the existing database
+   */
   abstract fun add(database: SupportSQLiteDatabase, vararg tables: TableCrud<*, in SupportSQLiteDatabase>): Boolean
 
+  /**
+   * returns a table instance provided the class of the table
+   * the class provided must be annotated with @Table
+   */
   abstract fun <T : TableCrud<*, in SupportSQLiteDatabase>> obtain(tableClass: Class<out TableCrud<*, in SupportSQLiteDatabase>>): T
 
+  /**
+   * queries the given sql and returns a cursor
+   */
   abstract fun querySql(sql: String): Cursor
 
+  /**
+   * pass a visitor to merge multiple operations
+   */
+  abstract fun <R : Any> accept(visitor: Visitor<FastDatabase, R>): R
+
+  /**
+   * queries the given query builder and returns a cursor
+   */
   abstract fun query(queryBuilder: QueryBuilder): Cursor
 
+  /**
+   * returns a writable version of the database
+   */
   abstract fun writableDatabase(): SupportSQLiteDatabase
 
+  /**
+   * executes query transaction
+   */
   abstract fun transact(block: FastDatabase.() -> Unit)
 
+  /**
+   * clear records in the passed tables
+   */
   abstract fun delete(vararg tableCruds: TableCrud<*, in SupportSQLiteDatabase>): Boolean
 
+  /**
+   * returns the name of the database
+   */
   abstract fun name(): String
+
+  /**
+   * in case migrations have not been done successfully, calling this ensures the database drops and creates all the tables afresh
+   */
+  abstract fun fallBackToDestructiveMigration()
 
   companion object {
     private val dbCache: ArrayMap<String, FastDatabase> = ArrayMap()
     private val lock = Any()
     const val DEFAULT_NAME = "fast"
+
     @JvmOverloads
     @JvmStatic
     fun createDatabase(dbClass: Class<*>,

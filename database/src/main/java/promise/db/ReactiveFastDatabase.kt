@@ -12,11 +12,8 @@
  */
 package promise.db
 
-import android.annotation.TargetApi
 import android.content.ContentValues
 import android.database.Cursor
-import android.database.DatabaseErrorHandler
-import android.os.Build
 import androidx.sqlite.db.SupportSQLiteDatabase
 import io.reactivex.Maybe
 import io.reactivex.Single
@@ -25,25 +22,13 @@ import promise.commons.model.List
 import promise.commons.util.DoubleConverter
 import promise.model.IdentifiableList
 
-class ReactiveFastDatabase private constructor(
+class ReactiveFastDatabase constructor(
     name: String?,
-    version: Int,
-    errorHandler: DatabaseErrorHandler) :
-    FastDatabaseImpl(name, version, errorHandler),
+    version: Int) :
+    FastDatabaseImpl(name, version),
     ReactiveCrud<SupportSQLiteDatabase> {
 
-  @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-  internal constructor(name: String?, version: Int, listener: Corrupt?) : this(
-      name,
-      version,
-      DatabaseErrorHandler {
-        assert(listener != null)
-        listener!!.onCorrupt()
-      })
-
   internal constructor(version: Int) : this(DEFAULT_NAME, version)
-
-  constructor(name: String?, version: Int) : this(name, version,  null)
 
   override fun queryAsync(queryBuilder: QueryBuilder): Single<Cursor> = Single.fromCallable { query(queryBuilder) }
 

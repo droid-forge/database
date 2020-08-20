@@ -13,7 +13,9 @@
 
 package promise.database.compiler
 
+import com.google.auto.common.MoreElements
 import com.google.auto.common.MoreTypes
+import com.google.common.util.concurrent.MoreExecutors
 import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
@@ -30,6 +32,7 @@ import promise.database.Relation
 import promise.database.compiler.utils.JavaUtils
 import promise.database.compiler.utils.LogUtil
 import promise.database.compiler.utils.asTableClassName
+import promise.database.compiler.utils.asTypeElement
 import promise.database.compiler.utils.camelCase
 import promise.database.compiler.utils.toTypeName
 import javax.annotation.processing.ProcessingEnvironment
@@ -38,6 +41,7 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.element.TypeParameterElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.util.ElementFilter
 
@@ -104,24 +108,23 @@ class DAOAnnotatedProcessor(private val processingEnv: ProcessingEnvironment) : 
       classBuilder.addMethod(MethodSpec.overriding(executableElement)
           .addCode("return null;").build())
       var relationType: Element?
-      if (MoreTypes.isType(executableElement.returnType) &&
-          MoreTypes.isTypeOf(Collection::class.java, executableElement.returnType)) {
-        val typeMirrors =
-            JavaUtils.getParameterizedTypeMirrors(MoreTypes.asDeclared(executableElement.returnType) as VariableElement)
+//      val ssElement = executableElement.enclosingElement
+//      if (ssElement is TypeParameterElement) {
+//
+//      }
+//      if (JavaUtils.isCollectionType(processingEnv, ssElement)) {
+//        val typeMirrors =
+//            JavaUtils.getParameterizedTypeMirrors(ssElement)
+//        val typeMirror = typeMirrors[0]
+//        relationType = processingEnv.typeUtils.asElement(typeMirror)
+//        LogUtil.n(Exception("Return type is collection: ${relationType}"))
+//      } else {
+//        relationType = processingEnv.typeUtils.asElement(executableElement.returnType)
+//        LogUtil.n(Exception("Return type is : ${relationType}"))
+//        //generateGetRelationMethod(classBuilder, relationType)
+//      }
 
-        val typeMirror = typeMirrors[0]
-        relationType = processingEnv.typeUtils.asElement(typeMirror)
-        LogUtil.n(Exception("Return type is collection: ${relationType}"))
-        //generateGetRelationMethod(classBuilder, relationType)
-      }
-
-      else {
-        relationType = processingEnv.typeUtils.asElement(executableElement.returnType)
-        LogUtil.n(Exception("Return type is : ${relationType}"))
-        //generateGetRelationMethod(classBuilder, relationType)
-      }
-
-      if (relationType == null) throw IllegalStateException("Failed to determine relation class")
+      //if (relationType == null) throw IllegalStateException("Failed to determine relation class")
 
 //      classBuilder.addMethod(MethodSpec.methodBuilder("get${relationType.simpleName}Impl")
 //          .addParameter(ClassName.get("android.database", "Cursor"), "cursor")

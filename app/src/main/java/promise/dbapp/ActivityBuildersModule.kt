@@ -18,7 +18,7 @@ import dagger.android.ContributesAndroidInjector
 
 @Module
 abstract class ActivityBuildersModule {
-  @ContributesAndroidInjector (
+  @ContributesAndroidInjector(
       modules = [
         ReposModule::class
       ]

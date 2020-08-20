@@ -1,5 +1,5 @@
 ---
-dbVersion: 1
+dbVersion: 3
 tableMetaData:
   - tableName: "likes"
     fields:
@@ -45,10 +45,18 @@ tableMetaData:
       - fieldName: "userId"
         columnName: "userId"
         nullable: true
+      - fieldName: "numberOfViews"
+        columnName: "numberOfViews"
+        nullable: true
       - fieldName: "publishedDate"
         columnName: "publishedDate"
         nullable: true
-    migrations: []
+    migrations:
+      - versionChange:
+          fromVersion: 2
+          toVersion: 3
+        field: "numberOfViewsColumn"
+        action: "CREATE"
   - tableName: "todoes"
     fields:
       - fieldName: "uid"
@@ -62,6 +70,9 @@ tableMetaData:
         nullable: true
       - fieldName: "timeStarted"
         columnName: "timeStarted"
+        nullable: true
+      - fieldName: "timeFinished"
+        columnName: "timeFinished"
         nullable: true
       - fieldName: "description"
         columnName: "description"

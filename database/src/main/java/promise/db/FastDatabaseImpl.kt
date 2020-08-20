@@ -12,10 +12,7 @@
  */
 package promise.db
 
-import android.annotation.TargetApi
 import android.database.Cursor
-import android.database.DatabaseErrorHandler
-import android.os.Build
 import androidx.collection.ArrayMap
 import androidx.sqlite.db.SupportSQLiteDatabase
 import promise.commons.createInstance
@@ -26,32 +23,26 @@ import promise.commons.util.ClassUtil
 import promise.commons.util.Conditions
 import promise.database.Table
 import promise.model.IdentifiableList
+import promise.utils.Visitor
 import java.util.*
 
-open class FastDatabaseImpl internal constructor(
+@Suppress("UNCHECKED_CAST")
+open class FastDatabaseImpl constructor(
     name: String?,
-    version: Int,
-    errorHandler: DatabaseErrorHandler)
-  : FastDatabase(name, version, errorHandler) {
+    version: Int)
+  : FastDatabase(name, version) {
+
+  private var fallBackToDestructiveMigration: Boolean = false
+
+  override fun fallBackToDestructiveMigration() {
+    this.fallBackToDestructiveMigration = true
+  }
 
   private val cacheMap: ArrayMap<String, Any> = ArrayMap()
 
   private var migration: Migration? = null
 
   private var databaseCreationCallback: DatabaseCreationCallback? = null
-
-  @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-  private constructor(name: String?,
-                      version: Int,
-                      listener: Corrupt?) : this(
-      name,
-      version,
-      DatabaseErrorHandler {
-        assert(listener != null)
-        listener!!.onCorrupt()
-      })
-
-  constructor(name: String?, version: Int) : this(name, version, null)
 
   final override fun onCreate(db: SupportSQLiteDatabase) {
     if (databaseCreationCallback != null) {
@@ -62,17 +53,27 @@ open class FastDatabaseImpl internal constructor(
   }
 
   final override fun onUpgrade(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
-    LogUtil.d(TAG, "onUpgrade", oldVersion, newVersion)
-    if (newVersion - oldVersion == 1)
-      onUpgradeDatabase(database, oldVersion, newVersion)
-    else {
-      var i = oldVersion
-      while (i < newVersion) {
-        onUpgradeDatabase(database, i, i + 1)
-        i++
+    try {
+      if (newVersion - oldVersion == 1)
+        onUpgradeDatabase(database, oldVersion, newVersion)
+      else {
+        var i = oldVersion
+        while (i < newVersion) {
+          onUpgradeDatabase(database, i, i + 1)
+          i++
+        }
       }
+      upgradeTables(database, oldVersion, newVersion)
+    } catch (e: Throwable) {
+      if (fallBackToDestructiveMigration) {
+        for (table in Conditions.checkNotNull(tables())) try {
+          drop(table, database)
+        } catch (tableError: TableError) {
+          LogUtil.e(TAG, tableError)
+        }
+        onCreate(database)
+      } else LogUtil.e(TAG, e)
     }
-    upgradeTables(database, oldVersion, newVersion)
   }
 
   private fun onUpgradeDatabase(database: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
@@ -92,7 +93,7 @@ open class FastDatabaseImpl internal constructor(
       if (ClassUtil.hasAnnotation(tableClass, Table::class.java)) {
         val table = tableClass.getAnnotation(Table::class.java)!!
         if (cacheMap.containsKey(table.tableName)) return cacheMap[table.tableName] as T
-        val tableObject: FastTable<*> = createInstance<FastTable<*>>(tableClass.kotlin, arrayOf(this))
+        val tableObject: FastTable<*> = createInstance<FastTable<*>>(clazz = tableClass.kotlin, args = arrayOf(this))
         tableObject.setNameOfTable(table.tableName)
         tableObject.setArgs(ArrayMap<String, Any>().apply {
           put(INDEXES, table.indices)
@@ -160,18 +161,6 @@ open class FastDatabaseImpl internal constructor(
       }
     }
     return created
-  }
-
-  private fun drop(database: SupportSQLiteDatabase): Boolean {
-    /*for (Map.Entry<IndexCreated, Table<, SupportSQLiteDatabase>> entry :
-        indexCreatedTableHashMap.entrySet()) {
-      try {
-        dropped = dropped && drop(checkTableExist(entry.getValue()), database);
-      } catch (DBError dbError) {
-        dbError.printStackTrace();
-        return false;
-      }
-    }*/return true
   }
 
   @Throws(DBError::class)
@@ -255,15 +244,14 @@ open class FastDatabaseImpl internal constructor(
   override fun <T : Identifiable<Int>> save(list: IdentifiableList<out T>, tableCrud: TableCrud<T, in SupportSQLiteDatabase>): Boolean =
       checkTableExist(tableCrud).accept(SaveListVisitor(writableDatabase, list)) as Boolean
 
-
   override fun deleteAll(): Boolean = synchronized(FastDatabaseImpl::class.java) {
     var deleted = true
     try {
-      writableDatabase.execSQL("PRAGMA foreign_keys = FALSE");
+      writableDatabase.execSQL("PRAGMA foreign_keys = FALSE")
       transact {
         for (table in Conditions.checkNotNull(tables())) deleted = deleted && delete(checkTableExist(table))
       }
-      writableDatabase.execSQL("PRAGMA foreign_keys = TRUE");
+      writableDatabase.execSQL("PRAGMA foreign_keys = TRUE")
     } catch (e: Exception) {
     }
     return deleted
@@ -282,6 +270,8 @@ open class FastDatabaseImpl internal constructor(
       db.endTransaction()
     }
   }
+
+  override fun <R : Any> accept(visitor: Visitor<FastDatabase, R>): R = visitor.visit(this)
 
   private fun <T : Identifiable<Int>> checkTableExist(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): TableCrud<T, in SupportSQLiteDatabase> =
       Conditions.checkNotNull(tableCrud)

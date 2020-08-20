@@ -13,7 +13,8 @@
 
 package promise.db;
 
-public interface Corrupt {
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
-  void onCorrupt();
+public interface Corrupt {
+  void onCorrupt(SupportSQLiteDatabase database);
 }

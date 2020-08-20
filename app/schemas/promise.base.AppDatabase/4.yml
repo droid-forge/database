@@ -1,5 +1,5 @@
 ---
-dbVersion: 1
+dbVersion: 4
 tableMetaData:
   - tableName: "likes"
     fields:
@@ -45,10 +45,18 @@ tableMetaData:
       - fieldName: "userId"
         columnName: "userId"
         nullable: true
+      - fieldName: "numberOfViews"
+        columnName: "numberOfViews"
+        nullable: true
       - fieldName: "publishedDate"
         columnName: "publishedDate"
         nullable: true
-    migrations: []
+    migrations:
+      - versionChange:
+          fromVersion: 2
+          toVersion: 3
+        field: "numberOfViewsColumn"
+        action: "CREATE"
   - tableName: "todoes"
     fields:
       - fieldName: "uid"
@@ -57,11 +65,17 @@ tableMetaData:
       - fieldName: "completed"
         columnName: "completed"
         nullable: true
+      - fieldName: "sentToServer"
+        columnName: "sentToServer"
+        nullable: true
       - fieldName: "title"
         columnName: "title"
         nullable: true
       - fieldName: "timeStarted"
         columnName: "timeStarted"
+        nullable: true
+      - fieldName: "timeFinished"
+        columnName: "timeFinished"
         nullable: true
       - fieldName: "description"
         columnName: "description"
@@ -69,7 +83,12 @@ tableMetaData:
       - fieldName: "photo"
         columnName: "photo"
         nullable: true
-    migrations: []
+    migrations:
+      - versionChange:
+          fromVersion: 3
+          toVersion: 4
+        field: "sentToServerColumn"
+        action: "CREATE"
   - tableName: "photos"
     fields:
       - fieldName: "albumId"

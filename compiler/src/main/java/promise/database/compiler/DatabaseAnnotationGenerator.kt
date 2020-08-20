@@ -17,8 +17,8 @@ import com.squareup.javapoet.AnnotationSpec
 import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.CodeBlock
 import promise.database.compiler.utils.LogUtil
-import promise.database.compiler.utils.getTableClassNameString
 import promise.database.compiler.utils.getDatabaseVersion
+import promise.database.compiler.utils.getTableClassNameString
 import promise.database.compiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.lang.model.element.Element
@@ -35,7 +35,8 @@ class DatabaseAnnotationGenerator(
       var entities: Array<TypeElement>? = null
       try {
         entities = element.getTableEntities(processingEnv)
-      } catch (e: Throwable) { LogUtil.e(e)
+      } catch (e: Throwable) {
+        LogUtil.e(e)
       }
       val generatedVersion = TableMetaDataWriter.finalMaxDbVersion()
       val version = max(element.getDatabaseVersion(), generatedVersion)

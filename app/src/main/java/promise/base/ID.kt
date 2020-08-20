@@ -13,7 +13,4 @@
 
 package promise.base
 
-import android.os.Parcel
-import android.os.Parcelable
-
 data class ID(val id: String)

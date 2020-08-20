@@ -496,7 +496,7 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
                 .add("@Override\n")
                 .beginControlFlow("public void accept($T " + parentElementVarName + ")",
                     TypeName.get(element.asType()))
-                .addStatement("saveWith"+capitalizeFirst(hasOneRelationFieldName)+"("+parentElementVarName+")")
+                .addStatement("saveWith" + capitalizeFirst(hasOneRelationFieldName) + "(" + parentElementVarName + ")")
                 .endControlFlow()
                 .endControlFlow(")")
                 .addStatement("return true")
@@ -507,8 +507,8 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
             .addModifiers(Modifier.PUBLIC)
             .addParameter(TypeName.get(element.asType()), parentElementVarName)
             .addCode(CodeBlock.builder()
-                .addStatement("return "+getParentElementTableVarName+".update("+parentElementVarName+") &&\n" +
-                    " "+relationElementTableVarName+".update("+parentElementVarName+".get"+capitalizeFirst(hasOneRelationFieldName)+"())")
+                .addStatement("return " + getParentElementTableVarName + ".update(" + parentElementVarName + ") &&\n" +
+                    " " + relationElementTableVarName + ".update(" + parentElementVarName + ".get" + capitalizeFirst(hasOneRelationFieldName) + "())")
                 .build())
             .returns(boolean.class)
             .build());

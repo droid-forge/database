@@ -15,7 +15,6 @@ package promise.database.compiler.utils.function;
 
 
 import promise.database.compiler.utils.List;
-import promise.database.compiler.utils.List;
 
 public interface ReduceFunction<K, T> {
   K reduce(List<T> list);

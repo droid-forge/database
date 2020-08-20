@@ -14,10 +14,11 @@
 package promise.base.comment;
 
 import android.annotation.SuppressLint;
+
 import org.jetbrains.annotations.NotNull;
+
 import promise.base.ID;
 import promise.base.post.Post;
-import promise.database.AddedEntity;
 import promise.database.Entity;
 import promise.database.HasOne;
 import promise.db.ActiveRecord;
@@ -26,39 +27,39 @@ import promise.db.ActiveRecord;
 @Entity
 //@AddedEntity(fromVersion = 1, toVersion = 2)
 public class Like extends ActiveRecord<Like> {
-	private ID uId;
+  private ID uId;
 
-	@HasOne
-	private Post post;
+  @HasOne
+  private Post post;
 
-	@Override
- 	public String toString(){
-		return 
-			"Comment{" +
-			",id = '" + uId + '\'' +
+  @Override
+  public String toString() {
+    return
+        "Comment{" +
+            ",id = '" + uId + '\'' +
 
-			"}";
-		}
+            "}";
+  }
 
-	@NotNull
-	@Override
-	public Like getEntity() {
-		return this;
-	}
+  @NotNull
+  @Override
+  public Like getEntity() {
+    return this;
+  }
 
-	public ID getUId() {
-		return uId;
-	}
+  public ID getUId() {
+    return uId;
+  }
 
-	public void setUId(ID uId) {
-		this.uId = uId;
-	}
+  public void setUId(ID uId) {
+    this.uId = uId;
+  }
 
-	public void setPost(Post post) {
-		this.post = post;
-	}
+  public Post getPost() {
+    return post;
+  }
 
-	public Post getPost() {
-		return post;
-	}
+  public void setPost(Post post) {
+    this.post = post;
+  }
 }

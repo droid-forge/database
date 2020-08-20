@@ -14,8 +14,8 @@
 package promise.database.compiler.migration
 
 class VersionChange {
-   var fromVersion: Int = 0
-    var toVersion: Int = 0
+  var fromVersion: Int = 0
+  var toVersion: Int = 0
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (javaClass != other?.javaClass) return false

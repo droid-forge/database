@@ -15,7 +15,9 @@ package promise.database.compiler
 
 import promise.database.HasMany
 import promise.database.Ignore
+import promise.database.Migrate
 import promise.database.MigrationOptions
+import promise.database.Migrations
 import promise.database.compiler.migration.Field
 import promise.database.compiler.migration.TableMetaData
 import promise.database.compiler.migration.TableMigration
@@ -37,8 +39,7 @@ class TableMetaDataWriter(
     fun finalMaxDbVersion(): Int {
       if (tableMetaData.isNotEmpty()) {
         val versionChanges: ArrayList<VersionChange?> = ArrayList()
-        tableMetaData.map {
-          metaData -> metaData.migrations.map { it.versionChange } }
+        tableMetaData.map { metaData -> metaData.migrations.map { it.versionChange } }
             .forEach {
               versionChanges.addAll(it)
             }
@@ -56,62 +57,59 @@ class TableMetaDataWriter(
   fun process(
       //elements: Map<Element, String>
   ): promise.database.compiler.utils.List<TableMigration> {
+    val tableMigrations = promise.database.compiler.utils.List<TableMigration>()
 
-//
-//
-//    val migrateFields = elements.filter {
-//      it.key.getAnnotation(Migrate::class.java) != null ||
-//          it.key.getAnnotation(Migrations::class.java) != null
-//    }
+    val migrateFields = elements.filter {
+      it.key.getAnnotation(Migrate::class.java) != null ||
+          it.key.getAnnotation(Migrations::class.java) != null
+    }
 
-//    if (migrateFields.isEmpty()) {
-//
-//    }
-//    else {
-//      migrateFields.forEach { entry ->
-//        if (entry.key.getAnnotation(Migrate::class.java) != null) {
-//          val migration = entry.key.getAnnotation(Migrate::class.java)
-//          tableMigrations.add(TableMigration().apply {
-//            versionChange = VersionChange().apply {
-//              fromVersion = migration.fromVersion
-//              toVersion = migration.toVersion
-//            }
-//            field = if (migration.action == MigrationOptions.CREATE_INDEX) entry.key.getNameOfColumn() else entry.value
-//            action = migration.action
-//          })
-//        } else if (entry.key.getAnnotation(Migrations::class.java) != null) {
-//          val migrations = entry.key.getAnnotation(Migrations::class.java)
-//          migrations.values.forEach {
-//            val migration = it
-//            tableMigrations.add(TableMigration().apply {
-//              versionChange = VersionChange().apply {
-//                fromVersion = migration.fromVersion
-//                toVersion = migration.toVersion
-//              }
-//              field = if (migration.action == MigrationOptions.CREATE_INDEX) entry.key.getNameOfColumn() else entry.value
-//              action = migration.action
-//            })
-//          }
-//        }
-//      }
-//    }
+    if (migrateFields.isNotEmpty()) migrateFields.forEach { entry ->
+      if (entry.key.getAnnotation(Migrate::class.java) != null) {
+        val migration = entry.key.getAnnotation(Migrate::class.java)
+        tableMigrations.add(TableMigration().apply {
+          versionChange = VersionChange().apply {
+            fromVersion = migration.fromVersion
+            toVersion = migration.toVersion
+          }
+          field = if (migration.action == MigrationOptions.CREATE_INDEX) entry.key.getNameOfColumn() else entry.value
+          action = migration.action
+        })
+      } else if (entry.key.getAnnotation(Migrations::class.java) != null) {
+        val migrations = entry.key.getAnnotation(Migrations::class.java)
+        migrations.values.forEach {
+          val migration = it
+          tableMigrations.add(TableMigration().apply {
+            versionChange = VersionChange().apply {
+              fromVersion = migration.fromVersion
+              toVersion = migration.toVersion
+            }
+            field = if (migration.action == MigrationOptions.CREATE_INDEX) entry.key.getNameOfColumn() else entry.value
+            action = migration.action
+          })
+        }
+      }
+    }
+
     val metaData = TableMetaData()
     val oldMetaData = promise.database.compiler.utils.List<TableMetaData>(
         PromiseDatabaseCompiler.databaseMetaDataWriter.currentDatabaseMetaData!!.tableMetaData)
         .find {
           it.tableName == entityElement.getTableName()
         }
-    val tableMigrations = promise.database.compiler.utils.List<TableMigration>()
+
     if (oldMetaData != null) {
       tableMigrations.addAll(generateRequiredTableMigrations(
           PromiseDatabaseCompiler.databaseMetaDataWriter.currentDatabaseMetaData!!.dbVersion,
           promise.database.compiler.utils.List(oldMetaData.fields),
-          elements))
-      val diffMigrations = promise.database.compiler.utils.List(oldMetaData.migrations).joinOn(
-          promise.database.compiler.utils.List(tableMigrations)) { t, u -> t != u }
-      tableMigrations.addAll(diffMigrations)
-      metaData.migrations = tableMigrations
+          elements.filter {
+            it.key.getAnnotation(Migrate::class.java) == null &&
+                it.key.getAnnotation(Migrations::class.java) == null
+          }))
+      tableMigrations.addAll(promise.database.compiler.utils.List(oldMetaData.migrations))
+      metaData.migrations = tableMigrations.uniques()
     } else metaData.migrations = tableMigrations
+
     val fields: ArrayList<Field> = ArrayList()
     /**
      * ignore fields with Has many relation and ones with Ignore annotation

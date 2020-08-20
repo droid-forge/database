@@ -33,12 +33,6 @@ import promise.database.compiler.utils.function.FilterFunction;
 import promise.database.compiler.utils.function.FilterFunction2;
 import promise.database.compiler.utils.function.GroupFunction;
 import promise.database.compiler.utils.function.GroupFunction2;
-import promise.database.compiler.utils.function.BIConsumer;
-import promise.database.compiler.utils.function.Combiner;
-import promise.database.compiler.utils.function.FilterFunction;
-import promise.database.compiler.utils.function.FilterFunction2;
-import promise.database.compiler.utils.function.GroupFunction;
-import promise.database.compiler.utils.function.GroupFunction2;
 import promise.database.compiler.utils.function.GroupFunction3;
 import promise.database.compiler.utils.function.JoinFunction;
 import promise.database.compiler.utils.function.MapFunction;
@@ -359,7 +353,7 @@ public class List<T> extends ArrayList<T> {
    *
    * @param uList    list to compare from
    * @param function filter function for each item
-   * @param equals  flags to compare equality or no equality
+   * @param equals   flags to compare equality or no equality
    * @param <U>      type of list item to compare from
    * @param <K>      type of attribute to compare
    * @return a reduced list

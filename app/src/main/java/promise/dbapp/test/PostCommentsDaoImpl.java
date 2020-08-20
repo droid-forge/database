@@ -27,8 +27,7 @@ import promise.db.criteria.Criteria;
 import promise.model.IdentifiableList;
 
 public class PostCommentsDaoImpl
-    implements PostCommentDao
-{
+    implements PostCommentDao {
 
   private PromiseDatabase promiseDatabase;
 

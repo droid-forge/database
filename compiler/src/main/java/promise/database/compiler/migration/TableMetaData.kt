@@ -26,5 +26,5 @@ class TableMetaData {
   var fields: List<Field> = emptyList()
 
   @JsonInclude(JsonInclude.Include.NON_NULL)
-  var migrations : List<TableMigration> = emptyList()
+  var migrations: List<TableMigration> = emptyList()
 }

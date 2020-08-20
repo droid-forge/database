@@ -72,8 +72,7 @@ class TableColumnFieldsGenerator(
           val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
           genColValues.add(pair)
         }
-      }
-      else if (element.isElementAnnotatedAsRelation()) {
+      } else if (element.isElementAnnotatedAsRelation()) {
         val hasOneAnnotation = element.getAnnotation(HasOne::class.java)
         if (hasOneAnnotation != null) {
           nameOfColumn = "${element.simpleName}Id"
@@ -95,8 +94,7 @@ class TableColumnFieldsGenerator(
           val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
           genColValues.add(pair)
         }
-      }
-      else if (element.isPersistable()) {
+      } else if (element.isPersistable()) {
         val spec = processField(element, nameOfColumn, i)
         map[Pair(element, colVariableName)] = spec
         val pair: Pair<Pair<String, Element>, String> = Pair(Pair(element.simpleName.toString(), element), colVariableName)
@@ -125,7 +123,6 @@ class TableColumnFieldsGenerator(
         )
         .build()
   }
-
 
   private fun getColumnInitializer(element: Element, classTypeName: TypeName): String {
     var str = "Column.Type"

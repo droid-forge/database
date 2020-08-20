@@ -22,7 +22,7 @@ import javax.lang.model.element.Element
 import javax.lang.model.element.TypeElement
 import javax.lang.model.util.ElementFilter
 
-class RelationsDaoProcessor(private val processingEnv: ProcessingEnvironment): AnnotatedClassProcessor() {
+class RelationsDaoProcessor(private val processingEnv: ProcessingEnvironment) : AnnotatedClassProcessor() {
   override fun process(environment: RoundEnvironment?): List<JavaFile.Builder?>? {
     val javaFiles = ArrayList<JavaFile.Builder?>()
     environment?.getElementsAnnotatedWith(Entity::class.java)

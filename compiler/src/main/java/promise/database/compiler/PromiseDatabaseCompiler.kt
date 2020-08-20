@@ -18,7 +18,6 @@ import com.squareup.javapoet.JavaFile
 import promise.database.DAO
 import promise.database.DatabaseEntity
 import promise.database.Entity
-import promise.database.Relation
 import promise.database.TypeConverter
 import promise.database.compiler.utils.JavaUtils
 import promise.database.compiler.utils.LogUtil
@@ -83,7 +82,7 @@ class PromiseDatabaseCompiler : AbstractProcessor() {
       processors.add(TypeConverterAnnotatedProcessor(processingEnv))
       processors.add(EntityAnnotatedProcessor(processingEnv, database!!))
       processors.add(RelationsDaoProcessor(processingEnv))
-      processors.add(DAOAnnotatedProcessor(processingEnv))
+      //processors.add(DAOAnnotatedProcessor(processingEnv))
       processors.add(DatabaseEntityAnnotatedProcessor(processingEnv, database))
       processors.forEach {
         val builders = it.process(environment)

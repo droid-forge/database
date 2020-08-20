@@ -88,7 +88,8 @@ class DatabaseAbstractMethodsGenerator(
             ),
             ParameterizedTypeName.get(
                 ClassName.get("promise.db", "FastTable"),
-                TypeVariableName.get("T"))))
+                TypeVariableName.get("T"))
+        ))
         .addCode(codeBlock.build())
         .build())
 

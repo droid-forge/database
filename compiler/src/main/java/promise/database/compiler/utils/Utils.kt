@@ -33,12 +33,10 @@ import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.lang.model.type.*
-import javax.lang.model.util.SimpleTypeVisitor6
-import javax.lang.model.util.SimpleTypeVisitor7
+import javax.lang.model.type.MirroredTypeException
+import javax.lang.model.type.TypeKind
+import javax.lang.model.type.TypeMirror
 import javax.lang.model.util.Types
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 import kotlin.reflect.KClass
 
 
@@ -171,7 +169,7 @@ object Utils {
        * Typename for this provider
        */
       element: ClassName
-      ): JavaFile.Builder {
+  ): JavaFile.Builder {
 
     val className = element.simpleName()
 

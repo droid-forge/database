@@ -58,8 +58,9 @@ class PostRepositoryImpl @Inject constructor(
   }
 
   override fun getPosts(): List<Post> = postRelationsDao.listWithComments()
+
   override fun deletePosts() {
-    val persons = postRelationsDao.listWithComments()
+    val persons = getPosts()
     persons.forEach {
       postRelationsDao.deleteComments(it)
       it.delete()

@@ -37,6 +37,7 @@ internal const val FOREIGN_kEYS = "foreign_keys"
  *
  * @param <T> [Identifiable] instance to be persisted by the model
 </T> */
+@Suppress("UNCHECKED_CAST")
 abstract class FastTable<T : Identifiable<Int>>
 /**
  * @param database

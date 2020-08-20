@@ -1,5 +1,5 @@
 ---
-dbVersion: 1
+dbVersion: 2
 tableMetaData:
   - tableName: "likes"
     fields:
@@ -63,13 +63,21 @@ tableMetaData:
       - fieldName: "timeStarted"
         columnName: "timeStarted"
         nullable: true
+      - fieldName: "timeFinished"
+        columnName: "timeFinished"
+        nullable: true
       - fieldName: "description"
         columnName: "description"
         nullable: true
       - fieldName: "photo"
         columnName: "photo"
         nullable: true
-    migrations: []
+    migrations:
+      - versionChange:
+          fromVersion: 1
+          toVersion: 2
+        field: "timeFinishedColumn"
+        action: "CREATE"
   - tableName: "photos"
     fields:
       - fieldName: "albumId"
