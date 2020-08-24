@@ -1,6 +1,7 @@
 package promise.base.post;
 
 import android.annotation.SuppressLint;
+import android.os.Parcel;
 
 import androidx.annotation.NonNull;
 
@@ -17,7 +18,6 @@ import promise.database.Entity;
 import promise.database.HasMany;
 import promise.db.ActiveRecord;
 
-@SuppressLint("ParcelCreator")
 @Entity
 public class Post extends ActiveRecord<Post> {
   private ID uId;
@@ -132,4 +132,52 @@ public class Post extends ActiveRecord<Post> {
   public void setPublishedDate(Date publishedDate) {
     this.publishedDate = publishedDate;
   }
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override
+  public void writeToParcel(Parcel dest, int flags) {
+    super.writeToParcel(dest, flags);
+    dest.writeParcelable(this.uId, flags);
+    dest.writeString(this.title);
+    dest.writeString(this.body);
+    dest.writeInt(this.userId);
+    dest.writeInt(this.numberOfViews);
+    dest.writeLong(this.publishedDate != null ? this.publishedDate.getTime() : -1);
+    dest.writeTypedList(this.comments);
+    dest.writeTypedList(this.photos);
+    dest.writeTypedList(this.likes);
+  }
+
+  public Post() {
+  }
+
+  protected Post(Parcel in) {
+    super(in);
+    this.uId = in.readParcelable(ID.class.getClassLoader());
+    this.title = in.readString();
+    this.body = in.readString();
+    this.userId = in.readInt();
+    this.numberOfViews = in.readInt();
+    long tmpPublishedDate = in.readLong();
+    this.publishedDate = tmpPublishedDate == -1 ? null : new Date(tmpPublishedDate);
+    this.comments = in.createTypedArrayList(PostComment.CREATOR);
+    this.photos = in.createTypedArrayList(Photo.CREATOR);
+    this.likes = in.createTypedArrayList(Like.CREATOR);
+  }
+
+  public static final Creator<Post> CREATOR = new Creator<Post>() {
+    @Override
+    public Post createFromParcel(Parcel source) {
+      return new Post(source);
+    }
+
+    @Override
+    public Post[] newArray(int size) {
+      return new Post[size];
+    }
+  };
 }

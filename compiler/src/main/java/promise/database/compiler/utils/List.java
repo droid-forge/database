@@ -206,7 +206,7 @@ public class List<T> extends ArrayList<T> {
    * arrange the list based on an atrribute that is not in blueprint of original items
    *
    * @param function   transformer for list to desired attribute that is sortable
-   * @param comparator compare fucntion that compares the result of the transformer
+   * @param comparator compare function that compares the result of the transformer
    * @param <K>        desired compare type
    * @return a sorted list
    */

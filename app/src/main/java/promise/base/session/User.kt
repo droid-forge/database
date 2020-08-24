@@ -11,20 +11,22 @@
  * limitations under the License.
  */
 
-package promise.base
+package promise.base.session
 
-import promise.database.TypeConverter
-import java.util.*
+import android.annotation.SuppressLint
+import promise.database.AddedEntity
+import promise.database.Entity
+import promise.db.ActiveRecord
 
-@TypeConverter
-class AppTypeConverter {
-
-  fun dateToString(date: Date?): String = (date ?: Date()).time.toString()
-
-  fun stringToDate(data: String): Date = Date(data.toLong())
-
-  fun toUniqueId(data: String): ID = ID().apply { id = data }
-
-  fun toString(data: ID?): String = data?.id ?: ""
-
+@SuppressLint("ParcelCreator")
+@Entity
+@AddedEntity(fromVersion = 1, toVersion = 2)
+class User: ActiveRecord<User>() {
+  var email: String = ""
+  var likedinProfileUrl = ""
+  var photoUrl = ""
+  var names = ""
+  override fun getEntity(): User {
+    return this
+  }
 }

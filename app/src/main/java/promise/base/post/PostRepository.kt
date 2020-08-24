@@ -35,14 +35,18 @@ class PostRepositoryImpl @Inject constructor(
   init {
     val posts = IdentifiableList(promise.commons.model.List.generate(5) {
       Post().apply {
-        uId = ID(it.toString())
+        uId = ID().apply {
+          id = it.toString()
+        }
         title = "post".plus(it)
         body = "body".plus(it)
         userId = it
         comments = promise.commons.model.List.generate(4) {
           PostComment().apply {
             name = "nm".repeat(it)
-            uId = ID((it + 1).toString())
+            uId = ID().apply {
+              id = (it + 1).toString()
+            }
             body = "hbytcvbcrxgfvbtrxt"
             email = "ejmail;jgfccghcfcvhbhcgvb"
           }

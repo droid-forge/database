@@ -32,8 +32,10 @@ import promise.database.compiler.utils.getTableEntities
 import javax.annotation.processing.ProcessingEnvironment
 import javax.annotation.processing.RoundEnvironment
 import javax.lang.model.element.Element
+import javax.lang.model.element.ElementKind
 import javax.lang.model.element.Modifier
 import javax.lang.model.element.TypeElement
+import javax.lang.model.util.ElementFilter
 
 class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
                                private val database: TypeElement) : AnnotatedClassProcessor() {
@@ -56,6 +58,11 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
   private fun processAnnotation(element: Element): JavaFile.Builder {
     if (!entities.map { it.asType().toString() }.contains(element.asType().toString()))
       LogUtil.e(Exception("Entity class ${element.simpleName} is not registered in database"), database)
+
+    if (ElementFilter.methodsIn(element.enclosedElements).none {
+          it.kind == ElementKind.CONSTRUCTOR && it.parameters.isEmpty()
+        }) LogUtil.e(Exception("$element must have a no args constructor"), element)
+
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 

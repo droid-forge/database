@@ -14,37 +14,47 @@
 package promise.base.comment;
 
 import android.annotation.SuppressLint;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import org.jetbrains.annotations.NotNull;
+import androidx.annotation.NonNull;
 
 import promise.base.ID;
 import promise.base.post.Post;
+import promise.commons.model.Identifiable;
 import promise.database.Entity;
 import promise.database.HasOne;
-import promise.db.ActiveRecord;
+import promise.database.PrimaryKeyAutoIncrement;
 
-@SuppressLint("ParcelCreator")
 @Entity
-//@AddedEntity(fromVersion = 1, toVersion = 2)
-public class Like extends ActiveRecord<Like> {
+
+public class Like implements Identifiable<Integer>, Parcelable {
   private ID uId;
 
   @HasOne
   private Post post;
 
+  @PrimaryKeyAutoIncrement
+  private int id;
+
+  private String type;
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  @NonNull
   @Override
   public String toString() {
     return
-        "Comment{" +
+        "Like{" +
             ",id = '" + uId + '\'' +
 
             "}";
-  }
-
-  @NotNull
-  @Override
-  public Like getEntity() {
-    return this;
   }
 
   public ID getUId() {
@@ -62,4 +72,49 @@ public class Like extends ActiveRecord<Like> {
   public void setPost(Post post) {
     this.post = post;
   }
+
+  @Override
+  public Integer getId() {
+    return id;
+  }
+
+  @Override
+  public void setId(Integer integer) {
+    this.id = integer;
+  }
+
+  @Override
+  public int describeContents() {
+    return 0;
+  }
+
+  @Override
+  public void writeToParcel(Parcel dest, int flags) {
+    dest.writeParcelable(this.uId, flags);
+    dest.writeParcelable(this.post, flags);
+    dest.writeInt(this.id);
+    dest.writeString(this.type);
+  }
+
+  public Like() {
+  }
+
+  protected Like(Parcel in) {
+    this.uId = in.readParcelable(ID.class.getClassLoader());
+    this.post = in.readParcelable(Post.class.getClassLoader());
+    this.id = in.readInt();
+    this.type = in.readString();
+  }
+
+  public static final Parcelable.Creator<Like> CREATOR = new Parcelable.Creator<Like>() {
+    @Override
+    public Like createFromParcel(Parcel source) {
+      return new Like(source);
+    }
+
+    @Override
+    public Like[] newArray(int size) {
+      return new Like[size];
+    }
+  };
 }

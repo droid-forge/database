@@ -13,4 +13,31 @@
 
 package promise.base
 
-data class ID(val id: String)
+import android.os.Parcel
+import android.os.Parcelable
+
+class ID() : Parcelable {
+   var id: String? = ""
+
+  constructor(parcel: Parcel) : this() {
+    id = parcel.readString()
+  }
+
+  override fun writeToParcel(parcel: Parcel, flags: Int) {
+    parcel.writeString(id)
+  }
+
+  override fun describeContents(): Int {
+    return 0
+  }
+
+  companion object CREATOR : Parcelable.Creator<ID> {
+    override fun createFromParcel(parcel: Parcel): ID {
+      return ID(parcel)
+    }
+
+    override fun newArray(size: Int): Array<ID?> {
+      return arrayOfNulls(size)
+    }
+  }
+}

@@ -18,6 +18,7 @@ import promise.base.comment.PostComment
 import promise.base.comment.PostCommentDao
 import promise.base.photo.Photo
 import promise.base.post.Post
+import promise.base.session.User
 import promise.base.todo.Todo
 import promise.commons.data.log.LogUtil
 import promise.database.DatabaseEntity
@@ -31,7 +32,8 @@ import promise.utils.Visitor
       Photo::class,
       Post::class,
       Todo::class,
-      Like::class
+      Like::class,
+      User::class
     ]
 )
 abstract class AppDatabase(fastDatabase: FastDatabase)
@@ -48,7 +50,7 @@ abstract class AppDatabase(fastDatabase: FastDatabase)
     })
   }
 
-  abstract fun getPostCommentsDao(): PostCommentDao
+  //abstract fun getPostCommentsDao(): PostCommentDao
 
   companion object {
     val TAG: String = LogUtil.makeTag(AppDatabase::class.java)

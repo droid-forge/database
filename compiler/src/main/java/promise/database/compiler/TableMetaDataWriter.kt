@@ -18,6 +18,7 @@ import promise.database.Ignore
 import promise.database.Migrate
 import promise.database.MigrationOptions
 import promise.database.Migrations
+import promise.database.PrimaryKeyAutoIncrement
 import promise.database.compiler.migration.Field
 import promise.database.compiler.migration.TableMetaData
 import promise.database.compiler.migration.TableMigration
@@ -27,6 +28,7 @@ import promise.database.compiler.utils.getNameOfColumn
 import promise.database.compiler.utils.getTableName
 import promise.database.compiler.utils.isColumnNullable
 import javax.lang.model.element.Element
+import javax.lang.model.element.Modifier
 import javax.lang.model.util.ElementFilter
 
 class TableMetaDataWriter(
@@ -104,7 +106,10 @@ class TableMetaDataWriter(
           promise.database.compiler.utils.List(oldMetaData.fields),
           elements.filter {
             it.key.getAnnotation(Migrate::class.java) == null &&
-                it.key.getAnnotation(Migrations::class.java) == null
+                it.key.getAnnotation(Migrations::class.java) == null &&
+                it.key.getAnnotation(PrimaryKeyAutoIncrement::class.java) == null &&
+                it.key.getAnnotation(Ignore::class.java) == null &&
+                !(it.key.modifiers.contains(Modifier.STATIC))
           }))
       tableMigrations.addAll(promise.database.compiler.utils.List(oldMetaData.migrations))
       metaData.migrations = tableMigrations.uniques()
@@ -116,7 +121,9 @@ class TableMetaDataWriter(
      */
     ElementFilter.fieldsIn(entityElement.enclosedElements).filter {
       it.getAnnotation(Ignore::class.java) == null &&
+          it.getAnnotation(PrimaryKeyAutoIncrement::class.java) == null &&
           it.getAnnotation(HasMany::class.java) == null
+          && !(it.modifiers.contains(Modifier.STATIC))
     }
         .forEach {
           fields.add(Field().apply {
