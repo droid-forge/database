@@ -59,10 +59,12 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
     if (!entities.map { it.asType().toString() }.contains(element.asType().toString()))
       LogUtil.e(Exception("Entity class ${element.simpleName} is not registered in database"), database)
 
-    if (ElementFilter.methodsIn(element.enclosedElements).none {
+/**
+ if (ElementFilter.methodsIn(element.enclosedElements).none {
           it.kind == ElementKind.CONSTRUCTOR && it.parameters.isEmpty()
         }) LogUtil.e(Exception("$element must have a no args constructor"), element)
-
+ */
+   
     val className = element.simpleName.toString()
     val pack = processingEnv.elementUtils.getPackageOf(element).toString()
 

@@ -297,8 +297,8 @@ android {
 
 dependencies {
      ...
-     implementation 'com.github.android-promise.database:database:1.0.3-alpha8'
-     kapt 'com.github.android-promise.database:compiler:1.0.3-alpha8'
+     implementation 'com.github.android-promise.database:database:1.0.3'
+     kapt 'com.github.android-promise.database:compiler:1.0.3'
      implementation 'com.github.android-promise:commons:1.1-alpha03'
 }
 ```
