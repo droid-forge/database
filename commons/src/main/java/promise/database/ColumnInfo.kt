@@ -15,8 +15,10 @@ package promise.database
 
 @Target(AnnotationTarget.FIELD)
 @Retention(AnnotationRetention.SOURCE)
-annotation class VarChar(val columnName: String = "",
-                         val length: Int,
-                         val nullable: Boolean = true,
-                         val unique: Boolean = false,
-                         val index: Boolean = false)
+annotation class ColumnInfo(
+    val columnName: String = "",
+    val nullable: Boolean = true,
+    val unique: Boolean = false,
+    val default: Int = 0,
+    val length: Int = 0
+)

@@ -16,7 +16,8 @@ package promise.database
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
 annotation class Entity(val tableName: String = "",
-                        val compoundIndices: Array<CompoundIndex> = []
+                        val compoundIndices: Array<CompoundIndex> = [],
+                        val generateRelations: Boolean = true
 ) {
   @Target(AnnotationTarget.FIELD)
   @Retention(AnnotationRetention.SOURCE)

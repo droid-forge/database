@@ -54,7 +54,6 @@ class TableDeserializerMethodGenerator(
         .addParameter(ClassName.get("android.database", "Cursor"), "e")
         .addAnnotation(Override::class.java)
         .addModifiers(Modifier.PUBLIC)
-        .addJavadoc("Deserializer converts from cursor to the entity")
         .returns(ClassName.get(typeDataTypePack, typeDataType))
         .addCode(codeBlock.build())
         .build()

@@ -29,14 +29,8 @@ import javax.inject.Singleton
 @Singleton
 interface AppComponent : AndroidInjector<App> {
 
-  //  fun postsTable(): PostsTable
-//  fun postRelationsDao(): PostRelationsDao
-  @Component.Builder
+  @Component.Factory
   interface Builder {
-
-    @BindsInstance
-    fun app(app: App): Builder
-
-    fun build(): AppComponent
+    fun create(@BindsInstance app: App): AppComponent
   }
 }

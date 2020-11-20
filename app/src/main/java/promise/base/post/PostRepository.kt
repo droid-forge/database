@@ -29,7 +29,9 @@ interface PostRepository {
 }
 
 @Singleton
-class PostRepositoryImpl @Inject constructor(
+class PostRepositoryImpl
+@Inject
+constructor(
     private var postRelationsDao: PostRelationsDao,
     private var postsTable: PostsTable) : PostRepository {
   init {

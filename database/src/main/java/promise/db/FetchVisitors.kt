@@ -27,7 +27,7 @@ import promise.model.ITimeStamped
 import promise.model.IdentifiableList
 import promise.utils.Visitor
 
-class FetchLastIdVisitor(private val x: SupportSQLiteDatabase) : Visitor<TableCrud<*, in SupportSQLiteDatabase>, Int> {
+internal class FetchLastIdVisitor(private val x: SupportSQLiteDatabase) : Visitor<TableCrud<*, in SupportSQLiteDatabase>, Int> {
   override fun visit(t: TableCrud<*, in SupportSQLiteDatabase>): Int {
     val builder: QueryBuilder = t.queryBuilder().select(Projection.count(FastTable.id).`as`("num"))
     @SuppressLint("Recycle") val cursor = x.query(builder.build(), builder.buildParameters())
@@ -35,7 +35,7 @@ class FetchLastIdVisitor(private val x: SupportSQLiteDatabase) : Visitor<TableCr
   }
 }
 
-class FetchAllVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
+internal class FetchAllVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
                                              private val columns: Array<out Column<*>>? = null) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, IdentifiableList<out T>> {
 
   override fun visit(t: TableCrud<T, in SupportSQLiteDatabase>): IdentifiableList<out T> {
@@ -59,7 +59,7 @@ class FetchAllVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabas
 }
 
 @Suppress("KDocUnresolvedReference")
-class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, TableCrud.Extras<T>> {
+internal class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, TableCrud.Extras<T>> {
 
   override fun visit(t: TableCrud<T, in SupportSQLiteDatabase>): TableCrud.Extras<T> =
       object : QueryExtras<T>(x, t) {
@@ -75,7 +75,7 @@ class FetchExtrasVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteData
    * @param <Q> The type of the items in the table
   </Q> */
   @Suppress("UNCHECKED_CAST")
-  private abstract inner class QueryExtras<Q : Identifiable<Int>> internal constructor(
+  private abstract inner class QueryExtras<Q : Identifiable<Int>> constructor(
       /**
        * the database instance to readAsync fromm
        */

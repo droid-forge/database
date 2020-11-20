@@ -27,6 +27,7 @@ class RelationsDaoProcessor(private val processingEnv: ProcessingEnvironment) : 
     val javaFiles = ArrayList<JavaFile.Builder?>()
     environment?.getElementsAnnotatedWith(Entity::class.java)
         ?.forEach { element ->
+          if (element.getAnnotation(Entity::class.java).generateRelations)
           javaFiles.addAll(processElementDaos(element))
         }
     return javaFiles

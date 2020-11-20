@@ -74,9 +74,6 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
 
     val classBuilder = TypeSpec.classBuilder(fileName)
         .addModifiers(Modifier.PUBLIC)
-        .addJavadoc("""
-          Table for ${element.simpleName}
-        """.trimIndent())
         .superclass(ParameterizedTypeName.get(
             ClassName.get("promise.db", "FastTable"),
             ClassName.get(pack, className))
@@ -111,9 +108,6 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
       classBuilder.addField(FieldSpec.builder(TypeName.get(TypeConverterAnnotatedProcessor
           .typeConverter!!.asType()), "typeConverter")
           .addModifiers(Modifier.PRIVATE)
-          .addJavadoc("""
-            TypeConverter for fields not directly persistable
-          """.trimIndent())
           .build())
       classBuilder.addMethod(MethodSpec.methodBuilder("setTypeConverter")
           .addModifiers(Modifier.PUBLIC)
@@ -129,9 +123,6 @@ class EntityAnnotatedProcessor(private val processingEnv: ProcessingEnvironment,
             ClassName.get(Integer::class.java)
         ), "idColumn")
         .addModifiers(Modifier.STATIC, Modifier.PUBLIC, Modifier.FINAL)
-        .addJavadoc("""
-          Column for primary key
-        """.trimIndent())
         .initializer(CodeBlock.of("FastTable.getId()")).build()
 
     classBuilder.addField(idColumnSpec)

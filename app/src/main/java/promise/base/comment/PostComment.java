@@ -3,6 +3,8 @@ package promise.base.comment;
 import android.annotation.SuppressLint;
 import android.os.Parcel;
 
+import androidx.annotation.NonNull;
+
 import org.jetbrains.annotations.NotNull;
 
 import promise.base.ID;
@@ -11,7 +13,9 @@ import promise.database.Entity;
 import promise.database.HasOne;
 import promise.db.ActiveRecord;
 
-@Entity
+@Entity(
+    generateRelations = false
+)
 public class PostComment extends ActiveRecord<PostComment> {
   private String name;
   private ID uId;
@@ -63,6 +67,7 @@ public class PostComment extends ActiveRecord<PostComment> {
     this.postCommentId = postCommentId;
   }
 
+  @NonNull
   @Override
   public String toString() {
     return

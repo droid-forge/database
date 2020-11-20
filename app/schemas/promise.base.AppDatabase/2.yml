@@ -40,7 +40,7 @@ tableMetaData:
     columnName: "uId"
     nullable: true
   - fieldName: "title"
-    columnName: "title"
+    columnName: "ttl"
     nullable: true
   - fieldName: "body"
     columnName: "body"
@@ -93,8 +93,8 @@ tableMetaData:
   - fieldName: "thumbnailUrl"
     columnName: "thumbnailUrl"
     nullable: true
-  - fieldName: "post"
-    columnName: "post"
+  - fieldName: "photoPost"
+    columnName: "photoPost"
     nullable: true
   migrations: []
 - tableName: "users"
@@ -111,19 +111,4 @@ tableMetaData:
   - fieldName: "names"
     columnName: "names"
     nullable: true
-  migrations:
-  - versionChange:
-      fromVersion: 1
-      toVersion: 2
-    field: "emailColumn"
-    action: "CREATE"
-  - versionChange:
-      fromVersion: 1
-      toVersion: 2
-    field: "photoUrlColumn"
-    action: "CREATE"
-  - versionChange:
-      fromVersion: 1
-      toVersion: 2
-    field: "likedinProfileUrlColumn"
-    action: "CREATE"
+  migrations: []

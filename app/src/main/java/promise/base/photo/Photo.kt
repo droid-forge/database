@@ -1,6 +1,5 @@
 package promise.base.photo
 
-import android.annotation.SuppressLint
 import android.os.Parcel
 import android.os.Parcelable
 import promise.base.post.Post
@@ -14,20 +13,19 @@ class Photo() : ActiveRecord<Photo>() {
   var title: String? = null
   var url: String? = null
   var thumbnailUrl: String? = null
+
   @HasOne
-  var post: Post? = null
+  var photoPost: Post? = null
 
   constructor(parcel: Parcel) : this() {
     albumId = parcel.readValue(Int::class.java.classLoader) as? Int
     title = parcel.readString()
     url = parcel.readString()
     thumbnailUrl = parcel.readString()
-    post = parcel.readParcelable(Post::class.java.classLoader)
+    photoPost = parcel.readParcelable(Post::class.java.classLoader)
   }
 
-  override fun getEntity(): Photo {
-    return this
-  }
+  override fun getEntity(): Photo = this
 
   override fun writeToParcel(parcel: Parcel, flags: Int) {
     super.writeToParcel(parcel, flags)
@@ -35,21 +33,14 @@ class Photo() : ActiveRecord<Photo>() {
     parcel.writeString(title)
     parcel.writeString(url)
     parcel.writeString(thumbnailUrl)
-    parcel.writeParcelable(post, flags)
+    parcel.writeParcelable(photoPost, flags)
   }
 
-  override fun describeContents(): Int {
-    return 0
-  }
+  override fun describeContents(): Int = 0
 
   companion object CREATOR : Parcelable.Creator<Photo> {
-    override fun createFromParcel(parcel: Parcel): Photo {
-      return Photo(parcel)
-    }
-
-    override fun newArray(size: Int): Array<Photo?> {
-      return arrayOfNulls(size)
-    }
+    override fun createFromParcel(parcel: Parcel): Photo = Photo(parcel)
+    override fun newArray(size: Int): Array<Photo?> = arrayOfNulls(size)
   }
 
 }

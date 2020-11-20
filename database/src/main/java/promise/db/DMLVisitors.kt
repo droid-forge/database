@@ -21,7 +21,7 @@ import promise.commons.model.List
 import promise.model.IdentifiableList
 import promise.utils.Visitor
 
-class UpdateVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
+internal class UpdateVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
                                            private val instance: T,
                                            private val column: Column<*>? = null) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, Boolean> {
 
@@ -44,7 +44,7 @@ class UpdateVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
   }
 }
 
-class DeleteVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
+internal class DeleteVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
                                            private val instance: T) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, Boolean> {
   override fun visit(t: TableCrud<T, in SupportSQLiteDatabase>): Boolean {
     fun onDelete(x: SupportSQLiteDatabase, column: Column<*>): Boolean {
@@ -55,7 +55,7 @@ class DeleteVisitor<T : Identifiable<Int>>(private val x: SupportSQLiteDatabase,
   }
 }
 
-class DeleteErasureVisitor(private val x: SupportSQLiteDatabase,
+internal class DeleteErasureVisitor(private val x: SupportSQLiteDatabase,
                            private val column: Column<*>? = null) : Visitor<TableCrud<*, in SupportSQLiteDatabase>, Boolean> {
   override fun visit(t: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
     fun onDelete(x: SupportSQLiteDatabase): Boolean =
@@ -70,7 +70,7 @@ class DeleteErasureVisitor(private val x: SupportSQLiteDatabase,
   }
 }
 
-class DeleteListErasureVisitor<C>(private val x: SupportSQLiteDatabase,
+internal class DeleteListErasureVisitor<C>(private val x: SupportSQLiteDatabase,
                                   private val column: Column<C>,
                                   private val list: List<out C>) : Visitor<TableCrud<*, in SupportSQLiteDatabase>, Boolean> {
   override fun visit(t: TableCrud<*, in SupportSQLiteDatabase>): Boolean {
@@ -93,7 +93,7 @@ class DeleteListErasureVisitor<C>(private val x: SupportSQLiteDatabase,
   }
 }
 
-class SaveVisitor<T : Identifiable<Int>>(
+internal class SaveVisitor<T : Identifiable<Int>>(
     private val updateVisitor: Visitor<TableCrud<T, in SupportSQLiteDatabase>, Boolean>,
     private val x: SupportSQLiteDatabase,
     private val instance: T
@@ -110,7 +110,7 @@ class SaveVisitor<T : Identifiable<Int>>(
   }
 }
 
-class SaveListVisitor<T : Identifiable<Int>>(
+internal class SaveListVisitor<T : Identifiable<Int>>(
     private val x: SupportSQLiteDatabase,
     private val list: IdentifiableList<out T>
 ) : Visitor<TableCrud<T, in SupportSQLiteDatabase>, Boolean> {

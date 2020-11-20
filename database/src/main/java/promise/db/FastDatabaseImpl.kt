@@ -273,6 +273,10 @@ open class FastDatabaseImpl constructor(
 
   override fun <R : Any> accept(visitor: Visitor<FastDatabase, R>): R = visitor.visit(this)
 
+/**
+incomplete function body
+TODO to be revisited
+ */
   private fun <T : Identifiable<Int>> checkTableExist(tableCrud: TableCrud<T, in SupportSQLiteDatabase>): TableCrud<T, in SupportSQLiteDatabase> =
       Conditions.checkNotNull(tableCrud)
 

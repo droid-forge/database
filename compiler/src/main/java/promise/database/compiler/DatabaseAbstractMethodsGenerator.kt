@@ -95,18 +95,5 @@ class DatabaseAbstractMethodsGenerator(
 
     return funSpecs
   }
-//
-//  private fun getPackage(element: TypeElement, returnTypeName: String): String {
-//    if (entities.isEmpty()) entities = element.getTableEntities(processingEnv)
-//    var pack = ""
-//    entities.forEach {
-//      if (returnTypeName == it.getTableClassNameString()) {
-//        pack = processingEnv.elementUtils.getPackageOf(it).toString()
-//      }
-//    }
-//    return pack
-//
-//  }
-
 
 }

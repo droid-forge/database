@@ -27,7 +27,6 @@ import promise.database.HasOne;
 import promise.database.PrimaryKeyAutoIncrement;
 
 @Entity
-
 public class Like implements Identifiable<Integer>, Parcelable {
   private ID uId;
 
@@ -50,11 +49,12 @@ public class Like implements Identifiable<Integer>, Parcelable {
   @NonNull
   @Override
   public String toString() {
-    return
-        "Like{" +
-            ",id = '" + uId + '\'' +
-
-            "}";
+    return "Like{" +
+        "uId=" + uId +
+        ", post=" + post +
+        ", id=" + id +
+        ", type='" + type + '\'' +
+        '}';
   }
 
   public ID getUId() {

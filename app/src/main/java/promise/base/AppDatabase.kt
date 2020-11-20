@@ -15,7 +15,6 @@ package promise.base
 
 import promise.base.comment.Like
 import promise.base.comment.PostComment
-import promise.base.comment.PostCommentDao
 import promise.base.photo.Photo
 import promise.base.post.Post
 import promise.base.session.User
@@ -34,20 +33,17 @@ import promise.utils.Visitor
       Todo::class,
       Like::class,
       User::class
-    ]
+    ],
+    version = 2
 )
 abstract class AppDatabase(fastDatabase: FastDatabase)
   : PromiseDatabase(fastDatabase) {
 
   init {
-    fastDatabase.accept(object : Visitor<FastDatabase, Unit> {
-      override fun visit(t: FastDatabase) {
-        t.setErrorHandler {
-          LogUtil.e(TAG, "database error: ${it.path}")
-        }
-        t.fallBackToDestructiveMigration()
-      }
-    })
+    fastDatabase.setErrorHandler {
+      LogUtil.e(TAG, "database error: ${it.path}")
+    }
+    fastDatabase.fallBackToDestructiveMigration()
   }
 
   //abstract fun getPostCommentsDao(): PostCommentDao

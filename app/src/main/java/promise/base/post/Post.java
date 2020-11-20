@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -14,13 +15,18 @@ import promise.base.ID;
 import promise.base.comment.Like;
 import promise.base.comment.PostComment;
 import promise.base.photo.Photo;
+import promise.database.ColumnInfo;
 import promise.database.Entity;
 import promise.database.HasMany;
 import promise.db.ActiveRecord;
 
 @Entity
 public class Post extends ActiveRecord<Post> {
+
+  @ColumnInfo(unique = true)
   private ID uId;
+
+  @ColumnInfo(columnName = "ttl", length = 40, unique = true)
   private String title;
   private String body;
   private int userId;
@@ -29,6 +35,7 @@ public class Post extends ActiveRecord<Post> {
   private Date publishedDate;
   @HasMany
   private List<PostComment> comments;
+
   @HasMany
   private List<Photo> photos;
   @HasMany

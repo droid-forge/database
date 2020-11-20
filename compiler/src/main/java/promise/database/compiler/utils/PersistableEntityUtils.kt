@@ -17,14 +17,13 @@ import com.squareup.javapoet.ClassName
 import com.squareup.javapoet.TypeName
 import com.sun.tools.javac.code.Attribute
 import org.atteo.evo.inflector.English
+import promise.database.ColumnInfo
 import promise.database.DatabaseEntity
 import promise.database.Entity
 import promise.database.ForeignKey
 import promise.database.HasMany
 import promise.database.HasOne
 import promise.database.Index
-import promise.database.Text
-import promise.database.VarChar
 import promise.database.compiler.TypeConverterAnnotatedProcessor
 import java.io.IOException
 import javax.annotation.processing.ProcessingEnvironment
@@ -139,15 +138,15 @@ fun Element.getNameOfColumn(): String {
           this.toTypeName().isSameAs(Long::class.java) ||
           this.toTypeName().isSameAs(Double::class.java) ||
           this.toTypeName().isSameAs(Boolean::class.java)) &&
-      this.getAnnotation(promise.database.Number::class.java) != null) {
-    name = this.getAnnotation(promise.database.Number::class.java).columnName
+      this.getAnnotation(ColumnInfo::class.java) != null) {
+    name = this.getAnnotation(ColumnInfo::class.java).columnName
   } else if (this.toTypeName().isSameAs(String::class.java) &&
-      this.getAnnotation(VarChar::class.java) != null) {
-    name = this.getAnnotation(VarChar::class.java).columnName
-  } else if (this.getAnnotation(Text::class.java) != null) {
-    name = this.getAnnotation(Text::class.java).columnName
-  } else if (this.getAnnotation(VarChar::class.java) != null) {
-    name = this.getAnnotation(VarChar::class.java).columnName
+      this.getAnnotation(ColumnInfo::class.java) != null) {
+    name = this.getAnnotation(ColumnInfo::class.java).columnName
+  } else if (this.getAnnotation(ColumnInfo::class.java) != null) {
+    name = this.getAnnotation(ColumnInfo::class.java).columnName
+  } else if (this.getAnnotation(ColumnInfo::class.java) != null) {
+    name = this.getAnnotation(ColumnInfo::class.java).columnName
   }
   if (name != null && name.isNotEmpty()) return name
   return this.simpleName.toString()
@@ -160,15 +159,15 @@ fun Element.isColumnNullable(): Boolean {
           this.toTypeName().isSameAs(Long::class.java) ||
           this.toTypeName().isSameAs(Double::class.java) ||
           this.toTypeName().isSameAs(Boolean::class.java)) &&
-      this.getAnnotation(promise.database.Number::class.java) != null) {
-    nullable = this.getAnnotation(promise.database.Number::class.java).nullable
+      this.getAnnotation(promise.database.ColumnInfo::class.java) != null) {
+    nullable = this.getAnnotation(promise.database.ColumnInfo::class.java).nullable
   } else if (this.toTypeName().isSameAs(String::class.java) &&
-      this.getAnnotation(VarChar::class.java) != null) {
-    nullable = this.getAnnotation(VarChar::class.java).nullable
-  } else if (this.getAnnotation(Text::class.java) != null) {
-    nullable = this.getAnnotation(Text::class.java).nullable
-  } else if (this.getAnnotation(VarChar::class.java) != null) {
-    nullable = this.getAnnotation(VarChar::class.java).nullable
+      this.getAnnotation(ColumnInfo::class.java) != null) {
+    nullable = this.getAnnotation(ColumnInfo::class.java).nullable
+  } else if (this.getAnnotation(ColumnInfo::class.java) != null) {
+    nullable = this.getAnnotation(ColumnInfo::class.java).nullable
+  } else if (this.getAnnotation(ColumnInfo::class.java) != null) {
+    nullable = this.getAnnotation(ColumnInfo::class.java).nullable
   }
   return nullable
 }

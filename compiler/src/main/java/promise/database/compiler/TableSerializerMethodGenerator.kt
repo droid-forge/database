@@ -42,12 +42,10 @@ class TableSerializerMethodGenerator(
       generatePutStatement(codeBlock, it.first.first, it.second, it.first.second)
     }
     codeBlock.addStatement("return values")
-
     return MethodSpec.methodBuilder("serialize")
         .addModifiers(Modifier.PUBLIC)
         .addParameter(ClassName.get(typeDataTypePack, typeDataType), "t")
         .addAnnotation(Override::class.java)
-        .addJavadoc("Serializer converts from the entity to ContentValues")
         .returns(ClassName.get("android.content", "ContentValues"))
         .addCode(codeBlock.build())
         .build()

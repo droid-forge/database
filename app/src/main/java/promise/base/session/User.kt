@@ -22,11 +22,10 @@ import promise.db.ActiveRecord
 @Entity
 @AddedEntity(fromVersion = 1, toVersion = 2)
 class User: ActiveRecord<User>() {
+
   var email: String = ""
   var likedinProfileUrl = ""
   var photoUrl = ""
   var names = ""
-  override fun getEntity(): User {
-    return this
-  }
+  override fun getEntity(): User = this
 }

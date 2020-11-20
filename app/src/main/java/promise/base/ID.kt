@@ -27,17 +27,10 @@ class ID() : Parcelable {
     parcel.writeString(id)
   }
 
-  override fun describeContents(): Int {
-    return 0
-  }
+  override fun describeContents(): Int = 0
 
   companion object CREATOR : Parcelable.Creator<ID> {
-    override fun createFromParcel(parcel: Parcel): ID {
-      return ID(parcel)
-    }
-
-    override fun newArray(size: Int): Array<ID?> {
-      return arrayOfNulls(size)
-    }
+    override fun createFromParcel(parcel: Parcel): ID = ID(parcel)
+    override fun newArray(size: Int): Array<ID?> = arrayOfNulls(size)
   }
 }

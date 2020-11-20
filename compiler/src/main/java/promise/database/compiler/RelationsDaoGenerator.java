@@ -13,6 +13,11 @@
 
 package promise.database.compiler;
 
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
+import com.google.common.base.MoreObjects;
+import com.google.common.collect.MoreCollectors;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -28,6 +33,8 @@ import com.squareup.javapoet.WildcardTypeName;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import javax.annotation.processing.ProcessingEnvironment;
@@ -37,6 +44,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.ElementKindVisitor7;
+import javax.lang.model.util.SimpleElementVisitor7;
 
 import kotlin.Pair;
 import promise.database.Entity;
@@ -102,13 +111,13 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
     tableAndRelationElements.put(parentRelationTableClassName, element);
     relationElements.forEach(relationElement -> {
       if (relationElement.getAnnotation(HasMany.class) != null) try {
-        Pair<ClassName, Element> pair = generateForHasManyRelation(relationElement, constructorParameters);
+        Pair<ClassName, Element> pair = generateForHasManyRelation(relationElement, constructorParameters, tableAndRelationElements);
         if (pair != null) tableAndRelationElements.put(pair.getFirst(), pair.getSecond());
       } catch (Exception e) {
         LogUtil.e(e, relationElement);
       }
       else if (relationElement.getAnnotation(HasOne.class) != null) try {
-        Pair<ClassName, Element> pair = generateForHasOneRelation(relationElement, constructorParameters);
+        Pair<ClassName, Element> pair = generateForHasOneRelation(relationElement, constructorParameters, tableAndRelationElements);
         if (pair != null) tableAndRelationElements.put(pair.getFirst(), pair.getSecond());
       } catch (Exception e) {
         LogUtil.e(e, relationElement);
@@ -129,7 +138,9 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
     return javaFiles;
   }
 
-  private Pair<ClassName, Element> generateForHasManyRelation(Element hasManyRelationFieldElement, ArrayList<ParameterSpec> constructorParameters) throws Exception {
+  private Pair<ClassName, Element> generateForHasManyRelation(Element hasManyRelationFieldElement,
+                                                              ArrayList<ParameterSpec> constructorParameters,
+                                                              HashMap<ClassName, Element> tableAndRelationElements) throws Exception {
     if (JavaUtils.isCollectionType(processingEnvironment, (VariableElement) hasManyRelationFieldElement)) {
       List<? extends TypeMirror> typeMirrors = JavaUtils.getParameterizedTypeMirrors((VariableElement) hasManyRelationFieldElement);
       if (typeMirrors != null) {
@@ -143,6 +154,11 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
         TypeElement relationElement = UtilsKt.asTypeElement(typeMirrors.get(0), processingEnvironment);
         if (relationElement.getAnnotation(Entity.class) == null)
           throw new Exception("Element related to " + element.getSimpleName() + " as HasMany in " + hasManyRelationFieldElement.getSimpleName() + " field is not marked as an Entity");
+        if (tableAndRelationElements.entrySet().stream().anyMatch(classNameElementEntry -> PersistableEntityUtilsKt.getTableName(classNameElementEntry.getValue())
+            .equals(PersistableEntityUtilsKt.getTableName(UtilsKt.asTypeElement(relationElement.asType(), processingEnvironment))))) {
+          LogUtil.e(new IllegalStateException("Relation has been repeated in "+element),  hasManyRelationFieldElement);
+          return null;
+        }
 
         VariableElement relationHasOneRelatedElement = null;
         for (VariableElement elem : ElementFilter.fieldsIn(relationElement.getEnclosedElements()))
@@ -328,7 +344,15 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
     return null;
   }
 
-  private Pair<ClassName, Element> generateForHasOneRelation(Element hasOneRelationFieldElement, ArrayList<ParameterSpec> constructorParameters) throws Exception {
+  private Pair<ClassName, Element> generateForHasOneRelation(Element hasOneRelationFieldElement,
+                                                             ArrayList<ParameterSpec> constructorParameters,
+                                                             HashMap<ClassName, Element> tableAndRelationElements) throws Exception {
+    if (tableAndRelationElements.entrySet().stream().anyMatch(classNameElementEntry -> PersistableEntityUtilsKt.getTableName(classNameElementEntry.getValue())
+        .equals(PersistableEntityUtilsKt.getTableName(
+            UtilsKt.asTypeElement(hasOneRelationFieldElement.asType(), processingEnvironment))))) {
+        LogUtil.e(new IllegalStateException("Relation has been repeated in "+element),  hasOneRelationFieldElement);
+        return null;
+    }
     if (!JavaUtils.isCollectionType(processingEnvironment, (VariableElement) hasOneRelationFieldElement)) {
       TypeMirror typeMirror = JavaUtils.getTypeMirror((VariableElement) hasOneRelationFieldElement);
       if (typeMirror != null) {
@@ -370,7 +394,7 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
             .build());
 
 
-        classBuilder.addMethod(MethodSpec.methodBuilder("paginateWith" + relationElementVarNames)
+        classBuilder.addMethod(MethodSpec.methodBuilder("paginateWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)))
             .addModifiers(Modifier.PUBLIC)
             .addParameter(int.class, "skip")
             .addParameter(int.class, "limit")
@@ -386,12 +410,12 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
                             ClassName.get(element.asType())
                         )
                     ))
-                .addStatement("return populateWith" + capitalizeFirst(relationElementVarNames) + "(" + parentElementVarNames + ")")
+                .addStatement("return populateWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)) + "(" + parentElementVarNames + ")")
                 .build())
             .build());
 
 
-        classBuilder.addMethod(MethodSpec.methodBuilder("listWith" + relationElementVarNames)
+        classBuilder.addMethod(MethodSpec.methodBuilder("listWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)))
             .addModifiers(Modifier.PUBLIC)
             .returns(ParameterizedTypeName.get(ClassName.get("promise.model", "IdentifiableList"),
                 WildcardTypeName.subtypeOf(
@@ -405,11 +429,11 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
                             ClassName.get(element.asType())
                         )
                     ))
-                .addStatement("return populateWith" + capitalizeFirst(relationElementVarNames) + "(" + parentElementVarNames + ")")
+                .addStatement("return populateWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)) + "(" + parentElementVarNames + ")")
                 .build())
             .build());
 
-        classBuilder.addMethod(MethodSpec.methodBuilder("listWith" + relationElementVarNames)
+        classBuilder.addMethod(MethodSpec.methodBuilder("listWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)))
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ArrayTypeName.of(
                 ParameterizedTypeName.get(ClassName.get("promise.db", "Column"),
@@ -427,11 +451,11 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
                             ClassName.get(element.asType())
                         )
                     ))
-                .addStatement("return populateWith" + capitalizeFirst(relationElementVarNames) + "(" + parentElementVarNames + ")")
+                .addStatement("return populateWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)) + "(" + parentElementVarNames + ")")
                 .build())
             .build());
 
-        classBuilder.addMethod(MethodSpec.methodBuilder("populateWith" + relationElementVarNames)
+        classBuilder.addMethod(MethodSpec.methodBuilder("populateWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)))
             .addModifiers(Modifier.PUBLIC)
             .addParameter(ParameterizedTypeName.get(ClassName.get("promise.model", "IdentifiableList"),
                 WildcardTypeName.subtypeOf(
@@ -471,7 +495,7 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
             .build());
 
 
-        classBuilder.addMethod(MethodSpec.methodBuilder("get" + relationElementVarName)
+        classBuilder.addMethod(MethodSpec.methodBuilder("get" + capitalizeFirst(hasOneRelationFieldName))
             .addParameter(TypeName.get(element.asType()), parentElementVarName)
             .addModifiers(Modifier.PUBLIC)
             .returns(TypeName.get(relationElement.asType()))
@@ -480,8 +504,7 @@ public class RelationsDaoGenerator implements CodeGenerator<List<JavaFile.Builde
                 .build())
             .build());
 
-
-        classBuilder.addMethod(MethodSpec.methodBuilder("saveWith" + relationElementVarNames)
+        classBuilder.addMethod(MethodSpec.methodBuilder("saveWith" + pluralize(capitalizeFirst(hasOneRelationFieldName)))
             .addModifiers(Modifier.PUBLIC)
             .returns(boolean.class)
             .addParameter(ParameterizedTypeName.get(ClassName.get("promise.model", "IdentifiableList"),
